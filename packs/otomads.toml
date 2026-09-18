@@ -207,7 +207,7 @@ extra = "角色曲"
 character = "letty-whiterock"
 album = "otomads"
 author = "鞍山侯国玉电乐团"
-title = "Crystallize Otto / 结晶化的白银"
+title = "Crystallize Otto ／ 结晶化的白银"
 extra = "角色曲"
 
 [[track]]
@@ -299,4 +299,144 @@ character = "konpaku-youmu"
 album = "otomads"
 author = "钬__"
 title = "【2025连缘羽梦祭单品】连缘妖妖梦~Ancient Temple"
+extra = "角色曲"
+
+[[track]]
+character = "wriggle-nightbug"
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】怎么这么蠢的虫月 ~ Mooned Insect"
+extra = "角色曲"
+
+[[track]]
+character = "wriggle-nightbug"
+album = "otomads"
+author = "芙兰厨陈YuYue"
+title = "蠢々秋月"
+extra = "角色曲"
+
+[[track]]
+character = "mystia-lorelei"
+album = "otomads"
+author = "芙兰厨陈YuYue"
+title = "【原汤化原食】已经只能听见歌声了"
+extra = "角色曲"
+
+[[track]]
+character = "kamishirasawa-keine"
+album = "otomads"
+author = "霜幻不容筱 & Shui__Huo & 逢封fn_eg"
+title = "Beat My Old World 【音MAD|个人全明星】"
+extra = "角色曲"
+
+[[track]]
+character = "hakurei-reimu"
+album = "otomads"
+author = "FFFanwen"
+title = "【缺明星】少女绮想曲"
+extra = "角色曲"
+
+[[track]]
+character = "inaba-tewi"
+album = "otomads"
+author = "冰の妖睛"
+title = "【东方德夜抄】♿侯国玉的菜盒子　～ Kagome-Kagome♿"
+extra = "角色曲"
+
+[[track]]
+character = "reisen-udongein-inaba"
+album = "otomads"
+author = "Satani_ZC & 天空海Skyocean & ItsZTChun & Rendering-Liu & 专治各种乱入"
+title = "【铁道音MAD】放在降弓用刑处轴温很快就会升高 ~ 狂气的CR（2021东方乘车录单品）"
+extra = "角色曲"
+
+[[track]]
+character = "reisen-udongein-inaba"
+album = "otomads"
+author = "芙兰厨陈YuYue"
+title = "【疾走向】今晚七点有狂气之瞳表演"
+extra = "角色曲"
+
+[[track]]
+character = "reisen-udongein-inaba"
+album = "otomads"
+author = "海老ルーミア"
+title = "【东方夏银梦】邀请后辈马上袭击～狂气的野兽先辈"
+extra = "角色曲"
+
+[[track]]
+character = "yagokoro-eirin"
+album = "otomads"
+author = "锤子先辈"
+title = "【2022摩多罗国玉祭单品】电棍1969"
+extra = "角色曲"
+
+[[track]]
+character = "yagokoro-eirin"
+album = "otomads"
+author = "myrevolution"
+title = "yeah4oyage1029"
+extra = "角色曲"
+
+[[track]]
+character = "yagokoro-eirin"
+album = "otomads"
+author = "川先僧"
+title = "【東方永夜抄】千年幻想郷 ～ History of Thomas"
+extra = "角色曲"
+
+[[track]]
+character = "yagokoro-eirin"
+album = "otomads"
+author = "マトウダイ"
+title = "千年マスオ郷　～ History of the Masuo"
+extra = "角色曲"
+
+[[track]]
+character = "houraisan-kaguya"
+album = "otomads"
+author = "丶Mikan"
+title = "【原曲不使用】竹取Fa♂翔"
+extra = "角色曲"
+
+[[track]]
+character = "izayoi-sakuya"
+album = "otomads"
+author = "van艺复泄"
+title = "【东方馅挂炒饭】night♂of knight"
+extra = "角色曲"
+
+[[track]]
+character = "yasaka-kanako"
+album = "otomads"
+author = "东风股早苗"
+title = "【东方馅挂炒饭】神圣庄严的古日♂暮里 ~ Suwa Wrestled Gym"
+extra = "角色曲"
+
+[[track]]
+character = "kamishirasawa-keine"
+album = "otomads"
+author = "稀神灵梦 & SayoYasuda"
+title = "【东方新春宴音MAD合作单品⁹】Extend Ash~蓬莱人"
+extra = "角色曲"
+
+[[track]]
+character = "kamishirasawa-keine"
+album = "otomads"
+author = "鬼剑士草贝戋神"
+title = "【东方馅挂炒饭】Extend Ash　～ 蓬莱人"
+extra = "角色曲"
+
+[[track]]
+character = "fujiwara-no-mokou"
+album = "otomads"
+author = "川先僧"
+title = "【東方永夜抄】飘上月球，不死之喵"
+extra = "角色曲"
+
+[[track]]
+character = "fujiwara-no-mokou"
+album = "otomads"
+author = "打酱油的小火柴"
+title = "【东方】飘上月球，不死乒乓"
 extra = "角色曲"
