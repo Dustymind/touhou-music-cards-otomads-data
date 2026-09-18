@@ -17,125 +17,147 @@ name = "otomads"
 kind = "other"
 pack = "otomads"
 order = 100
+# 这张专辑名（=曲包名"otomads"）没有展示价值：曲目没作者时**整行不显示**（见 D94）
+show_album_name = false
 
 [[track]]
 character = "kirisame-marisa"
 album = "otomads"
-title = "川先僧 - 普通肥猫魔法使"
+author = "川先僧"
+title = "普通肥猫魔法使"
 extra = "角色曲"
 
 [[track]]
 character = "alice-margatroid"
 album = "otomads"
-title = "鞍山侯国玉电乐团 - 电棍裁判 ~ 玩弄唢呐的选手"
+author = "鞍山侯国玉电乐团"
+title = "电棍裁判 ~ 玩弄唢呐的选手"
 extra = "角色曲"
 
 [[track]]
 character = "hakurei-reimu"
 album = "otomads"
-title = "nulla - 恶俗小径　～ Chaoshan Path"
+author = "nulla"
+title = "恶俗小径　～ Chaoshan Path"
 extra = "角色曲"
 
 [[track]]
 character = "hakurei-reimu"
 album = "otomads"
-title = "弦卷こころOfficial - ♿春色小径（心绮楼Ver.）"
+author = "弦卷こころOfficial"
+title = "♿春色小径（心绮楼Ver.）"
 extra = "角色曲"
 
 [[track]]
 character = "rumia"
 album = "otomads"
-title = "木大的雷某 - 露米娅的██视频流出"
+author = "木大的雷某"
+title = "露米娅的██视频流出"
 extra = "角色曲"
 
 [[track]]
 character = "rumia"
 album = "otomads"
-title = "芙兰厨陈YuYue - 妖魔夜行！"
+author = "芙兰厨陈YuYue"
+title = "妖魔夜行！"
 extra = "角色曲"
 
 [[track]]
 character = "daiyousei"
 album = "otomads"
-title = "黑区awa - [原图不使用]Lunate Elf♿"
+author = "黑区awa"
+title = "[原图不使用]Lunate Elf♿"
 extra = "角色曲"
 
 [[track]]
 character = "cirno"
 album = "otomads"
-title = "きゅーみぅ - 东方原曲大致最开始的音的おてんば恋娘"
+author = "きゅーみぅ"
+title = "东方原曲大致最开始的音的おてんば恋娘"
 extra = "角色曲"
 
 [[track]]
 character = "hong-meiling"
 album = "otomads"
-title = "拔剑Sketon - 【东方馅挂炒饭】上海红茶馆"
+author = "拔剑Sketon"
+title = "【东方馅挂炒饭】上海红茶馆"
 extra = "角色曲"
 
 [[track]]
 character = "hong-meiling"
 album = "otomads"
-title = "Chyan_184 - 【东方电气棍】鞍山红茶馆 ~ Chinese Tea"
+author = "Chyan_184"
+title = "【东方电气棍】鞍山红茶馆 ~ Chinese Tea"
 extra = "角色曲"
 
 [[track]]
 character = "hong-meiling"
 album = "otomads"
-title = "Rokkan - 明治十七年の上郡アリス"
+author = "Rokkan"
+title = "明治十七年の上郡アリス"
 extra = "角色曲"
 
 [[track]]
 character = "koakuma"
 album = "otomads"
-title = "地下部 vs Rinsaku vs 逢封fn_eg vs Moonview210 vs chleain - Masuo魔法図書館"
+author = "地下部 vs Rinsaku vs 逢封fn_eg vs Moonview210 vs chleain"
+title = "Masuo魔法図書館"
 extra = "角色曲"
 
 [[track]]
 character = "patchouli-knowledge"
 album = "otomads"
-title = "_Karacher_ - 【183／东方电气棍】Locked Girl ~ 室密棍哥"
+author = "_Karacher_"
+title = "【183／东方电气棍】Locked Girl ~ 室密棍哥"
 extra = "角色曲"
 
 [[track]]
 character = "izayoi-sakuya"
 album = "otomads"
-title = "打酱油的小火柴 & 长叶松烯 - 月时盆"
+author = "打酱油的小火柴 & 长叶松烯"
+title = "月时盆"
 extra = "角色曲"
 
 [[track]]
 character = "izayoi-sakuya"
 album = "otomads"
-title = "ねむちゃんぐ - 【音MAD】バグ ナイワケ ナイツ"
+author = "ねむちゃんぐ"
+title = "【音MAD】バグ ナイワケ ナイツ"
 extra = "角色曲"
 
 [[track]]
 character = "izayoi-sakuya"
 album = "otomads"
-title = "SYLVASTER - 【东方都映冢】Flowering Night【音MAD】"
+author = "SYLVASTER"
+title = "【东方都映冢】Flowering Night【音MAD】"
 extra = "角色曲"
 
 [[track]]
 character = "izayoi-sakuya"
 album = "otomads"
-title = "NOVA音MAD社 - 【音MAD】2020骑士之夜合作"
+author = "NOVA音MAD社"
+title = "【音MAD】2020骑士之夜合作"
 extra = "角色曲"
 
 [[track]]
 character = "remilia-scarlet"
 album = "otomads"
-title = "芙兰厨陈YuYue - 【音MAD】献给逝去公主的七重奏！"
+author = "芙兰厨陈YuYue"
+title = "【音MAD】献给逝去公主的七重奏！"
 extra = "角色曲"
 
 [[track]]
 character = "remilia-scarlet"
 album = "otomads"
-title = "鞍山侯国玉电乐团 - 【东方电气棍】献给已逝棍妣的八重奏"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】献给已逝棍妣的八重奏"
 extra = "角色曲"
 
 [[track]]
 character = "remilia-scarlet"
 album = "otomads"
-title = "川先僧 - 【东方红魔馆】献给已逝猫咪的七重奏"
+author = "川先僧"
+title = "【东方红魔馆】献给已逝猫咪的七重奏"
 extra = "角色曲"
 
 [[track]]
@@ -147,17 +169,20 @@ extra = "角色曲"
 [[track]]
 character = "flandre-scarlet"
 album = "otomads"
-title = "木大的雷某 - 【最终鬼畜妹】来了！2026！"
+author = "木大的雷某"
+title = "【最终鬼畜妹】来了！2026！"
 extra = "角色曲"
 
 [[track]]
 character = "flandre-scarlet"
 album = "otomads"
-title = "心水湛清 & thwy & 許祭 & Passthem & 浪涛I2A - 最终鬼畜全明星•BILIBILI【东方新春宴'24单品】"
+author = "心水湛清 & thwy & 許祭 & Passthem & 浪涛I2A"
+title = "最终鬼畜全明星•BILIBILI【东方新春宴'24单品】"
 extra = "角色曲"
 
 [[track]]
 character = "ibuki-suika"
 album = "otomads"
-title = "thwy - 岁月"
+author = "thwy"
+title = "岁月"
 extra = "角色曲"
