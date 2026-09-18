@@ -186,3 +186,110 @@ album = "otomads"
 author = "thwy"
 title = "岁月"
 extra = "角色曲"
+
+# ── 2026-09 新增：bilibili 音MAD（yt-dlp 最高音质）──
+
+[[track]]
+character = "cirno"
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "无何有之棍 ~ Deep Silver"
+extra = "角色曲"
+
+[[track]]
+character = "letty-whiterock"
+album = "otomads"
+author = "循環"
+title = "Crystallize Masuo"
+extra = "角色曲"
+
+[[track]]
+character = "letty-whiterock"
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "Crystallize Otto / 结晶化的白银"
+extra = "角色曲"
+
+[[track]]
+character = "chen"
+album = "otomads"
+author = "丹花伊吹 & 艾了个拉 & 四季映姬78 & thwy & Binkales"
+title = "【2023新春宴音MAD单品】远野马娘前线"
+extra = "角色曲"
+
+[[track]]
+character = "chen"
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】掉业棕（Withered Estick）"
+extra = "角色曲"
+
+[[track]]
+character = "alice-margatroid"
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】鞍山的唢呐师"
+extra = "角色曲"
+
+[[track]]
+character = "lily-white"
+album = "otomads"
+author = "龙青瑶RyuuSeiyou"
+title = "【东方馅挂炒饭】暮里的兄贵之都（天空的花之都）"
+extra = "角色曲"
+
+[[track]]
+character = "prismriver-sisters"
+album = "otomads"
+author = "芙兰厨陈YuYue"
+title = "【音Mad】疾走全明星あんさんぶる！"
+extra = "角色曲"
+
+[[track]]
+character = "prismriver-sisters"
+album = "otomads"
+author = "川先僧"
+title = "【东方Project】猫灵乐团~幻影合奏"
+extra = "角色曲"
+
+[[track]]
+character = "konpaku-youmu"
+album = "otomads"
+author = "川先僧"
+title = "【东方Project】广有射怪猫管我鸟事"
+extra = "角色曲"
+
+[[track]]
+character = "saigyouji-yuyuko"
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】幽雅地退役吧，墨染的电棍 ~ Border of Otto"
+extra = "角色曲"
+
+[[track]]
+character = "chen"
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】击败跋扈"
+extra = "角色曲"
+
+[[track]]
+character = "yakumo-ran"
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】电棍幻葬 ~ Netto-Fantasy"
+extra = "角色曲"
+
+[[track]]
+character = "yakumo-ran"
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】吉吉跋扈 ~ Who Kai Da!"
+extra = "角色曲"
+
+[[track]]
+character = "yakumo-yukari"
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "Otto-Fantasia"
+extra = "角色曲"
