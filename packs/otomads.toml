@@ -615,3 +615,10 @@ album = "otomads"
 author = "手稲"
 title = "对了，一起去回忆京都吧。"
 extra = "角色曲"
+
+[[track]]
+character = "shameimaru-aya"
+album = "otomads"
+author = "y的自然对数"
+title = "对了 向北邮出发吧"
+extra = "角色曲"
