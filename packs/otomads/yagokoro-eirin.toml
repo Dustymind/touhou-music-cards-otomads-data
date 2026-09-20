@@ -1,0 +1,32 @@
+# 音MAD 曲包（otomads）：`yagokoro-eirin` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "yagokoro-eirin"
+
+[[track]]
+album = "otomads"
+author = "锤子先辈"
+title = "【2022摩多罗国玉祭单品】电棍1969"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1AD4y1s72f/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "myrevolution"
+title = "yeah4oyage1029"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1mhyWBsEc6/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "川先僧"
+title = "【東方永夜抄】千年幻想郷 ～ History of Thomas"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Ck4y1m7qk/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "マトウダイ"
+title = "千年マスオ郷　～ History of the Masuo"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Yy4y197wQ/"          # ingest_otomads.py

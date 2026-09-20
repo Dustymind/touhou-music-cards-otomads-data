@@ -1,0 +1,39 @@
+# 音MAD 曲包（otomads）：`izayoi-sakuya` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "izayoi-sakuya"
+
+[[track]]
+album = "otomads"
+author = "打酱油的小火柴 & 长叶松烯"
+title = "月时盆"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Mk4y1673i/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "ねむちゃんぐ"
+title = "【音MAD】バグ ナイワケ ナイツ"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1WU4y1N7Bc/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "SYLVASTER"
+title = "【东方都映冢】Flowering Night【音MAD】"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1PM4y1V7Wu/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "NOVA音MAD社"
+title = "【音MAD】2020骑士之夜合作"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Da411c7rm/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "van艺复泄"
+title = "【东方馅挂炒饭】night♂of knight"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1eetSznEPN/"          # ingest_otomads.py

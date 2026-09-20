@@ -1,0 +1,11 @@
+# 音MAD 曲包（otomads）：`daiyousei` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "daiyousei"
+
+[[track]]
+album = "otomads"
+author = "黑区awa"
+title = "[原图不使用]Lunate Elf♿"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1YkHczFEhe"          # mp3 标签

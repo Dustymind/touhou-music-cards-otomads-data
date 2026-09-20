@@ -1,0 +1,11 @@
+# 音MAD 曲包（otomads）：`yasaka-kanako` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "yasaka-kanako"
+
+[[track]]
+album = "otomads"
+author = "东风股早苗"
+title = "【东方馅挂炒饭】神圣庄严的古日♂暮里 ~ Suwa Wrestled Gym"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV123VV6JEWq/"          # ingest_otomads.py

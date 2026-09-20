@@ -1,0 +1,11 @@
+# 音MAD 曲包（otomads）：`lily-white` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "lily-white"
+
+[[track]]
+album = "otomads"
+author = "龙青瑶RyuuSeiyou"
+title = "【东方馅挂炒饭】暮里的兄贵之都（天空的花之都）"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1XpW6eXEQT/"          # ingest_otomads.py

@@ -1,0 +1,59 @@
+# 音MAD 曲包（otomads）：`shameimaru-aya` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "shameimaru-aya"
+
+[[track]]
+album = "otomads"
+author = "云生结海lou"
+title = "【东方电气棍】大旋風神哈利路少女"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1tKVizwEpC/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "Rinsaku"
+title = "風神魔酢汚"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Ye411G7gR/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "フランソウ"
+title = "【东方食雪汉】**少女"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1BLex6oExB/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "みぇち"
+title = "Masuo的笔记　～ Mysteriousuo Note"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1ds4y1J7wK/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "_萳苝_"
+title = "【东方雪花帖】傻风之循环 ~ Wind Tangpu"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1oe4y1C7PR/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "鱼调YuDiao & 天空海Skyocean & DKZ53"
+title = "【2024东方新春宴音MAD合作单品】山东之国的不眠夜"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1VH4y1a71E/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "手稲"
+title = "对了，一起去回忆京都吧。"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1YM4y1w7Sd/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "y的自然对数"
+title = "对了 向北邮出发吧"
+extra = "角色曲"

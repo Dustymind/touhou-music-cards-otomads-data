@@ -1,0 +1,18 @@
+# 音MAD 曲包（otomads）：`yakumo-ran` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "yakumo-ran"
+
+[[track]]
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】电棍幻葬 ~ Netto-Fantasy"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Fs4y1v7H3/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】吉吉跋扈 ~ Who Kai Da!"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1ok4y1777E/"          # ingest_otomads.py

@@ -1,0 +1,25 @@
+# 音MAD 曲包（otomads）：`kamishirasawa-keine` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "kamishirasawa-keine"
+
+[[track]]
+album = "otomads"
+author = "霜幻不容筱 & Shui__Huo & 逢封fn_eg"
+title = "Beat My Old World 【音MAD|个人全明星】"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1LUbXzaE2A/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "稀神灵梦 & SayoYasuda"
+title = "【东方新春宴音MAD合作单品⁹】Extend Ash~蓬莱人"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV13P4y1z7AV/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "鬼剑士草贝戋神"
+title = "【东方馅挂炒饭】Extend Ash　～ 蓬莱人"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1et411u7FH/"          # ingest_otomads.py

@@ -1,0 +1,23 @@
+# 音MAD 曲包（otomads）：`flandre-scarlet` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "flandre-scarlet"
+
+[[track]]
+album = "otomads"
+title = "最终鬼畜蓝蓝路 (2023 Remix)"
+extra = "角色曲"
+
+[[track]]
+album = "otomads"
+author = "木大的雷某"
+title = "【最终鬼畜妹】来了！2026！"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1JkiLBiE21/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "心水湛清 & thwy & 許祭 & Passthem & 浪涛I2A"
+title = "最终鬼畜全明星•BILIBILI【东方新春宴'24单品】"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV17z421d7mj/"          # mp3 标签

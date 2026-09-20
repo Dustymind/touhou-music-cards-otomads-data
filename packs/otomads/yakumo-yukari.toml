@@ -1,0 +1,11 @@
+# 音MAD 曲包（otomads）：`yakumo-yukari` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "yakumo-yukari"
+
+[[track]]
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "Otto-Fantasia"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1bP41147U9/"          # ingest_otomads.py

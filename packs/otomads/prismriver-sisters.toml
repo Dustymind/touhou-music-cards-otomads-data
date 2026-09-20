@@ -1,0 +1,18 @@
+# 音MAD 曲包（otomads）：`prismriver-sisters` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "prismriver-sisters"
+
+[[track]]
+album = "otomads"
+author = "芙兰厨陈YuYue"
+title = "【音Mad】疾走全明星あんさんぶる！"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV14H4y1p7wF/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "川先僧"
+title = "【东方Project】猫灵乐团~幻影合奏"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Wp4y1Y7uy/"          # ingest_otomads.py

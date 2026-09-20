@@ -1,0 +1,11 @@
+# 音MAD 曲包（otomads）：`patchouli-knowledge` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "patchouli-knowledge"
+
+[[track]]
+album = "otomads"
+author = "_Karacher_"
+title = "【183／东方电气棍】Locked Girl ~ 室密棍哥"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1YYNv6KEym/"          # mp3 标签

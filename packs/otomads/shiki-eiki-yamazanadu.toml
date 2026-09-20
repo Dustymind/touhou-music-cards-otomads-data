@@ -1,0 +1,25 @@
+# 音MAD 曲包（otomads）：`shiki-eiki-yamazanadu` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "shiki-eiki-yamazanadu"
+
+[[track]]
+album = "otomads"
+author = "麦恩_exe"
+title = "【原曲不使用】第六十年的东方审判"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1fRcJzgE5Q/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "云生结海lou"
+title = "【东方电气棍】第六十年的职业选手 ～ Pro Player of Sixty Years"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1ymjTzHEiG/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "鬼剑士草贝戋神"
+title = "【东方充电男】第六十年的疯子裁判"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV17E411J7e1/"          # ingest_otomads.py

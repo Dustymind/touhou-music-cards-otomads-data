@@ -1,0 +1,25 @@
+# 音MAD 曲包（otomads）：`remilia-scarlet` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "remilia-scarlet"
+
+[[track]]
+album = "otomads"
+author = "芙兰厨陈YuYue"
+title = "【音MAD】献给逝去公主的七重奏！"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1xF4m1M7Hi/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】献给已逝棍妣的八重奏"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1iavXesELa/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "川先僧"
+title = "【东方红魔馆】献给已逝猫咪的七重奏"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV167411G7UG/"          # mp3 标签

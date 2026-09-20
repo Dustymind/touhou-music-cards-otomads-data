@@ -1,0 +1,25 @@
+# 音MAD 曲包（otomads）：`chen` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "chen"
+
+[[track]]
+album = "otomads"
+author = "丹花伊吹 & 艾了个拉 & 四季映姬78 & thwy & Binkales"
+title = "【2023新春宴音MAD单品】远野马娘前线"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1JM411q7HY/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】掉业棕（Withered Estick）"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Rh4y1p7Zb/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】击败跋扈"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV19c411A7PA/"          # ingest_otomads.py

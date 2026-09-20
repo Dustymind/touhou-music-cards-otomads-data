@@ -1,0 +1,18 @@
+# 音MAD 曲包（otomads）：`rumia` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "rumia"
+
+[[track]]
+album = "otomads"
+author = "木大的雷某"
+title = "露米娅的██视频流出"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1AfRdYVEkz/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "芙兰厨陈YuYue"
+title = "妖魔夜行！"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1pS411P7nv/"          # mp3 标签

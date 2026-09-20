@@ -1,0 +1,18 @@
+# 音MAD 曲包（otomads）：`alice-margatroid` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "alice-margatroid"
+
+[[track]]
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "电棍裁判 ~ 玩弄唢呐的选手"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Co4y1574c/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】鞍山的唢呐师"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Rs4y1779Z/"          # ingest_otomads.py

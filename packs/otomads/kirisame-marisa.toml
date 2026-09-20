@@ -1,0 +1,11 @@
+# 音MAD 曲包（otomads）：`kirisame-marisa` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "kirisame-marisa"
+
+[[track]]
+album = "otomads"
+author = "川先僧"
+title = "普通肥猫魔法使"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1GD4y1m7JY/"          # mp3 标签

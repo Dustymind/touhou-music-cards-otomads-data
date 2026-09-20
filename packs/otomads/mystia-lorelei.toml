@@ -1,0 +1,11 @@
+# 音MAD 曲包（otomads）：`mystia-lorelei` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "mystia-lorelei"
+
+[[track]]
+album = "otomads"
+author = "芙兰厨陈YuYue"
+title = "【原汤化原食】已经只能听见歌声了"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV18rPReMEEo/"          # ingest_otomads.py

@@ -1,0 +1,18 @@
+# 音MAD 曲包（otomads）：`kazami-yuuka` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "kazami-yuuka"
+
+[[track]]
+album = "otomads"
+author = "比占庭"
+title = "【东方电气棍】今昔幻想乡"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1uM4m1U7hA/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "みぇち"
+title = "今昔gay想郷　～ Masuo Land"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1wW4y1r7vB/"          # ingest_otomads.py

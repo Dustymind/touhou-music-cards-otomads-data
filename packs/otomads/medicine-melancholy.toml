@@ -1,0 +1,11 @@
+# 音MAD 曲包（otomads）：`medicine-melancholy` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "medicine-melancholy"
+
+[[track]]
+album = "otomads"
+author = "餃子と垂れ"
+title = "剧毒Masuo ～ Forsaken Masuo"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1sX4y1H7Uf/"          # ingest_otomads.py

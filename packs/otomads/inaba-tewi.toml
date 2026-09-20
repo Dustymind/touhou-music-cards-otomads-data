@@ -1,0 +1,25 @@
+# 音MAD 曲包（otomads）：`inaba-tewi` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "inaba-tewi"
+
+[[track]]
+album = "otomads"
+author = "冰の妖睛"
+title = "【东方德夜抄】♿侯国玉的菜盒子　～ Kagome-Kagome♿"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1yHQDYHETF/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "青空彼方"
+title = "【东方馅挂炒饭】宇佐大人的白旗"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1hs411e78v/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "森林"
+title = "Masuo大人的白旗"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1BT4y1Q7bL/"          # ingest_otomads.py

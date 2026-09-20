@@ -1,0 +1,18 @@
+# 音MAD 曲包（otomads）：`konpaku-youmu` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "konpaku-youmu"
+
+[[track]]
+album = "otomads"
+author = "川先僧"
+title = "【东方Project】广有射怪猫管我鸟事"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1By4y1C7ga/"          # ingest_otomads.py
+
+[[track]]
+album = "otomads"
+author = "钬__"
+title = "【2025连缘羽梦祭单品】连缘妖妖梦~Ancient Temple"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1FUFYeJE8e/"          # ingest_otomads.py

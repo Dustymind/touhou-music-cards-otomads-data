@@ -1,0 +1,18 @@
+# 音MAD 曲包（otomads）：`cirno` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "cirno"
+
+[[track]]
+album = "otomads"
+author = "きゅーみぅ"
+title = "东方原曲大致最开始的音的おてんば恋娘"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1kb411U789/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "无何有之棍 ~ Deep Silver"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1kw411q7S8/"          # ingest_otomads.py

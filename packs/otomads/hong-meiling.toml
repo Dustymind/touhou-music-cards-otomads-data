@@ -1,0 +1,25 @@
+# 音MAD 曲包（otomads）：`hong-meiling` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "hong-meiling"
+
+[[track]]
+album = "otomads"
+author = "拔剑Sketon"
+title = "【东方馅挂炒饭】上海红茶馆"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Tt411K7yc/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "Chyan_184"
+title = "【东方电气棍】鞍山红茶馆 ~ Chinese Tea"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1uijx6aEJM/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "Rokkan"
+title = "明治十七年の上郡アリス"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1GG4y1r7oJ/"          # mp3 标签

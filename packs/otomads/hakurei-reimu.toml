@@ -1,0 +1,25 @@
+# 音MAD 曲包（otomads）：`hakurei-reimu` 的曲目。
+# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+
+key = "hakurei-reimu"
+
+[[track]]
+album = "otomads"
+author = "nulla"
+title = "恶俗小径　～ Chaoshan Path"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Xx411T7Ew"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "弦卷こころOfficial"
+title = "♿春色小径（心绮楼Ver.）"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Dy411q7fm/"          # mp3 标签
+
+[[track]]
+album = "otomads"
+author = "FFFanwen"
+title = "【缺明星】少女绮想曲"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV15s411S7Uw/"          # ingest_otomads.py
