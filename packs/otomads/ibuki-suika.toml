@@ -39,6 +39,7 @@ author = "芙兰厨陈YuYue"
 title = "【东方萃梦想】碎 月"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV16w4m1v7Md/"          # ingest_otomads.py
+start_time = "00:00:04.600"
 
 [[track]]
 album = "otomads"

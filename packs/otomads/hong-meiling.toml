@@ -16,6 +16,7 @@ author = "Chyan_184"
 title = "【东方电气棍】鞍山红茶馆 ~ Chinese Tea"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1uijx6aEJM/"          # mp3 标签
+start_time = "00:00:02.339"
 
 [[track]]
 album = "otomads"

@@ -9,6 +9,7 @@ author = "川先僧"
 title = "【東方永夜抄】飘上月球，不死之喵"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV14k4y1z7RH/"          # ingest_otomads.py
+start_time = "00:00:20.000"
 
 [[track]]
 album = "otomads"
@@ -16,3 +17,4 @@ author = "打酱油的小火柴"
 title = "【东方】飘上月球，不死乒乓"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1RK4y1r7wN/"          # ingest_otomads.py
+start_time = "00:00:08.500"

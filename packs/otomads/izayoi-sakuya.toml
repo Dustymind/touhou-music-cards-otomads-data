@@ -9,6 +9,7 @@ author = "打酱油的小火柴 & 长叶松烯"
 title = "月时盆"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Mk4y1673i/"          # mp3 标签
+start_time = "00:00:11.000"
 
 [[track]]
 album = "otomads"

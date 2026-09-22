@@ -9,6 +9,7 @@ author = "川先僧"
 title = "【东方Project】广有射怪猫管我鸟事"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1By4y1C7ga/"          # ingest_otomads.py
+start_time = "00:00:02.000"
 
 [[track]]
 album = "otomads"

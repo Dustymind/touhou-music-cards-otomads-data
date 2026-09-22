@@ -16,6 +16,7 @@ author = "芙兰厨陈YuYue"
 title = "【疾走向】今晚七点有狂气之瞳表演"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1vWBeBEEZa/"          # ingest_otomads.py
+start_time = "00:00:01.060"
 
 [[track]]
 album = "otomads"

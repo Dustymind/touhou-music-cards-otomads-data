@@ -16,6 +16,7 @@ author = "龙青瑶RyuuSeiyou"
 title = "【东方】厨♂房归航"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV11SwheoENn/"          # ingest_otomads.py
+start_time = "00:00:17.000"
 
 [[track]]
 album = "otomads"
