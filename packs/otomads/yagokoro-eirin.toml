@@ -1,5 +1,5 @@
 # 音MAD 曲包（otomads）：`yagokoro-eirin` 的曲目。
-# 清单与口径见 `data/packs/otomads.toml` 与 `data/packs/README.md`。
+# 清单与口径见 `packs/otomads.toml` 与 `README.md`。
 
 key = "yagokoro-eirin"
 
