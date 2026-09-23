@@ -1,3 +1,6 @@
+Too many A1 slops, README rewriting in progress...zzz...
+
+<!--
 # 东方歌牌 · 音MAD 曲包数据（otomads）
 
 音MAD（音MAD 曲包）的**真源**。主仓库
@@ -59,3 +62,4 @@ cd tools && UV_CACHE_DIR=.uv/cache uv run python -m tmc.ingest_pack \
 
 本仓库的提交历史是从主仓库按路径重写搬来的（`git filter-repo`，13 条，2026-09-17 → 2026-09-23），
 之后在这里独立提交。
+-->
