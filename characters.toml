@@ -1,0 +1,177 @@
+# 本仓库允许使用的角色清单（key / name / order）。
+# 由主仓库 `pnpm data:roster` 生成；原曲没有的角色（音MAD 自有身份）手动追加后会保留。
+
+[[character]]
+key = "kirisame-marisa"
+name = "霧雨魔理沙"
+order = 1
+
+[[character]]
+key = "alice-margatroid"
+name = "アリス・マーガトロイド"
+order = 2
+
+[[character]]
+key = "hakurei-reimu"
+name = "博麗霊夢"
+order = 3
+
+[[character]]
+key = "rumia"
+name = "ルーミア"
+order = 4
+
+[[character]]
+key = "daiyousei"
+name = "大妖精"
+order = 5
+
+[[character]]
+key = "cirno"
+name = "チルノ"
+order = 6
+
+[[character]]
+key = "hong-meiling"
+name = "紅美鈴"
+order = 7
+
+[[character]]
+key = "koakuma"
+name = "小悪魔"
+order = 8
+
+[[character]]
+key = "patchouli-knowledge"
+name = "パチュリー・ノーレッジ"
+order = 9
+
+[[character]]
+key = "izayoi-sakuya"
+name = "十六夜咲夜"
+order = 10
+
+[[character]]
+key = "remilia-scarlet"
+name = "レミリア・スカーレット"
+order = 11
+
+[[character]]
+key = "flandre-scarlet"
+name = "フランドール・スカーレット"
+order = 12
+
+[[character]]
+key = "letty-whiterock"
+name = "レティ・ホワイトロック"
+order = 13
+
+[[character]]
+key = "chen"
+name = "橙"
+order = 14
+
+[[character]]
+key = "lily-white"
+name = "リリーホワイト"
+order = 15
+
+[[character]]
+key = "prismriver-sisters"
+name = "ルナサ/メルラン/リリカ・プリズムリバー"
+order = 16
+
+[[character]]
+key = "konpaku-youmu"
+name = "魂魄妖夢"
+order = 17
+
+[[character]]
+key = "saigyouji-yuyuko"
+name = "西行寺幽々子"
+order = 18
+
+[[character]]
+key = "yakumo-ran"
+name = "八雲藍"
+order = 19
+
+[[character]]
+key = "yakumo-yukari"
+name = "八雲紫"
+order = 20
+
+[[character]]
+key = "wriggle-nightbug"
+name = "リグル･ナイトバグ"
+order = 21
+
+[[character]]
+key = "mystia-lorelei"
+name = "ミスティア・ローレライ"
+order = 22
+
+[[character]]
+key = "kamishirasawa-keine"
+name = "上白沢慧音"
+order = 23
+
+[[character]]
+key = "inaba-tewi"
+name = "因幡てゐ"
+order = 24
+
+[[character]]
+key = "reisen-udongein-inaba"
+name = "鈴仙・優曇華院・イナバ"
+order = 25
+
+[[character]]
+key = "yagokoro-eirin"
+name = "八意永琳"
+order = 26
+
+[[character]]
+key = "houraisan-kaguya"
+name = "蓬莱山輝夜"
+order = 27
+
+[[character]]
+key = "fujiwara-no-mokou"
+name = "藤原妹紅"
+order = 28
+
+[[character]]
+key = "medicine-melancholy"
+name = "メディスン・メランコリー"
+order = 29
+
+[[character]]
+key = "kazami-yuuka"
+name = "風見幽香"
+order = 30
+
+[[character]]
+key = "onozuka-komachi"
+name = "小野塚小町"
+order = 31
+
+[[character]]
+key = "shiki-eiki-yamazanadu"
+name = "四季映姫・ヤマザナドゥ"
+order = 32
+
+[[character]]
+key = "shameimaru-aya"
+name = "射命丸文"
+order = 38
+
+[[character]]
+key = "yasaka-kanako"
+name = "八坂神奈子"
+order = 40
+
+[[character]]
+key = "ibuki-suika"
+name = "伊吹萃香"
+order = 105

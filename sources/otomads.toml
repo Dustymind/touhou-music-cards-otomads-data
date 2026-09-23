@@ -18,6 +18,7 @@ id = "local"
 label_en = "Local library"
 label_zh = "本地曲库"
 table_url = "/manifest.json"
+loudness = "loudness/otomads.json"   # 本源自己的响度表（otomads.measure_loudness / fetch_audio 生成）
 kind = "local"
 order = 1          # 本模式只有它一个源
 enabled = true     # 必须默认开：音MAD 除了它没有别的来源（tmc.validate 守）
