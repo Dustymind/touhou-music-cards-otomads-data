@@ -1,0 +1,321 @@
+"""曲包音频键（`source` / `start_time` / `stop_time`）与抓取/裁剪流程的测试。
+
+契约：`docs/packs-audio-v1.md`。这里只测**离线可验证**的部分（解析、校验、幂等规则、
+硬链接与缓存失效）；真正的下载靠 `--track` 手工验一次。
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+
+import pytest
+
+from otomads import fetch_audio, local_source, loudness, packformat as packs
+
+PACKS = [{"id": "demo", "label": {"en": "Demo", "zh": "演示"}, "kind": "local", "order": 100}]
+ALBUMS = [{"key": "demo", "name": "demo", "kind": "other", "pack": "demo", "order": 100}]
+CHARS = [{"key": "cirno", "music": []}]
+
+
+def make_track(**overrides) -> dict:
+    track = {"character": "cirno", "album": "demo", "title": "曲目", "extra": "角色曲", "pack": "demo"}
+    track.update(overrides)
+    return track
+
+
+# ------------------------------------------------------------------ 时间与区间
+
+@pytest.mark.parametrize(("text", "seconds"), [
+    ("00:00:00.000", 0.0),
+    ("00:00:40.000", 40.0),
+    ("00:01:10.500", 70.5),
+    ("01:02:03.004", 3723.004),
+    ("99:59:59.999", 359_999.999),
+    (" 00:00:07.000 ", 7.0),          # 两头空白容忍
+])
+def test_parse_time_ok(text, seconds):
+    assert packs.parse_time(text) == pytest.approx(seconds)
+
+
+@pytest.mark.parametrize("text", [
+    "00:00:00",          # 缺毫秒
+    "00:00:00.00",       # 毫秒必须三位
+    "0:0:00.000",        # 分/秒必须两位
+    "00:60:00.000",      # 分越界
+    "00:00:60.000",      # 秒越界
+    "1.5", "abc", "", "00:00:00.0000",
+])
+def test_parse_time_rejects_bad_format(text):
+    with pytest.raises(ValueError):
+        packs.parse_time(text)
+
+
+def test_trim_seconds_semantics():
+    assert packs.trim_seconds({}) is None                                  # 都没写 → 不裁
+    assert packs.trim_seconds({"start_time": "00:00:40.000"}) == (40.0, None)   # 只给 start → 裁到结尾
+    assert packs.trim_seconds({"stop_time": "00:01:10.000"}) == (0.0, 70.0)     # 只给 stop → 从开头
+    assert packs.trim_seconds({"start_time": "00:00:40.000",
+                               "stop_time": "00:01:10.000"}) == (40.0, 30.0)
+
+
+@pytest.mark.parametrize("pair", [
+    ("00:01:10.000", "00:00:40.000"),    # 倒挂
+    ("00:00:40.000", "00:00:40.000"),    # 相等
+])
+def test_trim_seconds_rejects_reversed(pair):
+    with pytest.raises(ValueError):
+        packs.trim_seconds({"start_time": pair[0], "stop_time": pair[1]})
+
+
+# ------------------------------------------------------------------ 文件名与原件键
+
+def test_audio_filename_matches_manifest_convention():
+    assert packs.audio_filename(make_track(author="川先僧", title="普通肥猫魔法使")) == "川先僧 - 普通肥猫魔法使.mp3"
+    assert packs.audio_filename(make_track(author="  川先僧  ")) == "川先僧 - 曲目.mp3"
+    assert packs.audio_filename(make_track()) == "曲目.mp3"          # 没作者就只用标题
+
+
+def test_source_key_is_stable_and_distinct():
+    one = packs.source_key("https://www.bilibili.com/video/BV1kw411q7S8/")
+    assert one == packs.source_key("https://www.bilibili.com/video/BV1kw411q7S8/")
+    assert len(one) == 16
+    assert one != packs.source_key("https://www.bilibili.com/video/BV1kw411q7S9/")
+
+
+# ------------------------------------------------------------------ 解析（含未知键）
+
+def write_pack(tmp_path, tracks: str, manifest: str = '[pack]\nid = "demo"\n', character: str = "cirno"):
+    """写一个最小曲包：`packs/demo.toml`（清单）+ `packs/demo/<角色>.toml`（曲目）。"""
+    packs_dir = tmp_path / "packs"
+    (packs_dir / "demo").mkdir(parents=True, exist_ok=True)
+    (packs_dir / "demo.toml").write_text(manifest, encoding="utf-8")
+    (packs_dir / "demo" / f"{character}.toml").write_text(
+        f'key = "{character}"\n\n{tracks}', encoding="utf-8")
+
+
+def test_load_packs_reads_audio_keys(tmp_path, monkeypatch):
+    write_pack(tmp_path, """
+[[track]]
+album = "demo"
+author = "作者"
+title = "标题"
+extra = "角色曲"
+source = "https://example.com/a"
+start_time = "00:00:10.000"
+stop_time = "00:00:20.000"
+""")
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    _packs, _albums, tracks, _cards = packs.load_packs()
+    assert tracks[0]["character"] == "cirno"                 # 角色由文件的 key 决定
+    assert tracks[0]["source"] == "https://example.com/a"
+    assert tracks[0]["start_time"] == "00:00:10.000"
+    assert packs.trim_seconds(tracks[0]) == (10.0, 10.0)
+
+
+@pytest.mark.parametrize(("line", "message"), [
+    ('starttime = "00:00:10.000"', "不认识的键"),          # 拼错的键不许静默丢弃
+    ('character = "cirno"', "不认识的键"),                 # 角色由文件的 key 决定，不再逐条写
+    ('source = "ftp://example.com/a"', "source 必须是"),   # 只认 http(s)
+    ('start_time = "10"', "时间格式"),                     # 格式错
+    ('start_time = "00:00:30.000"\nstop_time = "00:00:10.000"', "必须晚于"),   # 区间倒挂
+])
+def test_load_packs_rejects_bad_keys(tmp_path, monkeypatch, line, message):
+    write_pack(tmp_path, f'[[track]]\nalbum = "demo"\ntitle = "标题"\n{line}\n')
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    with pytest.raises(SystemExit, match=message):
+        packs.load_packs()
+
+
+def test_load_packs_allows_stop_only(tmp_path, monkeypatch):
+    write_pack(tmp_path, '[[track]]\nalbum = "demo"\ntitle = "标题"\nstop_time = "00:00:10.000"\n')
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    _packs, _albums, tracks, _cards = packs.load_packs()
+    assert packs.trim_seconds(tracks[0]) == (0.0, 10.0)      # 只给 stop ⇒ 从开头裁到 10s
+
+
+def test_load_packs_reads_character_cards(tmp_path, monkeypatch):
+    """角色文件可以写 `card`（音MAD 侧自己的卡面，写法同 data/characters/*.toml）。"""
+    packs_dir = tmp_path / "packs"
+    (packs_dir / "demo").mkdir(parents=True, exist_ok=True)
+    (packs_dir / "demo.toml").write_text('[pack]\nid = "demo"\n', encoding="utf-8")
+    (packs_dir / "demo" / "cirno.toml").write_text(
+        'key = "cirno"\ncard = ["チルノ-mad.png", "チルノ-mad2.png"]\n\n'
+        '[[track]]\nalbum = "demo"\ntitle = "标题"\n', encoding="utf-8")
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    _packs, _albums, tracks, cards = packs.load_packs()
+    assert cards == {"cirno": ["チルノ-mad.png", "チルノ-mad2.png"]}
+    assert tracks[0]["character"] == "cirno"
+    # 没写 card 的角色不进这张表（缺省沿用共享身份的卡面）
+    assert set(cards) == {"cirno"}
+
+
+@pytest.mark.parametrize("line", ['card = []', 'card = "x.png"', 'card = [""]'])
+def test_load_packs_rejects_bad_card(tmp_path, monkeypatch, line):
+    packs_dir = tmp_path / "packs"
+    (packs_dir / "demo").mkdir(parents=True, exist_ok=True)
+    (packs_dir / "demo.toml").write_text('[pack]\nid = "demo"\n', encoding="utf-8")
+    (packs_dir / "demo" / "cirno.toml").write_text(f'key = "cirno"\n{line}\n', encoding="utf-8")
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    with pytest.raises(SystemExit, match="card 必须是"):
+        packs.load_packs()
+
+
+
+@pytest.mark.parametrize(("manifest", "character", "body", "message"), [
+    # 清单里写曲目：曲目一律进角色文件（否则两处都能写，迟早漂移）
+    ('[pack]\nid = "demo"\n\n[[track]]\nalbum = "demo"\ntitle = "标题"\n', "cirno",
+     'key = "cirno"\n', "一角色一份"),
+    # 角色文件缺 key
+    ('[pack]\nid = "demo"\n', "cirno", '[[track]]\nalbum = "demo"\ntitle = "标题"\n', "缺少 key"),
+    # 文件名与 key 不一致（写错一个字符就会被静默错挂，所以直接报）
+    ('[pack]\nid = "demo"\n', "cirno", 'key = "cirno-2"\n', "文件名与 key 不一致"),
+    # 角色文件里写 [pack] / [[album]]
+    ('[pack]\nid = "demo"\n', "cirno", 'key = "cirno"\n[pack]\nid = "demo"\n', "只能写在清单"),
+])
+def test_load_packs_rejects_bad_layout(tmp_path, monkeypatch, manifest, character, body, message):
+    packs_dir = tmp_path / "packs"
+    (packs_dir / "demo").mkdir(parents=True, exist_ok=True)
+    (packs_dir / "demo.toml").write_text(manifest, encoding="utf-8")
+    (packs_dir / "demo" / f"{character}.toml").write_text(body, encoding="utf-8")
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    with pytest.raises(SystemExit, match=message):
+        packs.load_packs()
+
+
+
+def test_audio_descriptors_feed_the_content_hash():
+    rows = packs.audio_descriptors([make_track(title="一", source="https://a", start_time="00:00:01.000")])
+    assert rows == [["demo", "一", "00:00:01.000", "", "https://a"]]
+
+
+# ------------------------------------------------------------------ 曲库扫描与助手
+
+def test_scan_library_skips_dot_entries(tmp_path):
+    (tmp_path / "otomads").mkdir()
+    (tmp_path / "otomads" / "thwy - 岁月.mp3").write_bytes(b"ID3")
+    (tmp_path / ".raw").mkdir()
+    (tmp_path / ".raw" / "abcdef.mp3").write_bytes(b"ID3")          # 原件目录：不许进 manifest
+    (tmp_path / ".state").mkdir()
+    (tmp_path / ".state" / "hidden.mp3").write_bytes(b"ID3")
+    (tmp_path / "otomads" / ".partial.mp3").write_bytes(b"ID3")     # 临时文件同理
+    assert local_source.scan_library(str(tmp_path)) == [("otomads", "thwy - 岁月")]
+
+
+# ------------------------------------------------------------------ 响度缓存
+
+def test_measure_library_invalidates_reset_and_prunes_missing(tmp_path):
+    library = tmp_path / "otomads"
+    library.mkdir()
+    (library / "a - x.mp3").write_bytes(b"ID3")
+    (library / "b - y.mp3").write_bytes(b"ID3")
+    output = tmp_path / "loudness.json"
+    output.write_text(json.dumps({"schema": 1, "targetDb": -11.0, "gains": {},
+                                  "measuredDb": {"a - x": -10.0, "b - y": -12.0, "gone - z": -9.0}}),
+                      encoding="utf-8")
+
+    summary = loudness.measure_library(library, output=output, reset=["a - x"], measure=lambda _p: -8.0)
+
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["measuredDb"]["a - x"] == -8.0        # 裁过的曲目被重置后重量
+    assert payload["measuredDb"]["b - y"] == -12.0       # 没动过的沿用缓存
+    assert "gone - z" not in payload["measuredDb"]       # 文件已不在 → 清掉
+    assert summary["measured"] == 2
+    assert all(loudness.MIN_GAIN <= gain <= loudness.MAX_GAIN for gain in payload["gains"].values())
+
+
+# ------------------------------------------------------------------ 抓取流程（离线部分）
+
+def test_version_key_normalizes_zero_padding():
+    assert fetch_audio.version_key("2026.08.19") == fetch_audio.version_key("2026.8.19")
+    assert fetch_audio.version_key("2026.9.1") > fetch_audio.version_key("2026.08.19")
+
+
+def dry_args(**overrides) -> argparse.Namespace:
+    base = {"dry_run": True, "force": False}
+    base.update(overrides)
+    return argparse.Namespace(**base)
+
+
+def test_process_track_dry_run_plans_download(tmp_path):
+    track = make_track(title="标题", author="作者", source="https://example.com/a",
+                       start_time="00:00:10.000", stop_time="00:00:20.000")
+    outcome = fetch_audio.process_track(track, library=tmp_path, state={"version": 1, "tracks": {}},
+                                        outputs={}, args=dry_args(), changed=set())
+    assert outcome["status"] == "dry"
+    assert "下载 + 裁剪" in outcome["detail"]
+
+
+def test_process_track_reports_missing_without_source(tmp_path):
+    outcome = fetch_audio.process_track(make_track(title="标题"), library=tmp_path,
+                                        state={"version": 1, "tracks": {}}, outputs={},
+                                        args=dry_args(dry_run=False), changed=set())
+    assert outcome["status"] == "missing"
+    assert "没有 source" in outcome["detail"]
+
+
+def test_process_track_skips_manual_file(tmp_path):
+    manual = tmp_path / "demo" / packs.audio_filename(make_track(title="标题"))
+    manual.parent.mkdir(parents=True)
+    manual.write_bytes(b"ID3")
+    outcome = fetch_audio.process_track(make_track(title="标题"), library=tmp_path,
+                                        state={"version": 1, "tracks": {}}, outputs={},
+                                        args=dry_args(dry_run=False), changed=set())
+    assert outcome["status"] == "skip"
+    assert "人工入库" in outcome["detail"]
+
+
+def test_render_without_trim_hardlinks_the_raw_file(tmp_path):
+    raw = tmp_path / ".raw" / "abcdef.mp3"
+    raw.parent.mkdir(parents=True)
+    raw.write_bytes(b"ID3" + b"\x00" * 64)
+    out = tmp_path / "demo" / "作者 - 标题.mp3"
+
+    fetch_audio.render(raw, out, None, tmp_path / fetch_audio.TMP_DIR)
+
+    assert out.read_bytes() == raw.read_bytes()
+    assert os.stat(out).st_ino == os.stat(raw).st_ino        # 同一 inode：省磁盘，且证明是硬链接
+
+
+def stub_download(source: str, raw) -> None:
+    """替掉真下载：写一个假的"原件"，让流程的其余部分可以离线跑。"""
+    raw.parent.mkdir(parents=True, exist_ok=True)
+    raw.write_bytes(b"ID3" + b"\x00" * 32)
+
+
+def test_duplicate_source_downloads_once_and_links(tmp_path, monkeypatch):
+    monkeypatch.setattr(fetch_audio, "download", stub_download)
+    shared = "https://example.com/same"
+    first = make_track(title="一", author="A", source=shared)
+    second = make_track(title="二", author="B", source=shared)
+    state: dict = {"version": 1, "tracks": {}}
+    outputs: dict = {}
+    args = dry_args(dry_run=False)
+
+    one = fetch_audio.process_track(first, library=tmp_path, state=state, outputs=outputs,
+                                    args=args, changed=set())
+    calls = []
+    monkeypatch.setattr(fetch_audio, "download", lambda source, raw: calls.append(source))
+    two = fetch_audio.process_track(second, library=tmp_path, state=state, outputs=outputs,
+                                    args=args, changed=set())
+
+    assert (one["status"], two["status"]) == ("fetched", "linked")
+    assert calls == []                                        # 原件已在 → 不重复下载
+    out_one = tmp_path / "demo" / packs.audio_filename(first)
+    out_two = tmp_path / "demo" / packs.audio_filename(second)
+    assert os.stat(out_one).st_ino == os.stat(out_two).st_ino  # 硬链接：同一 inode
+    assert state["tracks"]["demo\u0001二"]["out"] == "demo/B - 二.mp3"
+
+
+def test_rerun_skips_when_unchanged(tmp_path, monkeypatch):
+    monkeypatch.setattr(fetch_audio, "download", stub_download)
+    track = make_track(title="标题", author="A", source="https://example.com/a")
+    state: dict = {"version": 1, "tracks": {}}
+    args = dry_args(dry_run=False)
+
+    fetch_audio.process_track(track, library=tmp_path, state=state, outputs={}, args=args, changed=set())
+    again = fetch_audio.process_track(track, library=tmp_path, state=state, outputs={}, args=args,
+                                      changed=set())
+
+    assert again["status"] == "skip"
+    assert again["detail"] == "已是目标状态"

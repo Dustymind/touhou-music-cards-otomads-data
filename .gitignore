@@ -1,0 +1,13 @@
+# 本机曲库与配置（机器相关，不进仓库）
+local-source.toml
+.music/
+
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.uv/
+
+# 编辑器 / 系统
+.DS_Store

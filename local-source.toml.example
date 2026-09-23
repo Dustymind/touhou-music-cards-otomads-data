@@ -1,0 +1,18 @@
+# 本地曲库助手配置示例：复制到**仓库根**并改名为 local-source.toml（已被 .gitignore）。
+# 曲库结构：<root>/<专辑>/<曲目>.mp3（默认 <root> = 本仓库根的 .music/）
+#
+# 只想在数据仓库里独立跑：cp local-source.toml.example local-source.toml 即可。
+# 想复用主仓库那份曲库：从主仓库跑 `pnpm local`（它会用 --config 指回主仓库的 local-source.toml）。
+
+[server]
+host = "127.0.0.1"
+port = 8011
+port_tries = 10
+
+[library]
+root = ".music"          # 相对本文件所在目录（仓库根）
+
+[pack]
+id = "otomads"
+label_en = "Otomads"
+label_zh = "音MAD"
