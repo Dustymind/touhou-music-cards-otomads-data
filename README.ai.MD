@@ -26,12 +26,19 @@ cp local-source.toml.example local-source.toml            # 曲库默认指向�
 
 uv run --project tools python -m otomads.local_source     # 完整本地源 → http://127.0.0.1:8011/manifest.json
 uv run --project tools python -m otomads.fetch_audio --dry-run
+uv run --project tools python -m otomads.fetch_audio --jobs 4   # 抓取/裁剪（并发 4；1 = 串行）
 uv run --project tools python -m otomads.measure_loudness
 uv run --project tools pytest
 ```
 
 曲库结构：`<root>/<专辑>/<曲目>.mp3`（默认 `<root>` = 本仓库 `.music/`；`.music/`、`local-source.toml` 都 gitignore）。
 主仓库的 `pnpm local` / `pnpm audio:fetch` 只是把 `--config` 指回主仓库那份配置的**路径包装**，不是 Python 依赖。
+
+**抓取是并发的**（`--jobs`，默认 4）：瓶颈**全在网络**（bilibili 的 playurl 往返 + 音频本体），
+本地那点活可忽略（实测约 0.25 秒/首，86 首合计约 23 秒），所以并发重叠的是网络等待。
+`--jobs` 给太大可能撞 bilibili 的 412 风控，先用默认值试。
+（yt-dlp 自己的 `--concurrent-fragments` 对这里**无效**：它只并行 HLS/DASH 的**分片**，
+而 bilibili 的音频是单个文件直链。详见 `tools/README.md` 的"两条实现纪律"与主仓库 D132。）
 
 ## 口径（硬规矩）
 
@@ -45,6 +52,9 @@ uv run --project tools pytest
 - 音频键（可选）：`source` / `start_time` / `stop_time`。运行时不进 `characters.json`，但会进
   `contentHash` —— 两端音频口径不同会在联机握手期被拒（主仓库契约 `docs/packs-audio-v1.md` §6）。
 - 音频与卡面素材都**不在本仓库**：`kind = "local"`，由本机曲库助手从 `<曲库>` 提供。
+- `sources/otomads.toml` 的 `table_url` 必须是**真相对路径**（`manifest.json`，**不带前导 `/`**）：
+  带前导 `/` 是域名根绝对路径，站点部署在子目录（GitHub Pages 项目页）时会打到根上 → 404 →
+  音MAD 所有曲目解析不出地址。主仓库 `tmc.build` / `tmc.validate` 会守这条（主仓库决策 D131）。
 
 ## 加一首曲目
 

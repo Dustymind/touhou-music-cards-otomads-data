@@ -2,7 +2,10 @@
 # kind: remote = 远程镜像；local = 本机助手（tools/src/tmc/local_source.py）
 # order: 默认 fallback 顺序（用户在设置页可调）；enabled: 默认开关状态
 # proxyable: 预留 —— 出现混合内容/跨域时可由助手代理
-# table_url 用**相对路径** = 同源（单端口部署：应用与本地曲库走同一个端口，见 deploy/Caddyfile）。
+# table_url 用**相对路径**（不带前导 `/`）= 相对**数据集目录**，同源取表（单端口部署下即同源）。
+#   ✗ 不要写成 `/manifest.json`：那是**域名根**绝对路径，站点一旦部署在子目录
+#     （GitHub Pages 项目页 `user.github.io/<repo>/`、任意子路径反代）就会打到根上 → 404 →
+#     音MAD 所有曲目解析不出地址。守卫：主仓库 `tmc.validate` + `tools/tests/test_build.py`（D131）。
 #
 # 为什么按模式拆（主仓库契约 docs/sources-separation-v1.md）：远程镜像里只有**原曲**曲目，本地助手只服务**音MAD**，
 # 拆开之后音MAD 模式不会再下载那三份用不上的镜像表（约 334 KB），也不再需要"切模式时偷偷把本地源打开"。
@@ -17,7 +20,7 @@
 id = "local"
 label_en = "Local library"
 label_zh = "本地曲库"
-table_url = "/manifest.json"
+table_url = "manifest.json"
 loudness = "loudness/otomads.json"   # 本源自己的响度表（otomads.measure_loudness / fetch_audio 生成）
 kind = "local"
 order = 1          # 本模式只有它一个源
