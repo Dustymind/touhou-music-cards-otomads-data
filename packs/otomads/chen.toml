@@ -5,7 +5,7 @@ key = "chen"
 
 [[track]]
 album = "otomads"
-author = "丹花伊吹 & 艾了个拉 & 四季映姬78 & thwy & Binkales"
+authors = ["丹花伊吹", "艾了个拉", "四季映姬78", "thwy", "Binkales"]
 title = "【2023新春宴音MAD单品】远野马娘前线"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1JM411q7HY/"          # ingest_otomads.py

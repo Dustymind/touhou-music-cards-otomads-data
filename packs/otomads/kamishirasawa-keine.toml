@@ -5,14 +5,14 @@ key = "kamishirasawa-keine"
 
 [[track]]
 album = "otomads"
-author = "霜幻不容筱 & Shui__Huo & 逢封fn_eg"
+authors = ["霜幻不容筱", "Shui__Huo", "逢封fn_eg"]
 title = "Beat My Old World 【音MAD|个人全明星】"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1LUbXzaE2A/"          # ingest_otomads.py
 
 [[track]]
 album = "otomads"
-author = "稀神灵梦 & SayoYasuda"
+authors = ["稀神灵梦", "SayoYasuda"]
 title = "【东方新春宴音MAD合作单品⁹】Extend Ash~蓬莱人"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV13P4y1z7AV/"          # ingest_otomads.py

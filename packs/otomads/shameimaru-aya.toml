@@ -40,7 +40,7 @@ source = "https://www.bilibili.com/video/BV1oe4y1C7PR/"          # ingest_otomad
 
 [[track]]
 album = "otomads"
-author = "鱼调YuDiao & 天空海Skyocean & DKZ53"
+authors = ["鱼调YuDiao", "天空海Skyocean", "DKZ53"]
 title = "【2024东方新春宴音MAD合作单品】山东之国的不眠夜"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1VH4y1a71E/"          # ingest_otomads.py

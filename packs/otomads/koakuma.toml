@@ -5,7 +5,7 @@ key = "koakuma"
 
 [[track]]
 album = "otomads"
-author = "地下部 vs Rinsaku vs 逢封fn_eg vs Moonview210 vs chleain"
+authors = ["地下部", "Rinsaku", "逢封fn_eg", "Moonview210", "chleain"]
 title = "Masuo魔法図書館"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1kU7a6rEf4/"          # mp3 标签

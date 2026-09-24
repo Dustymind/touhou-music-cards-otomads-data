@@ -17,7 +17,7 @@ source = "https://www.bilibili.com/video/BV1JkiLBiE21/"          # mp3 标签
 
 [[track]]
 album = "otomads"
-author = "心水湛清 & thwy & 許祭 & Passthem & 浪涛I2A"
+authors = ["心水湛清", "thwy", "許祭", "Passthem", "浪涛I2A"]
 title = "最终鬼畜全明星•BILIBILI【东方新春宴'24单品】"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV17z421d7mj/"          # mp3 标签
