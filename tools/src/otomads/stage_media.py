@@ -21,15 +21,20 @@
 
 归档布局（解出来就是部署根）::
 
-    manifest.json                 # {"schema":1,"pack":"otomads","tracks":[[专辑, 曲目, 地址], …]}
+    manifest.json                 # {"schema":1,"pack":"otomads","tracks":[[专辑, 曲目, 地址], …],
+                                  #  "loudness":"loudness/otomads.json"}（有表才写这个键）
     media/otomads/<文件>.mp3       # 文件名 = 磁盘文件名（`作者 - 标题.mp3`），**不能改**
+    loudness/otomads.json         # 本源响度表：**跟着源走**（D139），路径与 manifest 里声明的一致
     cards-otomads/<文件>           # 可选：音MAD 图集（`local_only`，只能同源 `./cards-otomads/`）
 
 口径（照抄助手与前端，**别在这里另立一套**）：
 
 * 曲目名 = **磁盘文件名的 stem**（带 `作者 - 标题` 前缀）；前端 `resolveTrack` 用归一化后缀兜底匹配；
 * 媒体地址复用 ``local_source.media_path`` 的同一套 ``quote``（去掉前导 ``/`` 即相对地址）；
-* `tracks` 行形状与助手 ``local_source.build_manifest`` 完全一致。
+* `tracks` 行形状与助手 ``local_source.build_manifest`` 完全一致；
+* 响度表路径写在 manifest 的 ``loudness`` 键里、**相对 manifest 自身**（前端优先按它取表，没声明才
+  回落到应用侧那份 —— 见主仓库 D139）。表由本仓库的 ``measure_loudness`` / ``fetch_audio`` 生成，
+  路径取源注册表里 ``loudness`` 声明的那个（默认 ``loudness/otomads.json``）。
 
 **幂等、可重复**：同一份曲库打两次，归档逐字节相同（tar 成员按名排序、mtime/uid/gid 归零、gzip mtime 归零）。
 """
@@ -46,6 +51,8 @@ import tempfile
 import urllib.request
 
 from . import local_source as ls
+from . import packformat
+from . import paths as repo
 
 #: 归档里的固定文件名（与助手 ``MANIFEST_PATH`` 同名：部署根的那一份就是给前端取的）
 MANIFEST_NAME = ls.MANIFEST_PATH
@@ -99,13 +106,35 @@ def media_url(album: str, title: str, base: str | None = None) -> str:
 
 
 def build_manifest(titles: list[str], album: str = DEFAULT_ALBUM,
-                   pack_id: str | None = None, base: str | None = None) -> dict:
-    """``{"schema":1,"pack":…,"tracks":[[专辑, 曲目, 地址], …]}``（行形状与助手一致）。"""
-    return {
+                   pack_id: str | None = None, base: str | None = None,
+                   loudness: str | None = None) -> dict:
+    """``{"schema":1,"pack":…,"tracks":[[专辑, 曲目, 地址], …],"loudness":…}``（行形状与助手一致）。
+
+    ``loudness`` **相对 manifest 自身**（见模块 docstring 与主仓库 D139）；不给就不写这个键。
+    """
+    manifest = {
         "schema": 1,
         "pack": pack_id or album,
         "tracks": [[album, title, media_url(album, title, base)] for title in titles],
     }
+    if loudness:
+        manifest["loudness"] = loudness
+    return manifest
+
+
+def declared_loudness(pack_id: str = DEFAULT_ALBUM) -> tuple[str, pathlib.Path] | None:
+    """本源在注册表里声明的响度表 → ``(相对 manifest 的路径, 磁盘路径)``；没声明就是 ``None``。
+
+    路径直接用注册表里写的那个（`loudness/otomads.json`）——**声明与实际放进归档的位置必须一致**，
+    否则前端按声明取会 404。找不到注册表 / 没写 `loudness` 键 ⇒ `None`（归档里不带表，前端回落）。
+    """
+    path = packformat.loudness_path(pack_id)
+    if path is None:
+        return None
+    try:
+        return (path.relative_to(repo.DATA).as_posix(), path)
+    except ValueError:                      # 注册表把表写到仓库外了（不该发生）
+        return None
 
 
 def render(manifest: dict) -> str:
@@ -142,9 +171,15 @@ def _write_archive(root: pathlib.Path, out: pathlib.Path) -> None:
 
 def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
          cards: pathlib.Path | None = None) -> dict:
-    """打一个可发布的归档（布局 = 部署根），返回摘要。"""
+    """打一个可发布的归档（布局 = 部署根，**含本源响度表**），返回摘要。"""
     tracks = library_tracks(library, album)
-    manifest = build_manifest(sorted(tracks), album)
+    table = declared_loudness(album)
+    if table is not None and not table[1].is_file():
+        print(f"⚠️  注册表声明的响度表不存在，归档里不带它：{table[1]}"
+              f"（跑 `uv run --project tools python -m otomads.measure_loudness` 生成；"
+              f"前端会回落到应用侧那份）")
+        table = None
+    manifest = build_manifest(sorted(tracks), album, loudness=table[0] if table else None)
     with tempfile.TemporaryDirectory() as tmp:
         root = pathlib.Path(tmp)
         (root / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
@@ -152,6 +187,10 @@ def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
         media.mkdir(parents=True)
         for title, path in sorted(tracks.items()):
             shutil.copyfile(path, media / f"{title}{path.suffix}")
+        if table is not None:                     # 响度表跟着源走（路径 = manifest 里声明的那个）
+            target = root / table[0]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(table[1], target)
         copied_cards = 0
         if cards is not None and cards.is_dir():
             target = root / CARDS_DIR
@@ -163,7 +202,7 @@ def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
         out.parent.mkdir(parents=True, exist_ok=True)
         _write_archive(root, out)
     return {"archive": out, "tracks": len(tracks), "cards": copied_cards,
-            "bytes": out.stat().st_size}
+            "bytes": out.stat().st_size, "loudness": 1 if table else 0}
 
 
 # ------------------------------------------------------------------ stage
@@ -218,7 +257,15 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
         media.mkdir(parents=True, exist_ok=True)
         for title, path in sorted(tracks.items()):
             shutil.copyfile(path, media / f"{title}{path.suffix}")
-        manifest = build_manifest(sorted(tracks), album, base=base)
+        table = declared_loudness(album)
+        if table is not None and table[1].is_file():
+            target = out / table[0]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(table[1], target)
+        else:
+            table = None
+        manifest = build_manifest(sorted(tracks), album, base=base,
+                                  loudness=table[0] if table else None)
         (out / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
         copied_cards = 0
         if cards is not None and cards.is_dir():
@@ -229,7 +276,7 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
                     shutil.copyfile(path, target / path.name)
                     copied_cards += 1
         return {"tracks": len(tracks), "cards": copied_cards, "source": "library", "out": out,
-                "manifest": manifest}
+                "manifest": manifest, "loudness": 1 if table else 0}
 
     with tempfile.TemporaryDirectory() as tmp:
         if archive.startswith(("http://", "https://")):
@@ -246,9 +293,10 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
     tracks = audio_files(out / MEDIA_DIR / album)
     if manifest_path.is_file():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if base:                                  # 要绝对地址就把媒体地址重烘一遍
+        if base:                                  # 要绝对地址就把媒体地址重烘一遍（**保留响度表声明**）
             titles = [row[1] for row in manifest.get("tracks", [])]
-            manifest = build_manifest(titles, album, manifest.get("pack"), base=base)
+            manifest = build_manifest(titles, album, manifest.get("pack"), base=base,
+                                      loudness=manifest.get("loudness"))
             manifest_path.write_text(render(manifest), encoding="utf-8")
     else:                                         # 归档里没有 manifest（手工做的）→ 按铺好的文件生成
         manifest = build_manifest(sorted(tracks), album, base=base)
@@ -287,6 +335,35 @@ def verify(out: pathlib.Path, album: str = DEFAULT_ALBUM) -> list[str]:
     for title in sorted(set(on_disk) - seen):
         problems.append(f"磁盘上有但 manifest 没列：{title}")
     return problems
+
+
+def loudness_coverage(out: pathlib.Path, album: str = DEFAULT_ALBUM) -> dict:
+    """manifest 声明的响度表 ↔ 音频的对应关系（D139）。
+
+    只报数、**不当错误**：表里缺某首 = 那一首还没量过（合法，前端系数按 1）；表里有对不上的键 =
+    改名后的残留（也是提示）。归档里没声明表就返回 ``{}`` 的空壳（``declared`` 为 None）。
+    """
+    report: dict = {"declared": None, "keys": 0, "missing": [], "extra": []}
+    manifest_path = out / MANIFEST_NAME
+    if not manifest_path.is_file():
+        return report
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    declared = manifest.get("loudness")
+    if not declared:
+        return report
+    report["declared"] = declared
+    table_path = out / str(declared)
+    if not table_path.is_file():
+        report["error"] = f"manifest 声明了响度表，但文件不在：{declared}"
+        return report
+    data = json.loads(table_path.read_text(encoding="utf-8"))
+    gains = data.get("gains") if isinstance(data, dict) else None
+    keys = set(gains or {})
+    files = set(audio_files(out / MEDIA_DIR / album))
+    report["keys"] = len(keys)
+    report["missing"] = sorted(files - keys)
+    report["extra"] = sorted(keys - files)
+    return report
 
 
 # ------------------------------------------------------------------ CLI
@@ -328,6 +405,7 @@ def main(argv: list[str] | None = None) -> int:
         summary = pack(args.library, args.out, args.album, args.cards)
         print(f"✅ 归档 {summary['archive']}：{summary['tracks']} 首 / "
               f"{summary['cards']} 张卡面 / {summary['bytes'] / 1048576:.1f} MB")
+        print(f"   响度表：{'已带上（跟着源走，D139）' if summary['loudness'] else '没带（前端会回落应用侧那份）'}")
         print("   发布它（例如 GitHub Release 资产），构建时用："
               "stage --archive <它的 URL> --out dist")
         return 0
@@ -340,6 +418,17 @@ def main(argv: list[str] | None = None) -> int:
           f"（来源：{summary['source']}）")
     print(f"   {MANIFEST_NAME}：{len(summary['manifest']['tracks'])} 行，"
           f"媒体地址{'绝对' if args.base else '相对'}（{'--base ' + args.base if args.base else '与部署基地址无关'}）")
+    coverage = loudness_coverage(args.out, args.album)
+    if coverage.get("declared"):
+        print(f"   响度表 {coverage['declared']}：{coverage['keys']} 条（跟着源走，D139）")
+        if coverage.get("error"):
+            print(f"   ✗ {coverage['error']}")
+        if coverage["missing"]:
+            print(f"   ⚠️  表里缺 {len(coverage['missing'])} 首（合法：没量过 ⇒ 增益按 1）")
+        if coverage["extra"]:
+            print(f"   ⚠️  表里有 {len(coverage['extra'])} 个键对不上音频（改名残留？）")
+    else:
+        print("   响度表：源没声明（前端会回落到应用侧那份 `data/<模式>/loudness/`）")
     for problem in problems:
         print(f"✗ {problem}")
     if problems:

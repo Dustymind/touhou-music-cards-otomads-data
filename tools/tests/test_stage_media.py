@@ -12,6 +12,7 @@ import tarfile
 import pytest
 
 from otomads import local_source as ls
+from otomads import paths
 from otomads import stage_media as sm
 
 
@@ -31,8 +32,34 @@ TRACKS = {"Chyan_184 - 【东方电气棍】鞍山红茶馆 ~ Chinese Tea": b"a"
 
 
 @pytest.fixture
-def library(tmp_path) -> pathlib.Path:
+def data_repo(tmp_path, monkeypatch) -> pathlib.Path:
+    """临时"数据仓库"根（把 `paths.DATA` 指过去）：默认**没有**注册表 ⇒ 归档不带响度表。
+
+    必须隔离：`pack`/`stage` 会去读源注册表里声明的响度表，指到真仓库的话测试会跟着真实数据漂移。
+    """
+    root = tmp_path / "data-repo"
+    root.mkdir()
+    monkeypatch.setattr(paths, "DATA", root)
+    return root
+
+
+@pytest.fixture
+def library(tmp_path, data_repo) -> pathlib.Path:
     return make_library(tmp_path / "lib", TRACKS)
+
+
+def declare_table(data_repo: pathlib.Path, gains: dict, pack_id: str = "otomads") -> pathlib.Path:
+    """在临时数据仓库里写一份"注册表声明 + 响度表"，返回表路径。"""
+    (data_repo / "sources").mkdir(exist_ok=True)
+    (data_repo / "sources" / f"{pack_id}.toml").write_text(
+        f'[[source]]\nid = "local"\ntable_url = "manifest.json"\n'
+        f'loudness = "loudness/{pack_id}.json"\nkind = "local"\nenabled = true\n',
+        encoding="utf-8")
+    (data_repo / "loudness").mkdir(exist_ok=True)
+    table = data_repo / "loudness" / f"{pack_id}.json"
+    table.write_text(json.dumps({"schema": 1, "targetDb": -11.3, "measuredDb": gains, "gains": gains},
+                                ensure_ascii=False), encoding="utf-8")
+    return table
 
 
 def read_manifest(out: pathlib.Path) -> dict:
@@ -206,3 +233,79 @@ def test_cli_stage_returns_one_when_selfcheck_fails(library, tmp_path, capsys):
     (out / "media" / "otomads" / "幽灵.mp3").write_bytes(b"ghost")
     assert sm.main(["stage", "--from", str(library), "--out", str(out)]) == 1
     assert "自检没通过" in capsys.readouterr().out
+
+
+# ------------------------------------------------------------------ 响度表跟着源走（D139）
+
+def test_pack_declares_and_ships_the_loudness_table(library, data_repo, tmp_path):
+    """注册表声明了表 ⇒ 归档里带上它，且 manifest 用**相对 manifest** 的路径声明它。"""
+    declare_table(data_repo, dict.fromkeys(TRACKS, 0.9))
+    out = tmp_path / "media.tar.gz"
+    summary = sm.pack(library, out)
+    assert summary["loudness"] == 1
+    with tarfile.open(out) as archive:
+        names = sorted(archive.getnames())
+        assert "loudness/otomads.json" in names
+        manifest = json.loads(archive.extractfile(sm.MANIFEST_NAME).read().decode("utf-8"))
+    assert manifest["loudness"] == "loudness/otomads.json"
+
+
+def test_pack_without_a_declared_table_adds_neither_field_nor_file(library, tmp_path):
+    out = tmp_path / "media.tar.gz"
+    assert sm.pack(library, out)["loudness"] == 0
+    with tarfile.open(out) as archive:
+        manifest = json.loads(archive.extractfile(sm.MANIFEST_NAME).read().decode("utf-8"))
+        assert "loudness" not in manifest
+        assert not [name for name in archive.getnames() if name.startswith("loudness/")]
+
+
+def test_pack_skips_a_declared_but_missing_table(library, data_repo, tmp_path, capsys):
+    """声明了但表不在 ⇒ 不声明、不带文件（声明了却发不出来 = 前端 404，而且不会回落）。"""
+    declare_table(data_repo, {})
+    (data_repo / "loudness" / "otomads.json").unlink()
+    out = tmp_path / "media.tar.gz"
+    assert sm.pack(library, out)["loudness"] == 0
+    assert "响度表不存在" in capsys.readouterr().out
+    with tarfile.open(out) as archive:
+        manifest = json.loads(archive.extractfile(sm.MANIFEST_NAME).read().decode("utf-8"))
+    assert "loudness" not in manifest
+
+
+def test_stage_from_library_ships_the_table(library, data_repo, tmp_path):
+    declare_table(data_repo, dict.fromkeys(TRACKS, 0.9))
+    out = tmp_path / "dist"
+    summary = sm.stage(out, library=library)
+    assert summary["loudness"] == 1
+    assert (out / "loudness" / "otomads.json").is_file()
+    assert read_manifest(out)["loudness"] == "loudness/otomads.json"
+
+
+def test_stage_base_rewrite_keeps_the_loudness_declaration(library, data_repo, tmp_path):
+    """`--base` 只重烘媒体地址，**不能把响度表声明弄丢**。"""
+    declare_table(data_repo, dict.fromkeys(TRACKS, 0.9))
+    archive = tmp_path / "media.tar.gz"
+    sm.pack(library, archive)
+    out = tmp_path / "dist"
+    sm.stage(out, archive=str(archive), base="https://h/sub/")
+    manifest = read_manifest(out)
+    assert manifest["loudness"] == "loudness/otomads.json"
+    assert all(row[2].startswith("https://h/sub/") for row in manifest["tracks"])
+
+
+def test_loudness_coverage_reports_missing_and_extra(library, data_repo, tmp_path):
+    """覆盖自查：缺的、多的都要报出来（只报数，不当错误 —— 缺 = 那首没量过，合法）。"""
+    titles = sorted(TRACKS)
+    declare_table(data_repo, {titles[0]: 0.9, "幽灵 - 不存在": 1.0})
+    out = tmp_path / "dist"
+    sm.stage(out, library=library)
+    coverage = sm.loudness_coverage(out)
+    assert coverage["declared"] == "loudness/otomads.json"
+    assert coverage["keys"] == 2
+    assert coverage["missing"] == [titles[1]]
+    assert coverage["extra"] == ["幽灵 - 不存在"]
+
+
+def test_cli_prints_the_loudness_line(library, data_repo, tmp_path, capsys):
+    declare_table(data_repo, dict.fromkeys(TRACKS, 0.9))
+    assert sm.main(["stage", "--from", str(library), "--out", str(tmp_path / "dist")]) == 0
+    assert "响度表 loudness/otomads.json：2 条" in capsys.readouterr().out

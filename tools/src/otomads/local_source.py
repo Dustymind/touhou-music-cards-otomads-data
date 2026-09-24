@@ -122,13 +122,27 @@ def media_path(album: str, title: str) -> str:
     return f"/media/{quote(album)}/{quote(title)}.mp3"
 
 
-def build_manifest(root: str, base_url: str, pack_id: str) -> dict:
-    return {
+def build_manifest(root: str, base_url: str, pack_id: str,
+                   loudness: str | None = None) -> dict:
+    """曲库 → manifest（``[专辑, 曲目, 绝对地址]`` 行）。
+
+    可选 ``loudness``：本源响度表的路径，**相对 manifest 自身**（例如 ``loudness/otomads.json``）。
+    带上它 = "响度表跟着源部署"（主仓库 D139）：前端优先按这个地址取表，没声明才回落到应用侧那份
+    （注册表里的 ``loudnessUrl``，相对数据集目录）。
+
+    ⚠️ 本机助手**故意不声明**：它只发 ``/manifest.json`` 与 ``/media/*``，不发响度表
+    （那份表在应用的 ``data/<模式>/loudness/`` 里，助手形态靠回落拿）。声明了却发不出来 = 增益失效，
+    所以只有真把表打进同一份归档的 ``stage_media.pack`` 才传这个参数。
+    """
+    manifest = {
         "schema": 1,
         "pack": pack_id,
         "tracks": [[album, title, base_url.rstrip("/") + media_path(album, title)]
                    for album, title in scan_library(root)],
     }
+    if loudness:
+        manifest["loudness"] = loudness
+    return manifest
 
 
 def find_bindable_port(host: str, port: int, tries: int) -> int | None:
