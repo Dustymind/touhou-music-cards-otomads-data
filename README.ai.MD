@@ -1,4 +1,4 @@
-# 东方歌牌 · 音MAD 曲包数据（otomads）
+# 东方谐频拾遗 · 音MAD 曲包数据（otomads）
 
 音MAD 曲包的**真源 + 工具**。主仓库
 [`Dustymind/touhou-music-cards-reconstructed`](https://github.com/Dustymind/touhou-music-cards-reconstructed)
@@ -11,7 +11,7 @@
 ```
 characters.toml           # 允许使用的角色清单（key / name / order；主仓库 `pnpm data:roster` 生成）
 packs/otomads.toml        # 曲包清单：只放 [pack] 与 [[album]]
-packs/otomads/<角色 key>.toml   # 一角色一份：顶层 key + 若干 [[track]]
+packs/otomads/<角色 key>.toml   # 一角色一份：顶层 key + 若干 [[track]]（还没有曲目的角色是**骨架**，见下）
 sources/otomads.toml      # 音源注册表：本模式唯一来源 = 本地曲库助手；声明 loudness 表路径
 loudness/otomads.json     # 本源自己的响度均衡表（键 = 文件名 stem）
 local-source.toml.example # 独立跑用的配置示例（复制成 local-source.toml）
@@ -46,6 +46,13 @@ uv run --project tools pytest
   且文件名必须等于 `key`（写错一个 key 会让曲目静默错挂）。
 - 角色 key 必须在 `characters.toml` 清单里。清单由主仓库 `pnpm data:roster` 生成；**原曲没有的角色**
   （音MAD 自有身份）手动追加后会保留 —— 那是将来 S2 的落脚点（主仓库契约 `docs/otomads-separation-v1.md` §5）。
+- **骨架文件**：真源里有、这里还没有曲目的角色，由主仓库 `pnpm data:scaffold` 预置一份骨架
+  （顶层只有 `key`，`name`/`order` 以注释带在文件头，另附注释掉的 `[[track]]` 示例）。骨架**不含任何
+  `[[track]]`** ⇒ 不进曲目集 ⇒ 对 `contentHash` 与生成物**完全惰性**；命令**幂等**且**绝不覆盖**
+  已填过的文件（D137）。
+  **为什么不能把角色提前写进 `characters.toml`**：那份清单是**派生**的（= 曲包引用到的角色 + 手工追加的
+  原曲没有的角色），把还没有曲目的角色塞进去，主仓库 `tmc.validate` 会判「不再被曲包引用」而报错，
+  `pnpm data:roster` 还会把它删掉。
 - 卡面：角色文件里可选的 `card = [...]` 覆盖该角色在音MAD 侧的卡面（缺省沿用共享身份），
   配套主仓库 `data/card-sets.toml` 里 `id = "otomads"` 那套 `local_only` 图集。
   **素材不入库**，由用户自己放进主仓库的 `public/cards-otomads/`。
@@ -71,12 +78,14 @@ uv run --project tools python -m otomads.ingest_pack \
 uv run --project tools python -m otomads.fetch_audio                     # ③ 抓取/裁剪 + 刷新 loudness/otomads.json
 ```
 
-② 只追加、不改写已有内容，同 `(专辑, 曲名)` 幂等跳过。写完在**本仓库**提交、打新 tag；
+② 只追加、不改写已有内容，同 `(专辑, 曲名)` 幂等跳过；角色还没有文件时它**新建**一份（同款表头）。
+**手写**也完全可以：先跑一次主仓库的 `pnpm data:scaffold` 拿到骨架，照里面的注释示例填 `[[track]]`
+（骨架里那份示例是**占位**，填真值再取消注释）。写完在**本仓库**提交、打新 tag；
 主仓库 `cd data/otomads && git checkout <新 tag>`，再 `pnpm data:build && pnpm data:validate`。
 
 ## 版本与消费
 
-- 主仓库把 submodule **pin 到 tag**（当前 `th09.5-260924`），不用分支跟踪。
+- 主仓库把 submodule **pin 到 tag**（当前 `th09.5-260925`），不用分支跟踪。
 - 升级流程：本仓库改数据 → 提交 → `git tag <新 tag>` → 推送；主仓库切到该 tag →
   `pnpm data:build`（生成 `public/data/otomads/*.json`，并把本仓库的 `loudness/otomads.json`
   拷成 `public/data/otomads/loudness/otomads.json`）→ 提交 gitlink 与生成物。
@@ -92,7 +101,8 @@ uv run --project tools python -m otomads.fetch_audio                     # ③ �
 ## 来源
 
 曲目归属沿用改版仓库（v2 工作区）的角色归属；`source` 行尾注释即来源（多数是 B 站）。
-当前规模：**86 首 / 35 个角色**，其中 84 首带 `source`、16 首带裁剪区间。
+当前规模：**86 首 / 35 个角色**（86 首全部带 `source`、16 首带裁剪区间）；
+角色文件共 **121 份** = 35 份有曲目 + **86 份骨架**（D137，等待手工补全）。
 
 ## 响度表与曲目的对应关系（自查）
 
