@@ -15,7 +15,7 @@ import pathlib
 import re
 import statistics
 import subprocess
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 
 #: 只衰减不放大 ✓；下限 0.6（约 −4.4 dB）—— 用"最轻的一首"当目标会把绝大多数曲目压到地板 ✗
 MIN_GAIN, MAX_GAIN = 0.6, 1.0
@@ -108,4 +108,56 @@ def describe(summary: dict) -> list[str]:
     for name in sorted(gains, key=lambda key: gains[key])[:3]:
         lines.append(f"  {gains[name]:.3f}  {name[:52]}")
     lines.append(f"→ {summary['output']}")
+    return lines
+
+
+# ------------------------------------------------------------------ 表与曲目的对应关系（D135 追加）
+
+#: 对应关系只提示、不报错 —— "音频还没抓"（曲目写了 source 但没跑 fetch_audio）
+#: 与"曲库只放了部分"都是**合法**状态，不该让命令失败。
+COVERAGE_SAMPLE = 5
+
+
+def coverage_report(tracks: "list[dict]", gains: "Mapping[str, float]",
+                    stem_of: "Callable[[dict], str]") -> dict:
+    """曲目 × 响度表的对应关系 → 两类问题（都只是提示）。
+
+    - ``missing``：曲目里**本该有增益、表里却没有**的 stem（音频不在曲库 / 还没抓）；
+    - ``stale``：表里有、**任何曲目都算不出来**的键（改了作者/曲名后没重跑，或拿别的曲库量过）。
+
+    为什么要有这条：表是**提交进仓库**的（生成它需要音频，而音频不分发），
+    所以"表与曲目对不上"只能靠代码发现。实测踩过一次 —— 拿别的曲库跑 `fetch_audio`
+    把表覆盖掉了，增益全错，而且是**悄无声息**的（听感差别，不是报错）。
+    """
+    expected = [stem_of(track) for track in tracks]
+    known = set(expected)
+    return {
+        "tracks": len(expected),
+        "covered": sum(1 for stem in expected if stem in gains),
+        "missing": sorted({stem for stem in expected if stem not in gains}),
+        "stale": sorted(set(gains) - known),
+    }
+
+
+def describe_coverage(report: dict) -> list[str]:
+    """对应关系 → 几行警告（没问题就返回空列表，不占输出）。"""
+    if not report:
+        return []
+    lines: list[str] = []
+    missing = report.get("missing") or []
+    if missing:
+        lines.append(f"⚠️ 响度表缺 {len(missing)}/{report['tracks']} 首"
+                     f"（音频不在曲库，或这几首还没抓）：")
+        for stem in missing[:COVERAGE_SAMPLE]:
+            lines.append(f"  · {stem[:60]}")
+        if len(missing) > COVERAGE_SAMPLE:
+            lines.append(f"  · …还有 {len(missing) - COVERAGE_SAMPLE} 首")
+    stale = report.get("stale") or []
+    if stale:
+        lines.append(f"⚠️ 响度表里有 {len(stale)} 个键对不上任何曲目"
+                     f"（改了作者/曲名？或拿别的曲库量过）：")
+        for stem in stale[:COVERAGE_SAMPLE]:
+            lines.append(f"  · {stem[:60]}")
+        if len(stale) > COVERAGE_SAMPLE:
+            lines.append(f"  · …还有 {len(stale) - COVERAGE_SAMPLE} 个")
     return lines

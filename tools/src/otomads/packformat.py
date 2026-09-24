@@ -123,6 +123,15 @@ def audio_filename(track: dict) -> str:
     return f"{author} - {track['title']}.mp3" if author else f"{track['title']}.mp3"
 
 
+def audio_stem(track: dict) -> str:
+    """成品文件名的 **stem**（= 响度表的键、`gainKeyOf` 的口径）：`作者 - 标题`，**不带扩展名**。
+
+    与 `audio_filename` 分两个函数是刻意的：抓取/裁剪要**文件名**，响度表要 **stem**，
+    混用会让"表与曲目对不上"的检查全程误报（实测踩过：86 首全被报成缺失 + 全被报成残留）。
+    """
+    return pathlib.Path(audio_filename(track)).stem
+
+
 def source_key(source: str) -> str:
     """`source` → 原始件的文件名（同一来源只下一份，重复引用时复用）。"""
     return hashlib.sha1(source.strip().encode("utf-8")).hexdigest()[:16]

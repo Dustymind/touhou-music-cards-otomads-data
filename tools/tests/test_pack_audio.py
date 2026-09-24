@@ -9,10 +9,11 @@ import argparse
 import pathlib
 import json
 import os
+import sys
 
 import pytest
 
-from otomads import fetch_audio, local_source, loudness, packformat as packs
+from otomads import fetch_audio, local_source, loudness, measure_loudness, packformat as packs
 
 PACKS = [{"id": "demo", "label": {"en": "Demo", "zh": "演示"}, "kind": "local", "order": 100}]
 ALBUMS = [{"key": "demo", "name": "demo", "kind": "other", "pack": "demo", "order": 100}]
@@ -504,3 +505,71 @@ def test_load_packs_keeps_a_compound_author_string_intact(tmp_path, monkeypatch)
     *_rest, tracks, _cards = packs.load_packs()
     assert tracks[0]["author"] == "乙 & 甲"
     assert "authors" not in tracks[0]
+
+
+# ------------------------------------------------------------------ 响度表 × 曲目的对应关系（D135 追加）
+
+def test_coverage_report_flags_missing_and_stale():
+    """缺键 = "音频还没抓"（合法，只提示）；多键 = "改名/换曲库后的残留"。"""
+    tracks = [make_track(author="甲", title="一"), make_track(author="乙", title="二")]
+    report = loudness.coverage_report(tracks, {"甲 - 一": 1.0, "丙 - 三": 0.7}, packs.audio_stem)
+    assert report == {"tracks": 2, "covered": 1, "missing": ["乙 - 二"], "stale": ["丙 - 三"]}
+    # 响度表的键是**不带扩展名**的 stem（文件名那一位是 audio_filename，两者别混）
+    assert packs.audio_stem(make_track(author="甲", title="一")) == "甲 - 一"
+    assert packs.audio_filename(make_track(author="甲", title="一")) == "甲 - 一.mp3"
+
+    lines = loudness.describe_coverage(report)
+    assert any("缺 1/2 首" in line for line in lines)
+    assert any("对不上任何曲目" in line for line in lines)
+    # 都对得上时**不占输出**（命令输出保持干净）
+    assert loudness.describe_coverage({"tracks": 2, "covered": 2, "missing": [], "stale": []}) == []
+
+
+def test_coverage_report_truncates_long_lists():
+    tracks = [make_track(title=f"曲{i}") for i in range(9)]
+    report = loudness.coverage_report(tracks, {}, packs.audio_stem)
+    assert report["covered"] == 0 and len(report["missing"]) == 9
+    lines = loudness.describe_coverage(report)
+    assert sum(1 for line in lines if line.startswith("  · ")) == loudness.COVERAGE_SAMPLE + 1   # +1 是"…还有 N 首"
+    assert any("还有 4 首" in line for line in lines)
+
+
+def test_measure_loudness_prints_coverage_warning(tmp_path, monkeypatch, capsys):
+    """真跑一次 CLI：曲库只覆盖一首、曲包有两首 ⇒ 输出里必须出现缺键警告。
+
+    量响度本身用替身顶掉（真量要 ffmpeg + 真音频，那一条由 `test_measure_library_*` 覆盖）。
+    """
+    output = tmp_path / "loudness.json"
+
+    def fake_measure(directories, *, output, jobs=8, reset=(), measure=None):
+        gains = {"甲 - 一": 1.0}
+        output.write_text(json.dumps({"schema": 1, "targetDb": -12.0, "measuredDb": {"甲 - 一": -12.0},
+                                      "gains": gains}, ensure_ascii=False), encoding="utf-8")
+        return {"measured": 1, "target": -12.0, "gains": gains, "dropped": [], "output": output}
+
+    monkeypatch.setattr(measure_loudness.loudness, "measure_library", fake_measure)
+    monkeypatch.setattr(measure_loudness.packformat, "loudness_path", lambda pack: output)
+    monkeypatch.setattr(measure_loudness.packformat, "available", lambda: True)
+    monkeypatch.setattr(measure_loudness.packformat, "load_packs", lambda: (
+        [], [], [make_track(author="甲", title="一"), make_track(author="乙", title="二")], {}))
+    monkeypatch.setattr(sys, "argv", ["measure_loudness", str(tmp_path), "--pack", "demo"])
+    assert measure_loudness.main() == 0
+
+    printed = capsys.readouterr().out
+    assert "缺 1/2 首" in printed and "乙 - 二" in printed
+    assert "对不上任何曲目" not in printed              # 表里那个键正好是曲包里的第一条 ⇒ 没有残留
+
+
+def test_measure_loudness_without_pack_dir_skips_coverage(tmp_path, monkeypatch, capsys):
+    """曲包目录不在（只跑助手/单测环境）⇒ 不打印对应关系，也不报错。"""
+    output = tmp_path / "loudness.json"
+
+    def fake_measure(directories, *, output, jobs=8, reset=(), measure=None):
+        return {"measured": 0, "target": 0.0, "gains": {}, "dropped": [], "output": output}
+
+    monkeypatch.setattr(measure_loudness.loudness, "measure_library", fake_measure)
+    monkeypatch.setattr(measure_loudness.packformat, "loudness_path", lambda pack: output)
+    monkeypatch.setattr(measure_loudness.packformat, "available", lambda: False)
+    monkeypatch.setattr(sys, "argv", ["measure_loudness", str(tmp_path), "--pack", "demo"])
+    assert measure_loudness.main() == 1                  # 一首都没量到 ⇒ 退出码 1（原有口径）
+    assert "⚠️" not in capsys.readouterr().out

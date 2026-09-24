@@ -369,6 +369,10 @@ def main(argv: list[str] | None = None) -> int:
             summary = loudness.measure_library(directories, output=output, jobs=args.jobs,
                                                reset=set(changed[pack_id]))
             print("\n".join(loudness.describe(summary)))
+            # 表与曲目的对应关系（只提示）—— 拿别的曲库跑时，这条会把"覆盖掉了"当场说出来
+            mine = [track for track in tracks if track["pack"] == pack_id]
+            report = loudness.coverage_report(mine, summary["gains"], packs.audio_stem)
+            print("\n".join(loudness.describe_coverage(report)))
 
     counts = collections.Counter(outcome["status"] for outcome in results)
     print("\n汇总：" + "，".join(f"{status} {count}" for status, count in sorted(counts.items())))
