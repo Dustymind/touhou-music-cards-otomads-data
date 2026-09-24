@@ -1,6 +1,6 @@
 """把解析好的录入行追加进**曲包的角色文件**（``packs/<曲包 id>/<角色 key>.toml``）。
 
-布局与口径见本仓库 ``README.md`` 与主仓库契约 ``docs/packs-audio-v1.md``：
+布局与口径见本仓库 ``README.ai.MD`` 与主仓库契约 ``docs/packs-audio-v1.md``：
 一个曲包 = 一份清单（``[pack]`` + ``[[album]]``）+ 一角色一份曲目文件。这条命令只**写数据**，
 不跑主仓库的 ``tmc.build`` / ``tmc.validate``（那两个是独立命令）。
 
@@ -87,9 +87,12 @@ def pack_manifest(pack: str) -> pathlib.Path:
 
 
 def contract_doc(manifest: pathlib.Path) -> pathlib.Path:
-    """曲包契约文档：本仓库根的 ``README.md``（新文件的注释指向它）。"""
-    root_readme = repo.ROOT / "README.md"
-    return root_readme if root_readme.exists() else manifest.parent / "README.md"
+    """曲包契约文档：本仓库根的 ``README.ai.MD``（新文件的注释指向它；退回 ``README.md``）。"""
+    for candidate in (repo.ROOT / "README.ai.MD", repo.ROOT / "README.md",
+                      manifest.parent / "README.md"):
+        if candidate.exists():
+            return candidate
+    return repo.ROOT / "README.ai.MD"
 
 
 def default_album(pack: str) -> str:

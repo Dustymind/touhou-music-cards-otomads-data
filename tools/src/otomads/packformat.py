@@ -197,7 +197,7 @@ def _character_tracks(pack_dir: pathlib.Path, manifest: str,
     （2026-09 那次 `reisen-udongein` 少写 `-inaba`），所以这里错了直接报；报错文案带包内相对路径，
     否则 35 个 `cirno.toml` 分不清是哪个包。
 
-    ``cards`` 是出参：文件里写了 ``card`` 就记一笔（音MAD 侧自己的卡面，写法见曲包根目录的 ``README.md``）。
+    ``cards`` 是出参：文件里写了 ``card`` 就记一笔（音MAD 侧自己的卡面，写法见曲包根目录的 ``README.ai.MD``）。
     """
     if not pack_dir.is_dir():
         return []
