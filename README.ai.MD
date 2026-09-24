@@ -13,7 +13,7 @@ characters.toml           # 允许使用的角色清单（key / name / order；�
 packs/otomads.toml        # 曲包清单：只放 [pack] 与 [[album]]
 packs/otomads/<角色 key>.toml   # 一角色一份：顶层 key + 若干 [[track]]（还没有曲目的角色是**骨架**，见下）
 sources/otomads.toml      # 音源注册表：本模式唯一来源 = 本地曲库助手；声明 loudness 表路径
-loudness/otomads.json     # 本源自己的响度均衡表（键 = 文件名 stem）
+loudness/otomads.json     # 本源自己的响度均衡表（键 = 文件名 stem；**跟着源部署**，见「静态部署」）
 local-source.toml.example # 独立跑用的配置示例（复制成 local-source.toml）
 tools/                    # 自带 uv 工程：助手 / 格式层 / 抓取 / 响度 / 录入（见 tools/README.md）
 ```
@@ -92,7 +92,8 @@ uv run --project tools python -m otomads.fetch_audio                     # ③ �
 # ① 打一个可发布的归档（布局 = 部署根）
 uv run --project tools python -m otomads.stage_media pack \
     --library <曲库> --cards <卡面目录> --out otomads-media.tar.gz
-#    → 归档内容：manifest.json + media/otomads/*.mp3（+ cards-otomads/*）。发布成 GitHub Release 资产即可。
+#    → 归档内容：manifest.json + media/otomads/*.mp3 + loudness/otomads.json（+ 可选 cards-otomads/*）。
+#      发布成 Release 资产，或直接解到静态站根目录。
 
 # ② 构建时铺进 dist（从归档拉，或直接从本地曲库铺）
 uv run --project tools python -m otomads.stage_media stage --archive <URL|路径> --out dist
@@ -109,6 +110,10 @@ uv run --project tools python -m otomads.stage_media stage --from <曲库> --out
 * `manifest.json` 的媒体地址默认写**相对**（`media/otomads/<文件>.mp3`）⇒ 归档与**部署基地址无关**：
   域名根与子目录（GitHub Pages 项目页）用**同一份归档**；要绝对地址就 `--base https://host/sub/`。
   前端把解析出来的 URL 直接赋给 `audio.src`，相对地址按**页面**解析，所以两种都成立。
+* **响度表跟着源走**（主仓库 D139）：注册表声明的表会被打进归档的 `loudness/otomads.json`，并在 manifest 里用
+  `"loudness": "loudness/otomads.json"` 声明（路径**相对 manifest 自身**）。前端**优先**按它取，没声明才回落到
+  应用侧那份（`public/data/<模式>/loudness/`）—— 所以同一个源换宿主（R2 / 别的域名 / 独立静态站）不用改应用。
+  `stage` 会顺手自查覆盖：**缺** = 那首还没量过（合法，增益按 1）、**多余** = 改名后的残留（都只提示不报错）。
 * 曲目名 = **磁盘文件名的 stem**（`作者 - 标题`），文件名**不能改** —— 它是 manifest 的匹配键，
   也是响度表的键（`packformat.audio_stem`）。
 * 归档是**不可信输入**（可能来自网络）：`stage` 会拒绝绝对路径、`..`、符号/硬链接（有测试盯着）。

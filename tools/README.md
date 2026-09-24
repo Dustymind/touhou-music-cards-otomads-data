@@ -11,6 +11,7 @@
 | `otomads.loudness` / `otomads.measure_loudness` | 逐曲响度均衡：度量核心 + CLI |
 | `otomads.parse_ingest_rows` | 录入原始行 → `tools/ingest_rows_<日期>.json` |
 | `otomads.ingest_otomads` / `otomads.ingest_local_audio` | 批量下载 / 本地待转音频入库 |
+| `otomads.stage_media` | 静态部署两步：`pack` 打归档（`manifest.json` + `media/<专辑>/*.mp3` + **本源响度表** + 可选卡面；**可复现**）、`stage` 铺进 `dist/`（从归档或本地曲库；自检 manifest ↔ 音频 ↔ 响度表覆盖）。归档按**不可信输入**处理（拒绝对路径/`..`/链接）。主仓库 D138/D139 |
 
 ## 独立跑（不依赖主仓库）
 
