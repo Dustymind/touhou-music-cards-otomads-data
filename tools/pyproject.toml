@@ -1,7 +1,7 @@
 [project]
 name = "tmc-otomads-tools"
 version = "0.1.0"
-description = "东方歌牌 · 音MAD 曲包数据仓库的工具：本地曲库助手、抓取/裁剪、响度均衡、录入"
+description = "东方谐频拾遗 · 音MAD 曲包数据仓库的工具：本地曲库助手、抓取/裁剪、响度均衡、录入"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
