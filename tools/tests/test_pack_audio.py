@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+import pathlib
 import json
 import os
 
@@ -237,19 +238,30 @@ def dry_args(**overrides) -> argparse.Namespace:
     return argparse.Namespace(**base)
 
 
+def run_track(track, *, library, state, outputs, args, changed) -> dict:
+    """调 `process_track` 并把"新认领的同源同区间登记项"并进 `outputs`（= 主流程做的事）。
+
+    返回 outcome —— 单个线程的顺序语义与并发前完全一致，所以这批用例照旧能守行为。
+    """
+    outcome, claimed = fetch_audio.process_track(track, library=library, state=state, outputs=outputs,
+                                                 args=args, changed=changed)
+    outputs.update(claimed)
+    return outcome
+
+
 def test_process_track_dry_run_plans_download(tmp_path):
     track = make_track(title="标题", author="作者", source="https://example.com/a",
                        start_time="00:00:10.000", stop_time="00:00:20.000")
-    outcome = fetch_audio.process_track(track, library=tmp_path, state={"version": 1, "tracks": {}},
-                                        outputs={}, args=dry_args(), changed=set())
+    outcome = run_track(track, library=tmp_path, state={"version": 1, "tracks": {}},
+                        outputs={}, args=dry_args(), changed=set())
     assert outcome["status"] == "dry"
     assert "下载 + 裁剪" in outcome["detail"]
 
 
 def test_process_track_reports_missing_without_source(tmp_path):
-    outcome = fetch_audio.process_track(make_track(title="标题"), library=tmp_path,
-                                        state={"version": 1, "tracks": {}}, outputs={},
-                                        args=dry_args(dry_run=False), changed=set())
+    outcome = run_track(make_track(title="标题"), library=tmp_path,
+                        state={"version": 1, "tracks": {}}, outputs={},
+                        args=dry_args(dry_run=False), changed=set())
     assert outcome["status"] == "missing"
     assert "没有 source" in outcome["detail"]
 
@@ -258,9 +270,9 @@ def test_process_track_skips_manual_file(tmp_path):
     manual = tmp_path / "demo" / packs.audio_filename(make_track(title="标题"))
     manual.parent.mkdir(parents=True)
     manual.write_bytes(b"ID3")
-    outcome = fetch_audio.process_track(make_track(title="标题"), library=tmp_path,
-                                        state={"version": 1, "tracks": {}}, outputs={},
-                                        args=dry_args(dry_run=False), changed=set())
+    outcome = run_track(make_track(title="标题"), library=tmp_path,
+                        state={"version": 1, "tracks": {}}, outputs={},
+                        args=dry_args(dry_run=False), changed=set())
     assert outcome["status"] == "skip"
     assert "人工入库" in outcome["detail"]
 
@@ -292,12 +304,12 @@ def test_duplicate_source_downloads_once_and_links(tmp_path, monkeypatch):
     outputs: dict = {}
     args = dry_args(dry_run=False)
 
-    one = fetch_audio.process_track(first, library=tmp_path, state=state, outputs=outputs,
-                                    args=args, changed=set())
+    one = run_track(first, library=tmp_path, state=state, outputs=outputs,
+                    args=args, changed=set())
     calls = []
     monkeypatch.setattr(fetch_audio, "download", lambda source, raw: calls.append(source))
-    two = fetch_audio.process_track(second, library=tmp_path, state=state, outputs=outputs,
-                                    args=args, changed=set())
+    two = run_track(second, library=tmp_path, state=state, outputs=outputs,
+                    args=args, changed=set())
 
     assert (one["status"], two["status"]) == ("fetched", "linked")
     assert calls == []                                        # 原件已在 → 不重复下载
@@ -313,9 +325,132 @@ def test_rerun_skips_when_unchanged(tmp_path, monkeypatch):
     state: dict = {"version": 1, "tracks": {}}
     args = dry_args(dry_run=False)
 
-    fetch_audio.process_track(track, library=tmp_path, state=state, outputs={}, args=args, changed=set())
-    again = fetch_audio.process_track(track, library=tmp_path, state=state, outputs={}, args=args,
-                                      changed=set())
+    run_track(track, library=tmp_path, state=state, outputs={}, args=args, changed=set())
+    again = run_track(track, library=tmp_path, state=state, outputs={}, args=args, changed=set())
 
     assert again["status"] == "skip"
     assert again["detail"] == "已是目标状态"
+
+
+# ------------------------------------------------------ 并发（--jobs，D132）
+
+def write_many_tracks(tmp_path, *, shared_pairs: int = 0, singles: int = 0) -> int:
+    """写一个曲包：`shared_pairs` 组"两条曲目引用同一个 source"，外加 `singles` 条各用各的源。"""
+    body = []
+    n = 0
+    for index in range(shared_pairs):
+        for suffix in ("甲", "乙"):
+            n += 1
+            body.append(f'[[track]]\nalbum = "demo"\nauthor = "A"\n'
+                        f'title = "T{n}{suffix}"\nextra = "角色曲"\n'
+                        f'source = "https://example.com/shared{index}"\n')
+    for index in range(singles):
+        n += 1
+        body.append(f'[[track]]\nalbum = "demo"\nauthor = "A"\n'
+                    f'title = "S{n}"\nextra = "角色曲"\n'
+                    f'source = "https://example.com/only{index}"\n')
+    write_pack(tmp_path, "\n".join(body))
+    return n
+
+
+def test_parallel_fetch_keeps_every_track_in_state(tmp_path, monkeypatch):
+    """并发收尾不许互相覆盖状态：8 条曲目、4 线程、6 个不同 source。
+
+    这条盯的是"状态文件只写一次/写丢"这一类竞态 —— 每条曲目各自收尾，缺一条就红。
+    """
+    count = write_many_tracks(tmp_path, shared_pairs=2, singles=4)   # 2×2 + 4 = 8 条，6 个 source
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    monkeypatch.setattr(fetch_audio, "ffmpeg_problem", lambda: None)
+    monkeypatch.setattr(fetch_audio, "ensure_ytdlp", lambda **_kwargs: None)
+    monkeypatch.setattr(fetch_audio, "download", stub_download)
+    library = tmp_path / "library"
+    library.mkdir()
+    config = tmp_path / "local-source.toml"
+    config.write_text(f'[library]\nroot = "{library}"\n', encoding="utf-8")
+
+    code = fetch_audio.main(["--config", str(config), "--jobs", "4"])
+
+    assert code == 0
+    state = json.loads((library / fetch_audio.STATE_DIR / "demo.json").read_text(encoding="utf-8"))
+    assert len(state["tracks"]) == count, state["tracks"].keys()
+    outputs = sorted((library / "demo").glob("*.mp3"))
+    assert len(outputs) == count
+    # 8 条成品必须齐全（不是"8 条里活下来几条"）。标题按 write_many_tracks 的生成规则：
+    # 先 2 组共享 source（T1甲/T2乙、T3甲/T4乙），再 4 条独占（S5…S8）
+    assert {path.name for path in outputs} == {
+        "A - T1甲.mp3", "A - T2乙.mp3", "A - T3甲.mp3", "A - T4乙.mp3",
+        "A - S5.mp3", "A - S6.mp3", "A - S7.mp3", "A - S8.mp3",
+    }
+
+
+def test_parallel_fetch_downloads_a_shared_source_once(tmp_path, monkeypatch):
+    """两条曲目共用同一个 source 时，并发下**只下一份**原件（原件按 source 存）。
+
+    不加锁的话两个线程会同时往 `.raw/<key>.mp3` 写；这里把下载计数钉住。
+    """
+    write_many_tracks(tmp_path, shared_pairs=3)                     # 6 条，3 个 source，两两成对
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    monkeypatch.setattr(fetch_audio, "ffmpeg_problem", lambda: None)
+    monkeypatch.setattr(fetch_audio, "ensure_ytdlp", lambda **_kwargs: None)
+    downloads: list[str] = []
+
+    def counting_download(source: str, raw) -> None:
+        downloads.append(source)
+        stub_download(source, raw)
+
+    monkeypatch.setattr(fetch_audio, "download", counting_download)
+    library = tmp_path / "library"
+    library.mkdir()
+    config = tmp_path / "local-source.toml"
+    config.write_text(f'[library]\nroot = "{library}"\n', encoding="utf-8")
+
+    code = fetch_audio.main(["--config", str(config), "--jobs", "6"])
+
+    assert code == 0
+    assert sorted(downloads) == [f"https://example.com/shared{index}" for index in range(3)]
+    # 同一 source 的两条成品是硬链接（同一 inode）—— 证明第二份是"链过来"而不是重下的
+    raws = sorted((library / fetch_audio.RAW_DIR).glob("*.mp3"))
+    assert len(raws) == 3
+    for raw in raws:
+        twins = [path for path in (library / "demo").glob("*.mp3")
+                 if os.stat(path).st_ino == os.stat(raw).st_ino]
+        assert len(twins) == 2, f"{raw.name} 应该被两条曲目共享"
+
+
+# --------------------------------------------- 子进程不许碰用户的终端（D132 追加）
+
+def test_every_ffmpeg_and_ytdlp_call_gets_its_own_stdin():
+    """**回归守卫**：所有 `ffmpeg` / `yt-dlp` 子进程都必须显式重定向 stdin。
+
+    症状（用户报的）：抓取跑完，终端**不回显**敲进去的命令。机理是子进程继承了终端的 stdin ——
+    ffmpeg 只要看到 stdin 是**终端**就会去接管它（`-nostdin` 只管"要不要读"，拦不住"stdin 是 tty"
+    这件事），一旦它在异常路径上退出就可能把终端留在非回显状态。86 首 = 86 次机会，量响度那一轮
+    还会再来 86 次。
+
+    这条用例把"每个调用点都写死"钉住 —— 只靠人工记是记不住的（Linux 沙箱里复现不出来，
+    只能在 WSL2 之类环境上撞）。只读源码，不跑子进程。
+    """
+    import ast
+
+    sources = sorted(pathlib.Path("src/otomads").glob("*.py"))
+    assert sources, "没找到工具源码"
+    offenders: list[str] = []
+    for path in sources:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if not (isinstance(func, ast.Attribute) and func.attr in {"run", "Popen", "call", "check_output"}):
+                continue
+            # 命令字面量里第一个参数是 ffmpeg / yt-dlp / ffprobe 才算
+            first = node.args[0] if node.args else None
+            text = ast.dump(first) if first is not None else ""
+            if not any(tool in text for tool in ("ffmpeg", "ffprobe", "yt-dlp")):
+                continue
+            keywords = {kw.arg for kw in node.keywords}
+            if "stdin" not in keywords:
+                offenders.append(f"{path.name}:{node.lineno}")
+    assert offenders == [], (
+        "这些调用没给子进程独立的 stdin（会抢用户的终端）：" + ", ".join(offenders))
+
