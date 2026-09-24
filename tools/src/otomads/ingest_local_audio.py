@@ -35,9 +35,9 @@ def main() -> int:
         if args.dry_run:
             continue
         result = subprocess.run([
-            "ffmpeg", "-y", "-loglevel", "error", "-i", str(source),
+            "ffmpeg", "-y", "-loglevel", "error", "-nostdin", "-i", str(source),
             "-vn", "-codec:a", "libmp3lame", "-b:a", "320k", str(target),
-        ])
+        ], stdin=subprocess.DEVNULL)          # 别让 ffmpeg 去接管用户的终端（见 D132 追加）
         if result.returncode != 0 or not target.exists():
             print(f"   ✗ 转码失败（{result.returncode}）")
             failed += 1

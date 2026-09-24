@@ -112,7 +112,7 @@ def main() -> int:
             "--no-part", "--quiet", "--no-warnings",
             "-o", str(DEST / f".tmp-{bv}.%(ext)s"),
             f"https://www.bilibili.com/video/{bv}",
-        ])
+        ], stdin=subprocess.DEVNULL)          # 同上：子进程不碰终端
         made = list(DEST.glob(f".tmp-{bv}.*"))
         if result.returncode != 0 or not made:
             print(f"   ✗ 失败（{result.returncode}）")

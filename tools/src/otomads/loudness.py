@@ -25,9 +25,16 @@ MEAN_RE = re.compile(r"mean_volume: ([-\d.]+) dB")
 
 
 def mean_volume_db(path: pathlib.Path) -> float | None:
-    """量一首的平均电平（dB）；量不到返回 `None`。"""
+    """量一首的平均电平（dB）；量不到返回 `None`。
+
+    `stdin=DEVNULL` **不能省**：ffmpeg 只要看到 stdin 是终端就会去接管它（`-nostdin` 也拦不住
+    "stdin 是 tty" 这件事），跑完可能把终端留在不回显的状态 ✗ —— 86 首就是 86 次机会。
+    实测（WSL2 上用户报的"抓取跑完终端不回显"，见 D132 追加）：Linux 沙箱里复现不出来，
+    所以这条按规范写死，不去赌平台。
+    """
     out = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(path), "-af", "volumedetect",
-                          "-f", "null", "-"], capture_output=True, text=True).stderr
+                          "-f", "null", "-"], capture_output=True, text=True,
+                         stdin=subprocess.DEVNULL).stderr
     matched = MEAN_RE.search(out)
     return float(matched.group(1)) if matched else None
 
