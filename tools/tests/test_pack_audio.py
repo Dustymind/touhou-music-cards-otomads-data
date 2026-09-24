@@ -429,10 +429,13 @@ def test_every_ffmpeg_and_ytdlp_call_gets_its_own_stdin():
 
     这条用例把"每个调用点都写死"钉住 —— 只靠人工记是记不住的（Linux 沙箱里复现不出来，
     只能在 WSL2 之类环境上撞）。只读源码，不跑子进程。
+
+    路径按**测试文件的位置**算，不按 CWD：`pytest tools/tests`（在仓库根跑）也必须能过。
     """
     import ast
 
-    sources = sorted(pathlib.Path("src/otomads").glob("*.py"))
+    # tools/src/otomads/*.py —— 从 tests/ 往上找到 tools/
+    sources = sorted((pathlib.Path(__file__).resolve().parent.parent / "src" / "otomads").glob("*.py"))
     assert sources, "没找到工具源码"
     offenders: list[str] = []
     for path in sources:
