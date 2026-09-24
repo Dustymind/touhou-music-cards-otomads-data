@@ -1,0 +1,19 @@
+# 音MAD 曲包（otomads）：`yatadera-narumi` 的曲目。
+# 清单与口径见 `packs/otomads.toml` 与 `README.ai.MD`。
+# 角色：矢田寺成美（主仓库真源 order = 81）。`name` / `order` 属于主仓库真源（S1），
+#   而本文件顶层**只允许** `key` 与可选的 `card`（写别的键会直接报错），所以这两项只留注释；
+#   填了曲目后在主仓库跑 `pnpm data:roster`，这个角色就会自动进 `characters.toml`。
+# 骨架由主仓库 `pnpm data:scaffold` 生成（D137）；它**不覆盖已有文件**，填过就不用再理它。
+
+key = "yatadera-narumi"
+
+# 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
+# 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
+# [[track]]
+# album = "otomads"
+# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
+# title = "曲名"
+# extra = "角色曲"
+# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
+# start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
+# stop_time = "00:00:30.000"
