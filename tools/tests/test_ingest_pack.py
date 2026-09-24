@@ -91,3 +91,34 @@ def test_main_dry_run_writes_nothing(tmp_path, monkeypatch):
     rows.write_text(json.dumps([{"title": "其一", "character": "cirno"}]), encoding="utf-8")
     assert ingest_pack.main(["--pack", "demo", "--rows", str(rows), "--dry-run"]) == 0
     assert not (tmp_path / "packs" / "demo").exists()
+
+
+def test_track_block_writes_authors_array():
+    """多作者写成 TOML 数组；键序里 `authors` 紧跟在 `author` 之后（两者只会有一个）。"""
+    block = ingest_pack.track_block({
+        "album": "demo", "title": "标题", "extra": "角色曲",
+        "authors": ["甲", '带"引号"'], "source": "https://a",
+    })
+    lines = block.splitlines()
+    assert lines[0] == "[[track]]"
+    assert lines[1] == 'album = "demo"'
+    assert 'authors = ["甲", "带\\"引号\\""]' in block      # 数组元素同样转义
+    assert "author = " not in block                        # 没写整串那一行
+
+
+def test_append_rows_writes_authors_from_the_row(tmp_path, monkeypatch):
+    make_data(tmp_path, monkeypatch)
+    assert ingest_pack.append_rows("demo", [
+        {"title": "合写", "authors": ["乙", "甲"], "character": "cirno"},
+        {"title": "单人", "author": "丙", "character": "cirno"},
+    ]) == {"cirno": {"added": 2, "skipped": 0}}
+    text = (tmp_path / "packs" / "demo" / "cirno.toml").read_text(encoding="utf-8")
+    assert 'authors = ["乙", "甲"]' in text                 # 数组写法原样落盘（顺序保留，显示时才排序）
+    assert 'author = "丙"' in text                          # 老写法不受影响
+
+
+@pytest.mark.parametrize("authors", [[], "甲", ["甲", " "]])
+def test_append_rows_rejects_bad_authors(tmp_path, monkeypatch, authors):
+    make_data(tmp_path, monkeypatch)
+    with pytest.raises(SystemExit, match="authors"):
+        ingest_pack.append_rows("demo", [{"title": "标题", "authors": authors, "character": "cirno"}])

@@ -70,7 +70,7 @@ PACK_KINDS = ("local",)
 PACK_KEYS = {"id", "label_en", "label_zh", "kind", "order"}
 ALBUM_KEYS = {"key", "name", "kind", "pack", "order", "show_album_name"}
 #: 角色文件里 `[[track]]` 的键 —— **没有** `character`：角色由文件的 `key` 决定
-TRACK_KEYS = {"album", "author", "title", "extra", "source", "start_time", "stop_time"}
+TRACK_KEYS = {"album", "author", "authors", "title", "extra", "source", "start_time", "stop_time"}
 #: 角色文件的顶层键（`track` 之外）：`card` 是**可选**的卡面覆盖（写法同 `data/characters/*.toml`）
 CHARACTER_KEYS = {"key", "card"}
 
@@ -119,7 +119,7 @@ def audio_filename(track: dict) -> str:
 
     这个名字同时是 manifest 的匹配键、`loudness.json` 的键与单曲模式存档的一部分，所以不能改（D95/D96）。
     """
-    author = (track.get("author") or "").strip()
+    author = author_of(track)
     return f"{author} - {track['title']}.mp3" if author else f"{track['title']}.mp3"
 
 
@@ -228,11 +228,50 @@ def _character_tracks(pack_dir: pathlib.Path, manifest: str,
                 "extra": entry.get("extra", "角色曲"),
                 "pack": pack_dir.name,
             }
-            if entry.get("author"):
-                track["author"] = entry["author"]
+            _read_authors(entry, track, f"{where} / {entry.get('title')}")
             _read_audio_keys(entry, track, f"{where} / {track['title']}")
             out.append(track)
     return out
+
+
+#: 多作者在**成品文件名**里的连接符。磁盘名 `作者 - 标题.mp3` 是 manifest 匹配键、响度表键
+#: 与单曲存档的一部分（D95/D96，不能改），所以 `authors = ["甲", "乙"]` 必须能还原成 `甲 & 乙`。
+AUTHOR_JOIN = " & "
+
+
+def author_of(track: dict) -> str:
+    """一条曲目的**署名整串**（= 成品文件名里 `作者` 那一段）。
+
+    优先 `author`（老写法/规范化后的结果）；只有 `authors` 时按 `AUTHOR_JOIN` 拼 ——
+    与 `packs.AUTHOR_JOIN` 同一口径（两份实现必须一致，否则助手找不到文件）。
+    """
+    single = (track.get("author") or "").strip()
+    if single:
+        return single
+    return AUTHOR_JOIN.join(str(name).strip() for name in (track.get("authors") or []))
+
+
+def _read_authors(entry: dict, track: dict, where: str) -> None:
+    """`author`（整串）或 `authors`（数组）：两种写法都认，**不能同时写**（D135）。
+
+    `authors` 会被规范化成"数组 + 整串"两份：数组给显示排序用，整串是成品文件名那一位。
+    两种写法在磁盘上**完全等价** ⇒ 把一个老条目改成数组不需要重抓/重裁音频。
+    `author = "乙 & 甲"` 这种整串**不拆**：人名里也可能有 `&`，猜分隔符会拆错。
+    """
+    single = entry.get("author")
+    many = entry.get("authors")
+    if single is not None and many is not None:
+        raise SystemExit(f"{where}：author 与 authors 只能写一个（author 是整串、authors 是数组）")
+    if many is not None:
+        if not isinstance(many, list) or not many:
+            raise SystemExit(f"{where}：authors 必须是非空字符串数组，例如 authors = [\"甲\", \"乙\"]")
+        cleaned = [str(name).strip() for name in many]
+        if not all(cleaned):
+            raise SystemExit(f"{where}：authors 里不能有空字符串")
+        track["authors"] = cleaned
+        track["author"] = AUTHOR_JOIN.join(cleaned)
+    elif single:
+        track["author"] = single
 
 
 def _read_audio_keys(entry: dict, track: dict, where: str) -> None:

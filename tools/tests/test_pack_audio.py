@@ -457,3 +457,50 @@ def test_every_ffmpeg_and_ytdlp_call_gets_its_own_stdin():
     assert offenders == [], (
         "这些调用没给子进程独立的 stdin（会抢用户的终端）：" + ", ".join(offenders))
 
+
+
+# ------------------------------------------------------------------ 多作者（D135）
+
+def test_load_packs_normalizes_authors_to_the_same_stem(tmp_path, monkeypatch):
+    """`authors = ["甲","乙"]` ⇒ 数组 + **与老写法逐字节相同的整串**（成品文件名/响度表键都不变）。"""
+    write_pack(tmp_path, """
+[[track]]
+album = "demo"
+authors = ["甲", "乙"]
+title = "标题"
+""")
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    *_rest, tracks, _cards = packs.load_packs()
+    assert tracks[0]["authors"] == ["甲", "乙"]
+    assert tracks[0]["author"] == "甲 & 乙"
+    assert packs.audio_filename(tracks[0]) == "甲 & 乙 - 标题.mp3"
+    # 老写法算出来的名字必须一模一样 —— 换写法不用重抓音频
+    assert packs.audio_filename(tracks[0]) == packs.audio_filename(make_track(author="甲 & 乙", title="标题"))
+
+
+def test_audio_filename_falls_back_to_joined_authors():
+    """只给 `authors`（没规范化过的手工 dict）时也要算对文件名。"""
+    assert packs.audio_filename(make_track(authors=["甲", "乙"])) == "甲 & 乙 - 曲目.mp3"
+    assert packs.author_of(make_track(authors=[" 甲 ", "乙 "])) == "甲 & 乙"
+
+
+@pytest.mark.parametrize(("line", "message"), [
+    ('author = "甲"\nauthors = ["甲", "乙"]', "只能写一个"),
+    ('authors = "甲"', "authors 必须"),
+    ('authors = []', "authors 必须"),
+    ('authors = ["甲", "  "]', "不能有空"),
+])
+def test_load_packs_rejects_bad_authors(tmp_path, monkeypatch, line, message):
+    write_pack(tmp_path, f'[[track]]\nalbum = "demo"\ntitle = "标题"\n{line}\n')
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    with pytest.raises(SystemExit, match=message):
+        packs.load_packs()
+
+
+def test_load_packs_keeps_a_compound_author_string_intact(tmp_path, monkeypatch):
+    """老写法 `author = "乙 & 甲"`：整串保留、**不拆**（人名里也可能有 `&`），也不产生 authors。"""
+    write_pack(tmp_path, '[[track]]\nalbum = "demo"\nauthor = "乙 & 甲"\ntitle = "标题"\n')
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    *_rest, tracks, _cards = packs.load_packs()
+    assert tracks[0]["author"] == "乙 & 甲"
+    assert "authors" not in tracks[0]

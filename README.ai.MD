@@ -51,6 +51,12 @@ uv run --project tools pytest
   **素材不入库**，由用户自己放进主仓库的 `public/cards-otomads/`。
 - 音频键（可选）：`source` / `start_time` / `stop_time`。运行时不进 `characters.json`，但会进
   `contentHash` —— 两端音频口径不同会在联机握手期被拒（主仓库契约 `docs/packs-audio-v1.md` §6）。
+- 作者：`author = "甲 & 乙"`（**整串**，老写法，原样保留、不按 `&` 拆）或
+  **`authors = ["甲", "乙"]`**（多作者，主仓库决策 D135；两者只能写一个）。数组会被规范化成
+  `author = "甲 & 乙"` —— **两种写法在磁盘上完全等价**（成品文件名 `作者 - 标题.mp3` 是 manifest
+  匹配键与响度表键，不能变），所以把一个老条目改成数组**不用重抓/重裁音频**。
+  多作者只影响**显示**：主仓库播放页与关于页按"英文/拼音首字母"排序后并列。
+  `python -m otomads.ingest_pack` 也认：录入行里把那一项写成数组（`"author": ["甲", "乙"]`）即落盘成 `authors`。
 - 音频与卡面素材都**不在本仓库**：`kind = "local"`，由本机曲库助手从 `<曲库>` 提供。
 - `sources/otomads.toml` 的 `table_url` 必须是**真相对路径**（`manifest.json`，**不带前导 `/`**）：
   带前导 `/` 是域名根绝对路径，站点部署在子目录（GitHub Pages 项目页）时会打到根上 → 404 →

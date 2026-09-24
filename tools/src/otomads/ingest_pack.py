@@ -28,7 +28,7 @@ from . import paths as repo
 BILIBILI = "https://www.bilibili.com/video/{bv}/"
 
 #: `[[track]]` 的键序（固定，diff 才稳定）：与 `packs.TRACK_KEYS` 一致
-FIELD_ORDER = ("album", "author", "title", "extra", "source", "start_time", "stop_time")
+FIELD_ORDER = ("album", "author", "authors", "title", "extra", "source", "start_time", "stop_time")
 
 #: 角色文件的开头注释（新文件才有）；路径按清单实际所在的根目录算
 FILE_HEADER = ("# 音MAD 曲包（{pack}）：`{character}` 的曲目。\n"
@@ -42,14 +42,34 @@ def toml_str(value: str) -> str:
 
 
 def track_block(track: dict) -> str:
-    """一条 ``[[track]]``：键序固定，空的键不写。"""
+    """一条 ``[[track]]``：键序固定，空的键不写。字符串数组（`authors`）写成 TOML 数组。"""
     lines = ["[[track]]"]
     for field in FIELD_ORDER:
         value = track.get(field)
-        if value in (None, ""):
+        if value in (None, "", []):
             continue
-        lines.append(f"{field} = {toml_str(str(value))}")
+        if isinstance(value, list):
+            lines.append(f"{field} = [{', '.join(toml_str(str(item)) for item in value)}]")
+        else:
+            lines.append(f"{field} = {toml_str(str(value))}")
     return "\n".join(lines)
+
+
+def authors_of(row: dict) -> list[str]:
+    """录入行里的多作者：``authors`` 是数组就用它（校验非空、去空白）；否则返回空列表。
+
+    行的形状见 ``parse_ingest_rows.py`` 的产物：``{source|bv, title, author, character}``；
+    多作者时把那一项写成数组即可（`"author": ["甲", "乙"]`）。
+    """
+    many = row.get("authors")
+    if many is None:
+        return []
+    if not isinstance(many, list) or not many:
+        raise SystemExit(f"录入行里的 authors 必须是非空数组：{json.dumps(row, ensure_ascii=False)}")
+    cleaned = [str(name).strip() for name in many]
+    if not all(cleaned):
+        raise SystemExit(f"录入行里的 authors 不能有空项：{json.dumps(row, ensure_ascii=False)}")
+    return cleaned
 
 
 def source_of(row: dict) -> str:
@@ -120,7 +140,7 @@ def append_rows(pack: str, rows: list[dict], album: str | None = None,
     for row in rows:
         character = str(row.get("character") or "").strip()
         title = str(row.get("title") or "").strip()
-        author = str(row.get("author") or "").strip()
+        authors = authors_of(row)
         if not character or not title:
             raise SystemExit(f"录入行缺少 character / title：{json.dumps(row, ensure_ascii=False)}")
         if character not in known:
@@ -135,8 +155,13 @@ def append_rows(pack: str, rows: list[dict], album: str | None = None,
             counts["skipped"] += 1
             continue
 
-        track = {"album": target_album, "author": author, "title": title,
+        track = {"album": target_album, "title": title,
                  "extra": str(row.get("extra") or "角色曲"), "source": source}
+        # 行里给了 `authors` 数组就写数组（D135），否则写老写法的整串 `author`
+        if authors:
+            track["authors"] = authors
+        else:
+            track["author"] = str(row.get("author") or "").strip()
         block = track_block(track)
         if dry_run:
             counts["added"] += 1
