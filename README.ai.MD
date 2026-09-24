@@ -83,6 +83,39 @@ uv run --project tools python -m otomads.fetch_audio                     # ③ �
 （骨架里那份示例是**占位**，填真值再取消注释）。写完在**本仓库**提交、打新 tag；
 主仓库 `cd data/otomads && git checkout <新 tag>`，再 `pnpm data:build && pnpm data:validate`。
 
+## 静态部署：把素材铺进 dist（主仓库 D138）
+
+应用本身是**纯静态**可部署的，唯一缺的是音MAD 的素材 —— 音频（86 首 / 约 324 MB）与音MAD 卡面
+**都不进任何仓库**。本仓库的工具把这件事做成"打一次归档 + 构建时铺一次"：
+
+```bash
+# ① 打一个可发布的归档（布局 = 部署根）
+uv run --project tools python -m otomads.stage_media pack \
+    --library <曲库> --cards <卡面目录> --out otomads-media.tar.gz
+#    → 归档内容：manifest.json + media/otomads/*.mp3（+ cards-otomads/*）。发布成 GitHub Release 资产即可。
+
+# ② 构建时铺进 dist（从归档拉，或直接从本地曲库铺）
+uv run --project tools python -m otomads.stage_media stage --archive <URL|路径> --out dist
+uv run --project tools python -m otomads.stage_media stage --from <曲库> --out dist
+```
+
+主仓库有配套包装：`pnpm media:pack` / `pnpm media:stage` / `OTOMADS_MEDIA_URL=<URL> pnpm media:pull`；
+GitHub Pages 那条工作流会在构建后自动取 `releases/latest/download/otomads-media.tar.gz`（取不到就跳过）。
+
+**三条口径**（改这里之前先读）：
+
+* `manifest.json` 的媒体地址默认写**相对**（`media/otomads/<文件>.mp3`）⇒ 归档与**部署基地址无关**：
+  域名根与子目录（GitHub Pages 项目页）用**同一份归档**；要绝对地址就 `--base https://host/sub/`。
+  前端把解析出来的 URL 直接赋给 `audio.src`，相对地址按**页面**解析，所以两种都成立。
+* 曲目名 = **磁盘文件名的 stem**（`作者 - 标题`），文件名**不能改** —— 它是 manifest 的匹配键，
+  也是响度表的键（`packformat.audio_stem`）。
+* 归档是**不可信输入**（可能来自网络）：`stage` 会拒绝绝对路径、`..`、符号/硬链接（有测试盯着）。
+
+`stage` 结束会**自检**（manifest 行数、专辑、每一行的文件真的在磁盘上），不一致就退出码 1。
+它**只铺素材、不构建应用**，所以顺序永远是「先 `pnpm build`，再铺素材」——
+**重新构建会清空 `dist/`**（vite 默认 `emptyOutDir`），素材要重铺。归档**可复现**：
+同一份曲库打两次逐字节相同。
+
 ## 版本与消费
 
 - 主仓库把 submodule **pin 到 tag**（当前 `th09.5-260925`），不用分支跟踪。
