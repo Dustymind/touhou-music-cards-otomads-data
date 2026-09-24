@@ -99,8 +99,10 @@ uv run --project tools python -m otomads.stage_media stage --archive <URL|路径
 uv run --project tools python -m otomads.stage_media stage --from <曲库> --out dist
 ```
 
-主仓库有配套包装：`pnpm media:pack` / `pnpm media:stage` / `OTOMADS_MEDIA_URL=<URL> pnpm media:pull`；
-GitHub Pages 那条工作流会在构建后自动取 `releases/latest/download/otomads-media.tar.gz`（取不到就跳过）。
+主仓库有配套包装：`pnpm media:pack` / `pnpm media:stage` / `OTOMADS_MEDIA_URL=<URL> pnpm media:pull`。
+**部署方式**：静态音MAD 源由人**手动**铺 —— 主仓库的 Pages 工作流**不**拉素材（用户裁定，见主仓库 D138）；
+而且主仓库是**私有**的，Release 资产对匿名请求返回 404，所以要取就带令牌：
+`gh release download <tag> --pattern otomads-media.tar.gz`，或本机 `pnpm media:pack` 现打一份。
 
 **三条口径**（改这里之前先读）：
 
