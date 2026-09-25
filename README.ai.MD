@@ -112,7 +112,7 @@ uv run --project tools python -m otomads.stage_media stage --from <曲库> --out
 **分两种情况 —— 只改曲目表元数据不用碰本机，只有"新音频"才走本地打包。**
 
 ```bash
-# 【A】只改曲目表 / 响度表（标题、作者、附加信息、卡面、删曲目）：改完推一下就行，**不用打包**
+# 【A】只改曲目表 / 响度表（标题、作者、附加信息、卡面**引用**、删曲目）：改完推一下就行，**不用打包**
 git -C <本仓库> commit -am "..." && git -C <本仓库> push      # repack-media 自动重打 + 触发 CF 重建
 
 # 【B】新音频（新抓 / 重裁）：必须在本地，且**顺序不能反**
@@ -133,10 +133,13 @@ gh workflow run trigger-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
 
 | 你改什么 | push 之后 |
 |---|---|
-| `packs/*.toml`（标题/作者/附加信息/卡面、删曲目）、`loudness/otomads.json` | ✅ **自动**：`repack-media` 工作流用**上一份归档的媒体** + 仓库现在的真源重打 ⇒ 变了就换 `media` 资产 ⇒ 触发 CF 重建 |
+| `packs/*.toml`（标题/作者/附加信息/卡面**引用**、删曲目）、`loudness/otomads.json` | ✅ **自动**：`repack-media` 工作流用**上一份归档的媒体** + 仓库现在的真源重打 ⇒ 变了就换 `media` 资产 ⇒ 触发 CF 重建 |
 | `wrangler.jsonc`、`media-worker.mjs`、`tools/**`、`.github/workflows/**` | ✅ **自动**（构建侧的输入，同一条链路里的重建就带上了） |
 | **新音频**（新抓/重裁的 mp3） | ❌ 必须在**bilibili 认的出口 IP** 后面（本机），而且**先换归档、再推源码**：`pnpm media:pack` → `gh release upload media … --clobber` → push（packs 变了才需要）→ 没推就补一次 `gh workflow run trigger-cdn.yml`。**实测 GitHub 托管 runner 抓不了**：三条真 source 全是 `HTTP Error 412`（数据中心 IP 的风控；86 条 source 全是 bilibili）|
 | 只改文档 | 归档逐字节没变 ⇒ **不换资产**，只重建一次站点（约 2–3 分钟） |
+
+**边界**：卡面是本地打包时从主仓库 `public/cards-otomads/` 拷进归档的（`pack --cards`），`repack` 只能**保留**
+归档里已有的卡图、加不进新的 ⇒ **新增/替换卡图文件**要按【B】走本地打包（改卡面**引用**则照【A】自动）。
 
 `repack-media` 的关键前提：版本号用**内容**哈希（D149）—— 照 mtime 算的话 CI 重打的清单与本机打的永远对不上，
 客户端每次都要重下 324 MB；`tools/tests/test_repack.py` 钉着"本机打包 == CI 重打，逐字节相同"。
