@@ -1,16 +1,13 @@
-// 素材站（`otomads-cdn.tsukinomiyako-mangesui.top`）在 Cloudflare 那边的配置：**一个只放静态资源的
-// Worker**，由 **Workers Builds**（Git 集成，连本仓库、生产分支 `main`）构建与部署（D148 追补）。
+// 素材站（`otomads-cdn.tsukinomiyako-mangesui.top`）在 Cloudflare 那边的配置：**一个放静态资源的 Worker**
+// 再加一个接管 `/media/*` 的小脚本。
 //
-// 面板里对应的两格：
-//   * Build command:  `python3 tools/build_cdn_site.py`   ← 取 Release 归档 → 自检 → 解到 ./dist
-//   * Deploy command: `npx wrangler deploy`               ← **不要**再带 `dist` 参数：那份目录由下面的
-//                                                            `assets.directory` 指定，位置参数会被
-//                                                            wrangler 当成"Worker 脚本路径"（第一次就这么
-//                                                            红过一次），而这里根本没有脚本 —— 只有资源。
-//   （Workers Builds 没有 Pages 那个 "Build output directory" 字段：资源目录由 `assets` 说了算。）
+// **谁部署它**（D150）：`.github/workflows/publish.yml` 的第三段 —— GitHub Actions 里跑
+// `python3 tools/build_cdn_site.py`（取归档 → 自检 → 铺 `./dist`）再 `npx wrangler deploy`。
+// 以前是 CF 的 **Workers Builds**（Git 集成）自己构建，但那条路依赖 CF 侧的连接：断掉时**零构建**，
+// 而 Deploy Hook 照样回 2xx ⇒ 静默失败（2026-09-25 就这么停了一整天）⇒ 已退役。
+// 面板上那份 Workers Builds 项目可以删掉；`wrangler` 对静态资源按哈希**增量上传**。
 {
-  // 必须与 CF 面板上的 Worker 名一致。不一致时 wrangler 会警告"CI 期望 otomads-cdn-git"并**擅自改名**，
-  // 还会试着开一个 PR 来"修"这份配置 —— 对齐了就没事。
+  // wrangler 用这个名字建/更新 Worker；必须与线上的 Worker 名一致。
   "name": "otomads-cdn-git",
   // 静态资源用不到新的运行时特性，取 CF 报错里建议的那个日期即可（改动它会换一套运行时默认值）。
   "compatibility_date": "2026-09-23",
@@ -29,5 +26,10 @@
     // 找不到就是 404，**不做 SPA 回退**：老站的行为就是这个（根路径 `/` 也是 404），
     // 而这个站点只放 manifest / 媒体 / 响度表 —— 回退成 HTML 只会让前端把 HTML 当 JSON 解析。
     "not_found_handling": "none"
-  }
+  },
+  // 自定义域名：**必须在配置里声明**，否则 `wrangler deploy` 有可能把它从 Worker 上摘掉 ——
+  // `sources/otomads.toml` 的 `table_url` 指向的就是它，掉了等于素材站下线。
+  "routes": [
+    { "pattern": "otomads-cdn.tsukinomiyako-mangesui.top", "custom_domain": true }
+  ]
 }
