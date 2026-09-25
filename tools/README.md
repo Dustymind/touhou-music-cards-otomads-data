@@ -54,7 +54,8 @@ uv run python -m otomads.fetch_audio                         # ④ 抓取/裁剪
 
 1. **并发只在应用层**：yt-dlp 的 `--concurrent-fragments` 只并行 HLS/DASH 的**分片**，而 bilibili 的音频
    是单个文件直链 —— 对抓取没有帮助。`fetch_audio` 因此自己开线程池（`--jobs`），瓶颈全在网络：
-   本地开销实测只有约 0.25 秒/首（`YoutubeDL()` + `-c copy`），86 首合计约 23 秒。
+   本地开销实测只有约 0.25 秒/首（`YoutubeDL()`；**裁剪**另算 —— D142 之后是"解码后精确切 + V0 重编码"，
+   ≈ 0.4–0.6 秒/首，但只有带区间的 16 首付这笔），86 首合计约 30 秒。
    并发下的三处不变量：状态**进线程池前读全**（运行期只有写）、状态落盘加锁、
    "同源同区间"的认领与产出在**同一把锁**里（否则两条同源曲目会白裁两遍）。
 2. **每个 `ffmpeg` / `yt-dlp` 子进程都要显式重定向 stdin**（`stdin=subprocess.DEVNULL`，ffmpeg 另加
