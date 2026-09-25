@@ -48,7 +48,6 @@ from __future__ import annotations
 
 import argparse
 import gzip
-import hashlib
 import json
 import pathlib
 import shutil
@@ -121,8 +120,9 @@ def build_manifest(titles: list[str], album: str = DEFAULT_ALBUM,
 
     ``loudness`` **相对 manifest 自身**（见模块 docstring 与主仓库 D139）；不给就不写这个键。
 
-    ``revisions`` / ``revision``（主仓库 D144）：**音频本身**的版本号（名字+大小+mtime，
-    `packformat.media_revision`）。行里的前三项与助手**逐字一致**，第 4 位与顶层键才是新增的
+    ``revisions`` / ``revision``（主仓库 D144）：**音频本身**的版本号，由调用方算好传进来 ——
+    归档侧是内容哈希（`packformat.content_revision`，D149），本机助手侧仍是 mtime
+    （`packformat.media_revision`）。行里的前三项与助手**逐字一致**，第 4 位与顶层键才是新增的
     —— 它们只进清单，不改地址。前端把版本拼进媒体地址：音频变了但链接没变时 URL 会跟着变
     ⇒ 不吃浏览器/CDN 的缓存；而且**逐曲**的写法只让变过的那几首换 URL，不会让整包 321 MB 全部重下。
 
@@ -205,37 +205,15 @@ def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
               f"（跑 `uv run --project tools python -m otomads.measure_loudness` 生成；"
               f"前端会回落到应用侧那份）")
         table = None
-    manifest = build_manifest(
-        sorted(tracks), album,
-        loudness=table[0] if table else None,
-        # 版本号用**内容**哈希（D149）：这样 CI 从上一份归档重打出来的清单与本机打出来的**逐字节相同**
-        revisions={title: packformat.content_revision(path) for title, path in tracks.items()},
-        revision=packformat.revisions_of([(f"{title}{path.suffix}", path)
-                                          for title, path in tracks.items()]),
-        # 曲目表跟着源走（D145）：清单里的**曲目**按曲包 TOML，**地址**按磁盘文件
-        snapshot=packformat.repo_snapshot(),
-    )
     with tempfile.TemporaryDirectory() as tmp:
         root = pathlib.Path(tmp)
-        (root / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
         media = root / MEDIA_DIR / album
         media.mkdir(parents=True)
         for title, path in sorted(tracks.items()):
             shutil.copyfile(path, media / f"{title}{path.suffix}")
-        if table is not None:                     # 响度表跟着源走（路径 = manifest 里声明的那个）
-            target = root / table[0]
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(table[1], target)
-        copied_cards = 0
-        if cards is not None and cards.is_dir():
-            target = root / CARDS_DIR
-            target.mkdir()
-            for path in sorted(cards.iterdir()):
-                if path.is_file() and not path.name.startswith("."):
-                    shutil.copyfile(path, target / path.name)
-                    copied_cards += 1
-        out.parent.mkdir(parents=True, exist_ok=True)
-        _write_archive(root, out)
+        _copy_loudness(root, table)
+        copied_cards = _copy_cards(cards, root / CARDS_DIR)
+        _assemble(root, tracks, table, album, None, out)
     return {"archive": out, "tracks": len(tracks), "cards": copied_cards,
             "bytes": out.stat().st_size, "loudness": 1 if table else 0}
 
@@ -275,13 +253,66 @@ def extract(archive_path: pathlib.Path, out: pathlib.Path) -> None:
             archive.extractall(out, members=members)
 
 
-def _download(url: str, dest: pathlib.Path) -> pathlib.Path:
-    """下载归档（跟随重定向；走环境里的 http(s)_proxy）。"""
-    print(f"⬇️  拉取素材：{url}")
-    target = dest / pathlib.Path(url.split("?", 1)[0]).name
-    with urllib.request.urlopen(url, timeout=120) as response, open(target, "wb") as handle:
-        shutil.copyfileobj(response, handle)
+def download_archive(url: str, target: pathlib.Path) -> pathlib.Path:
+    """取归档到 `target`：认 `file://` 与 http(s)（跟随重定向、走环境里的 `http(s)_proxy`）。
+
+    `stage --archive` 与 Cloudflare 的构建入口（`tools/build_cdn_site.py`）共用这一份 ——
+    以前两边各写一遍（差一个 `file://`、差一个 120 秒超时）。
+    """
+    print(f"⬇️  取归档：{url}")
+    if url.startswith("file://"):
+        shutil.copyfile(url[len("file://"):], target)
+    else:
+        with urllib.request.urlopen(url, timeout=120) as response, open(target, "wb") as handle:
+            shutil.copyfileobj(response, handle)
+    print(f"    落盘 {target}（{target.stat().st_size} B）")
     return target
+
+
+def _copy_loudness(root: pathlib.Path, table) -> None:
+    """响度表**跟着源走**：放进归档的位置 = 注册表声明的位置（manifest 里写的也是它）。"""
+    if table is None:
+        return
+    target = root / table[0]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(table[1], target)
+
+
+def _copy_cards(cards: pathlib.Path | None, target: pathlib.Path) -> int:
+    """可选的音MAD 卡面目录 → `cards-otomads/`（跳过点开头的文件）；返回拷了几张。"""
+    if cards is None or not cards.is_dir():
+        return 0
+    target.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for path in sorted(cards.iterdir()):
+        if path.is_file() and not path.name.startswith("."):
+            shutil.copyfile(path, target / path.name)
+            copied += 1
+    return copied
+
+
+def _assemble(root: pathlib.Path, tracks: dict[str, pathlib.Path], table, album: str,
+              pack_id: str | None, out: pathlib.Path) -> dict:
+    """把 `tracks` 写成 manifest、再把 `root` 打成归档 —— **`pack` 与 `repack` 共用这一段**。
+
+    以前两边各抄一份（11–14 行逐字同形），而这里正是"本机 `pack` == CI `repack` 逐字节相同"那条
+    性质的所在地（`tools/tests/test_repack.py` 盯着）：抄两份等于白留一个漂移面。
+    逐曲版本号用**内容**哈希（D149）且**只算一次** —— 整表版本号吃同一批哈希，不再重复读那 330 MB。
+    """
+    revisions = {title: packformat.content_revision(path) for title, path in tracks.items()}
+    manifest = build_manifest(
+        sorted(tracks), album, pack_id,
+        loudness=table[0] if table else None,
+        revisions=revisions,
+        revision=packformat.revisions_of([(f"{title}{path.suffix}", revisions[title])
+                                          for title, path in tracks.items()]),
+        # 曲目表跟着源走（D145）：清单里的**曲目**按曲包 TOML，**地址**按磁盘文件
+        snapshot=packformat.repo_snapshot(),
+    )
+    (root / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    _write_archive(root, out)
+    return manifest
 
 
 def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path | None = None,
@@ -298,30 +329,21 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
         for title, path in sorted(tracks.items()):
             shutil.copyfile(path, media / f"{title}{path.suffix}")
         table = declared_loudness(album)
-        if table is not None and table[1].is_file():
-            target = out / table[0]
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(table[1], target)
-        else:
+        if table is not None and not table[1].is_file():
             table = None
+        _copy_loudness(out, table)
         manifest = build_manifest(sorted(tracks), album, base=base,
                                   loudness=table[0] if table else None,
                                   snapshot=packformat.repo_snapshot())
         (out / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
-        copied_cards = 0
-        if cards is not None and cards.is_dir():
-            target = out / CARDS_DIR
-            target.mkdir(exist_ok=True)
-            for path in sorted(cards.iterdir()):
-                if path.is_file() and not path.name.startswith("."):
-                    shutil.copyfile(path, target / path.name)
-                    copied_cards += 1
+        copied_cards = _copy_cards(cards, out / CARDS_DIR)
         return {"tracks": len(tracks), "cards": copied_cards, "source": "library", "out": out,
                 "manifest": manifest, "loudness": 1 if table else 0}
 
     with tempfile.TemporaryDirectory() as tmp:
         if archive.startswith(("http://", "https://")):
-            local = _download(archive, pathlib.Path(tmp))
+            name = pathlib.Path(archive.split("?", 1)[0]).name or "archive.tar.gz"
+            local = download_archive(archive, pathlib.Path(tmp) / name)
         else:
             local = pathlib.Path(archive)
             if not local.is_file():
@@ -336,8 +358,13 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if base:                                  # 要绝对地址就把媒体地址重烘一遍（**保留响度表与曲目表声明**）
             titles = [row[1] for row in manifest.get("tracks", [])]
+            # 版本号（逐曲第 4 位 + 顶层 `revision`）**原样透传**：重烘的只是地址，
+            # 客户端该不该重下媒体不该因为"换了个基地址"而变化。
+            revisions = {row[1]: row[3] for row in manifest.get("tracks", []) if len(row) > 3}
             manifest = build_manifest(titles, album, manifest.get("pack"), base=base,
                                       loudness=manifest.get("loudness"),
+                                      revisions=revisions or None,
+                                      revision=manifest.get("revision"),
                                       snapshot=packformat.pack_snapshot_of(manifest))
             manifest_path.write_text(render(manifest), encoding="utf-8")
     else:                                         # 归档里没有 manifest（手工做的）→ 按铺好的文件生成
@@ -410,34 +437,16 @@ def repack(previous: pathlib.Path, out: pathlib.Path) -> dict:
         if table is not None and not table[1].is_file():
             print(f"⚠️  注册表声明的响度表不存在，归档里不带它：{table[1]}")
             table = None
-        if table is not None:                       # 表在**仓库**里 ⇒ 重算过的表会跟着重打进来
-            target = root / table[0]
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(table[1], target)
+        _copy_loudness(root, table)                 # 表在**仓库**里 ⇒ 重算过的表会跟着重打进来
+        manifest = _assemble(root, tracks, table, album, before.get("pack"), out)
 
-        manifest = build_manifest(
-            sorted(tracks), album, before.get("pack"),
-            loudness=table[0] if table else None,
-            revisions={title: packformat.content_revision(path) for title, path in tracks.items()},
-            revision=packformat.revisions_of([(f"{title}{path.suffix}", path)
-                                              for title, path in tracks.items()]),
-            snapshot=packformat.repo_snapshot(),
-        )
-        (root / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
-        out.parent.mkdir(parents=True, exist_ok=True)
-        _write_archive(root, out)
-
-    # "换了没有"要**比归档本身**：响度表变了而清单没变的情况也得算改了（清单里只记了表的路径）
-    def digest(path: pathlib.Path) -> str:
-        hasher = hashlib.sha1()
-        with open(path, "rb") as handle:
-            for block in iter(lambda: handle.read(1 << 20), b""):
-                hasher.update(block)
-        return hasher.hexdigest()
-
+    # "换了没有"要**比归档本身**：响度表变了而清单没变的情况也得算改了（清单里只记了表的路径）。
+    # 先比大小（不等就一定变了）⇒ 变了的时候省掉两次 330 MB 读；等长再按**同一套内容哈希**比
+    # （`packformat.content_revision`，不再在这里自己写一遍 chunked sha1）。
+    changed = (previous.stat().st_size != out.stat().st_size
+               or packformat.content_revision(previous) != packformat.content_revision(out))
     return {"archive": out, "tracks": len(tracks), "loudness": 1 if table else 0,
-            "bytes": out.stat().st_size, "changed": digest(previous) != digest(out),
-            "manifest": manifest}
+            "bytes": out.stat().st_size, "changed": changed, "manifest": manifest}
 
 
 # ------------------------------------------------------------------ review（铺之前自检，D147）
@@ -627,7 +636,7 @@ def main(argv: list[str] | None = None) -> int:
                           help="上一份归档（**媒体**的来源）")
     repacker.add_argument("--out", type=pathlib.Path, default=pathlib.Path("otomads-media.tar.gz"),
                           help="重打到哪（默认 otomads-media.tar.gz）")
-    _add_common(repacker)
+    # 注意：**没有** `--album` —— 重打的专辑名来自上一份归档，命令行给了也不会被读（以前挂着这个死参数）
 
     reviewer = sub.add_parser("review", help="铺之前自检一个归档（CDN 工作流用；本地也能跑）")
     reviewer.add_argument("--archive", type=pathlib.Path,
@@ -635,7 +644,7 @@ def main(argv: list[str] | None = None) -> int:
                           help="要自检的归档（默认 otomads-media.tar.gz）")
     reviewer.add_argument("--no-packs", action="store_true",
                           help="不比对本仓库的 packs/（归档不是这份仓库打的时候）")
-    _add_common(reviewer)
+    # 同样**没有** `--album`：review 的专辑名也从归档里读
 
     args = parser.parse_args(argv)
 
@@ -672,6 +681,9 @@ def main(argv: list[str] | None = None) -> int:
               "stage --archive <它的 URL> --out dist")
         return 0
 
+    if args.cards is not None and args.archive is not None:
+        print("⚠️  `--cards` 只在 `--from <曲库>` 那条路上有用"
+              "（从归档铺时卡面本来就在归档里）—— 这次忽略它")
     summary = stage(args.out, args.archive, args.library, args.album, args.base, args.cards)
     problems = verify(args.out, args.album)
     if not (args.out / "index.html").is_file():
