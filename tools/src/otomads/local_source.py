@@ -54,6 +54,7 @@ import sys
 import tomllib
 from urllib.parse import quote, unquote
 
+from . import packformat
 from . import paths as repo
 
 DEFAULT_CONFIG = repo.ROOT / "local-source.toml"
@@ -98,6 +99,25 @@ def load_config(path, *, host=None, port=None, root=None, pack_id=None,
     }
 
 
+def library_files(root: str) -> list[tuple[str, str, str]]:
+    """曲库 → `[(专辑, 曲目, 绝对路径), …]`：与 `scan_library` 同一套跳过规则，只是**带路径**。
+
+    `build_manifest` 要拿它算 `revision`（名字 + 大小 + mtime，见 `packformat.media_revision`）；
+    `scan_library` 的返回形状是给别处（与 `fetch_audio` 的口径一致）用的，不能动。
+    """
+    found: list[tuple[str, str, str]] = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [name for name in dirnames if not name.startswith(".")]
+        for name in filenames:
+            if name.startswith(".") or not name.lower().endswith(AUDIO_EXTENSIONS):
+                continue
+            full = os.path.join(dirpath, name)
+            rel = os.path.relpath(full, root).replace(os.sep, "/")
+            album, _, filename = rel.rpartition("/")
+            found.append((album, os.path.splitext(filename)[0], full))
+    return sorted(found)
+
+
 def scan_library(root: str) -> list[tuple[str, str]]:
     """曲库 → `[(专辑, 曲目), …]`。专辑 = 第一层目录名，曲目 = 去掉扩展名的文件名。
 
@@ -105,16 +125,7 @@ def scan_library(root: str) -> list[tuple[str, str]]:
     它们都在曲库根下面；不跳过的话 manifest 会多出 `album = ".raw"` 的垃圾条目，
     界面上的条目数也就跟着错 ✗（契约见 `docs/packs-audio-v1.md` §2）。
     """
-    found: list[tuple[str, str]] = []
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [name for name in dirnames if not name.startswith(".")]
-        for name in filenames:
-            if name.startswith(".") or not name.lower().endswith(AUDIO_EXTENSIONS):
-                continue
-            rel = os.path.relpath(os.path.join(dirpath, name), root).replace(os.sep, "/")
-            album, _, filename = rel.rpartition("/")
-            found.append((album, os.path.splitext(filename)[0]))
-    return sorted(found)
+    return [(album, title) for album, title, _path in library_files(root)]
 
 
 def media_path(album: str, title: str) -> str:
@@ -133,12 +144,25 @@ def build_manifest(root: str, base_url: str, pack_id: str,
     ⚠️ 本机助手**故意不声明**：它只发 ``/manifest.json`` 与 ``/media/*``，不发响度表
     （那份表在应用的 ``data/<模式>/loudness/`` 里，助手形态靠回落拿）。声明了却发不出来 = 增益失效，
     所以只有真把表打进同一份归档的 ``stage_media.pack`` 才传这个参数。
+
+    ``revision``（主仓库 D144）：**音频本身**的版本号（名字+大小+mtime）。前端把它拼进媒体地址，
+    于是"曲库变了但链接没变"也能立刻拿到新音频，而不是吃浏览器/CDN 的缓存。manifest 自己走
+    ``Cache-Control: no-store``（见 `_send_manifest`）⇒ 每次都是最新的，前端因此拿得到新版本号。
+
+    版本号写**两处**：行里的第 4 位（**逐曲** —— 只让变过的那几首换 URL，不牵动整包 321 MB），
+    外加顶层的 ``revision``（整表兜底，给"只看顶层"的消费者）。两者都是同一套算法的输出。
     """
+    files = library_files(root)
+    rows: list[list[str]] = []
+    for album, title, path in files:
+        rows.append([album, title, base_url.rstrip("/") + media_path(album, title),
+                     packformat.media_revision([(f"{album}/{title}", path)])])
     manifest = {
         "schema": 1,
         "pack": pack_id,
-        "tracks": [[album, title, base_url.rstrip("/") + media_path(album, title)]
-                   for album, title in scan_library(root)],
+        "revision": packformat.media_revision([(f"{album}/{title}", path)
+                                               for album, title, path in files]),
+        "tracks": rows,
     }
     if loudness:
         manifest["loudness"] = loudness

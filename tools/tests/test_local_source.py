@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import socket
 import threading
 import urllib.request
@@ -96,3 +97,39 @@ def test_config_priority(tmp_path, library):
 
 
 import urllib.parse  # noqa: E402  (供上面的 quote 使用)
+
+
+# --------------------------------------------- 媒体版本号（D144）
+
+def test_manifest_carries_per_track_media_revisions(library):
+    """清单带**逐曲**版本号（名字+大小+mtime）：音频变了但链接没变时，前端靠换 URL 绕开缓存。
+
+    整表 ``revision`` 同时给一份（给"只看顶层"的消费者），两者都是同一套算法的输出。
+    """
+    first = local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
+    assert len(first["revision"]) == 16
+    assert all(len(row) == 4 and len(row[3]) == 16 for row in first["tracks"])
+
+    # 文件没动 ⇒ 再算一次**一模一样**（可复现；前端因此不会白白换 URL 让所有客户端重下）
+    assert local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads") == first
+
+    victim = library / "otomads" / "thwy - 岁月.mp3"
+    stamp = victim.stat()
+    os.utime(victim, ns=(stamp.st_atime_ns, stamp.st_mtime_ns + 1_000_000))
+    second = local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
+
+    # **只有动过的那一首换版本**（逐曲的意义：不然整包 321 MB 会全部重下）
+    changed = [index for index, (a, b) in enumerate(zip(first["tracks"], second["tracks"])) if a != b]
+    assert len(changed) == 1, changed
+    assert second["revision"] != first["revision"]
+    # 变的只有版本号，地址本身一个字没动 —— 缓存就是靠这一位失效的
+    assert [row[2] for row in first["tracks"]] == [row[2] for row in second["tracks"]]
+
+
+def test_served_manifest_is_never_cached_and_carries_revision(server, library):
+    """助手发 manifest 必须**不缓存**（``no-store``）—— 前端就是靠每次拿到最新的版本号。"""
+    with urllib.request.urlopen(f"{server}/manifest.json") as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+        assert resp.headers["Cache-Control"] == "no-store"
+    assert len(payload["revision"]) == 16
+    assert all(len(row) == 4 for row in payload["tracks"])

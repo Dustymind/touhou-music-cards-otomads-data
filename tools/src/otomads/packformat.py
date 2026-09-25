@@ -332,3 +332,20 @@ def loudness_path(pack_id: str) -> pathlib.Path | None:
         if entry.get("loudness"):
             return repo.DATA / entry["loudness"]
     return None
+
+
+def media_revision(entries) -> str:
+    """`[(清单里的名字, 文件路径), …]` → **数据版本号**（16 位十六进制，sha1 截断）。
+
+    前端把它拼进媒体地址（`?v=<revision>`，主仓库 D144）：**版本一变 = URL 一变** ⇒ 浏览器与
+    CDN 都不能拿旧的顶。缓存键因此跟"音频本身"走，而不是跟"链接"走。
+
+    输入只取**文件名 + 字节数 + mtime**：改一个字节、重裁一次、加一首、删一首，版本都会变；
+    而"文件没动、只是重新打一次包"版本不变 ✓（同样的输入必然同样的输出，可复现）。
+    **故意不读文件内容** —— 86 首要哈希 370 MB，而"重新打包"是个几秒级操作，不值当。
+    """
+    digest = hashlib.sha1()
+    for name, path in sorted(entries, key=lambda item: item[0]):
+        stat = pathlib.Path(path).stat()        # 助手那边给的是 str（os.path.join），两边都收
+        digest.update(f"{name}\t{stat.st_size}\t{stat.st_mtime_ns}\n".encode())
+    return digest.hexdigest()[:16]

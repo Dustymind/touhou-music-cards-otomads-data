@@ -6,6 +6,7 @@
 """
 import io
 import json
+import os
 import pathlib
 import tarfile
 
@@ -309,3 +310,41 @@ def test_cli_prints_the_loudness_line(library, data_repo, tmp_path, capsys):
     declare_table(data_repo, dict.fromkeys(TRACKS, 0.9))
     assert sm.main(["stage", "--from", str(library), "--out", str(tmp_path / "dist")]) == 0
     assert "响度表 loudness/otomads.json：2 条" in capsys.readouterr().out
+
+
+def manifest_of(archive: pathlib.Path) -> dict:
+    """从**归档**里读 manifest（`read_manifest` 那个是给 `stage --from` 的目录形态用的）。"""
+    with tarfile.open(archive) as handle:
+        return json.loads(handle.extractfile(sm.MANIFEST_NAME).read().decode("utf-8"))
+
+
+def test_pack_manifest_carries_media_revisions(library, tmp_path):
+    """D144：逐曲版本号写在第 4 位 + 整表 ``revision``；**前三项与助手逐字一致**（只加不改）。
+
+    版本号只进清单、不进地址；前端把它拼成 `?v=`，于是"音频换了但链接没变"也能立刻拿到新的。
+    """
+    out = tmp_path / "media.tar.gz"
+    sm.pack(library, out)
+    manifest = manifest_of(out)
+
+    assert len(manifest["revision"]) == 16
+    for row in manifest["tracks"]:
+        assert len(row) == 4 and len(row[3]) == 16
+        assert row[0] == "otomads"
+        assert row[2].startswith("media/otomads/") and not row[2].startswith("/")
+
+    # 没声明时不许凭空造键（老调用方/别的包不受影响）
+    bare = sm.build_manifest(["a"], "otomads")
+    assert "revision" not in bare and len(bare["tracks"][0]) == 3
+
+    # 文件变了 ⇒ **只有那一首**的版本号跟着变（逐曲，不是整包一起换）
+    victim = library / "otomads" / "Rendering-Liu - 岁月.mp3"
+    stamp = victim.stat()
+    os.utime(victim, ns=(stamp.st_atime_ns, stamp.st_mtime_ns + 1_000_000))
+    again = tmp_path / "again.tar.gz"
+    sm.pack(library, again)
+    moved = [row for row, old in zip(manifest_of(again)["tracks"], manifest["tracks"])
+             if row[3] != old[3]]
+    assert len(moved) == 1, moved
+    # 地址一个字没动 —— 失效的只有版本号那一位
+    assert [row[2] for row in manifest_of(again)["tracks"]] == [row[2] for row in manifest["tracks"]]

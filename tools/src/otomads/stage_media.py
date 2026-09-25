@@ -107,16 +107,27 @@ def media_url(album: str, title: str, base: str | None = None) -> str:
 
 def build_manifest(titles: list[str], album: str = DEFAULT_ALBUM,
                    pack_id: str | None = None, base: str | None = None,
-                   loudness: str | None = None) -> dict:
-    """``{"schema":1,"pack":…,"tracks":[[专辑, 曲目, 地址], …],"loudness":…}``（行形状与助手一致）。
+                   loudness: str | None = None, revisions: dict[str, str] | None = None,
+                   revision: str | None = None) -> dict:
+    """``{"schema":1,"pack":…,"revision":…,"tracks":[[专辑, 曲目, 地址, 版本], …],"loudness":…}``
+    （行形状与助手一致；第 4 位是逐曲版本号，顶层 `revision` 是整表版本号）。
 
     ``loudness`` **相对 manifest 自身**（见模块 docstring 与主仓库 D139）；不给就不写这个键。
+
+    ``revisions`` / ``revision``（主仓库 D144）：**音频本身**的版本号（名字+大小+mtime，
+    `packformat.media_revision`）。行里的前三项与助手**逐字一致**，第 4 位与顶层键才是新增的
+    —— 它们只进清单，不改地址。前端把版本拼进媒体地址：音频变了但链接没变时 URL 会跟着变
+    ⇒ 不吃浏览器/CDN 的缓存；而且**逐曲**的写法只让变过的那几首换 URL，不会让整包 321 MB 全部重下。
     """
-    manifest = {
-        "schema": 1,
-        "pack": pack_id or album,
-        "tracks": [[album, title, media_url(album, title, base)] for title in titles],
-    }
+    rows: list[list[str]] = []
+    for title in titles:
+        row = [album, title, media_url(album, title, base)]
+        if revisions and title in revisions:
+            row.append(revisions[title])
+        rows.append(row)
+    manifest = {"schema": 1, "pack": pack_id or album, "tracks": rows}
+    if revision:
+        manifest["revision"] = revision
     if loudness:
         manifest["loudness"] = loudness
     return manifest
@@ -179,7 +190,14 @@ def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
               f"（跑 `uv run --project tools python -m otomads.measure_loudness` 生成；"
               f"前端会回落到应用侧那份）")
         table = None
-    manifest = build_manifest(sorted(tracks), album, loudness=table[0] if table else None)
+    manifest = build_manifest(
+        sorted(tracks), album,
+        loudness=table[0] if table else None,
+        revisions={title: packformat.media_revision([(f"{title}{path.suffix}", path)])
+                   for title, path in tracks.items()},
+        revision=packformat.media_revision([(f"{title}{path.suffix}", path)
+                                            for title, path in tracks.items()]),
+    )
     with tempfile.TemporaryDirectory() as tmp:
         root = pathlib.Path(tmp)
         (root / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
