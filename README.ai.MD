@@ -126,7 +126,7 @@ gh workflow run trigger-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
 |---|---|
 | `packs/*.toml`（标题/作者/附加信息/卡面、删曲目）、`loudness/otomads.json` | ✅ **自动**：`repack-media` 工作流用**上一份归档的媒体** + 仓库现在的真源重打 ⇒ 变了就换 `media` 资产 ⇒ 触发 CF 重建 |
 | `wrangler.jsonc`、`media-worker.mjs`、`tools/**`、`.github/workflows/**` | ✅ **自动**（构建侧的输入，同一条链路里的重建就带上了） |
-| **新音频**（新抓/重裁的 mp3） | ❌ 只能在有曲库的机器上：`pnpm media:pack` → `gh release upload media … --clobber` → `gh workflow run trigger-cdn.yml`（或再推一次） |
+| **新音频**（新抓/重裁的 mp3） | ❌ 必须在**bilibili 认的出口 IP** 后面（本机）：`pnpm media:pack` → `gh release upload media … --clobber` → `gh workflow run trigger-cdn.yml`（或再推一次）。**实测 GitHub 托管 runner 抓不了**：三条真 source 全是 `HTTP Error 412`（数据中心 IP 的风控；86 条 source 全是 bilibili）|
 | 只改文档 | 归档逐字节没变 ⇒ **不换资产**，只重建一次站点（约 2–3 分钟） |
 
 `repack-media` 的关键前提：版本号用**内容**哈希（D149）—— 照 mtime 算的话 CI 重打的清单与本机打的永远对不上，
