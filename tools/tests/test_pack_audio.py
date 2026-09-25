@@ -196,6 +196,67 @@ def test_audio_descriptors_feed_the_content_hash():
     assert rows == [["demo", "一", "00:00:01.000", "", "https://a"]]
 
 
+# ------------------------------------------------ 曲目表快照（D145，C 路线）
+
+#: **共享测试向量**：与主仓库 `tools/tests/test_build.py` 里那份**同一份字面量**。
+#: 它钉的是"源在自己的清单里给的曲目表"与"主仓库构建出来的自带数据"必须**逐字同形**（D145）：
+#: 任一侧改了形状（少一位作者、多一个字段），两侧里总有一侧会红 —— 那正是"看得见、点不响"的成因。
+PACK_MUSIC_VECTOR = [
+    ({"album": "demo", "title": "只有附加信息", "extra": "角色曲"},
+     ["demo", "只有附加信息", "角色曲"]),
+    ({"album": "demo", "title": "单作者", "extra": "道中曲", "author": "甲"},
+     ["demo", "单作者", "道中曲", "甲"]),
+    ({"album": "demo", "title": "多作者", "extra": "秘封曲", "author": "甲 & 乙", "authors": ["甲", "乙"]},
+     ["demo", "多作者", "秘封曲", "甲 & 乙", ["甲", "乙"]]),
+]
+
+
+def test_music_entry_matches_the_shared_vector():
+    for case, expected in PACK_MUSIC_VECTOR:
+        assert packs.music_entry(case) == expected
+
+
+def test_pack_snapshot_groups_by_character_and_keeps_cards():
+    """快照只给"角色 → 曲目"（+ 可选卡面覆盖），**不复制身份**（name/order 的真源仍在主仓库）。"""
+    tracks = [
+        make_track(title="一", extra="角色曲"),
+        make_track(character="marisa", title="二", extra="道中曲", author="乙"),
+        make_track(title="三", extra="秘封曲", author="丙"),
+    ]
+    snapshot = packs.pack_snapshot(ALBUMS, tracks, {"cirno": ["チルノ-mad.png"]})
+    assert snapshot["albums"] == ALBUMS
+    assert [c["key"] for c in snapshot["characters"]] == ["cirno", "marisa"]   # 首次出现的顺序
+    assert snapshot["characters"][0] == {
+        "key": "cirno", "music": [["demo", "一", "角色曲"], ["demo", "三", "秘封曲", "丙"]],
+        "card": ["チルノ-mad.png"]}
+    assert snapshot["characters"][1] == {"key": "marisa", "music": [["demo", "二", "道中曲", "乙"]]}
+    # 入参不被就地改（纯函数）
+    assert tracks[0]["character"] == "cirno" and "card" not in snapshot["characters"][1]
+
+
+def test_pack_snapshot_sees_a_track_added_to_the_pack(tmp_path, monkeypatch):
+    """往曲包 TOML 里加一首 ⇒ 它出现在快照里（C 的全部意义："加曲目只动数据仓库"）。"""
+    write_pack(tmp_path, '[[track]]\nalbum = "demo"\ntitle = "一"\n')
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    before = packs.pack_snapshot(*packs.load_packs()[1:])
+    assert [entry[1] for entry in before["characters"][0]["music"]] == ["一"]
+
+    (tmp_path / "packs" / "demo" / "cirno.toml").write_text(
+        'key = "cirno"\n\n[[track]]\nalbum = "demo"\ntitle = "一"\n\n'
+        '[[track]]\nalbum = "demo"\ntitle = "二"\n', encoding="utf-8")
+    after = packs.pack_snapshot(*packs.load_packs()[1:])
+    assert [entry[1] for entry in after["characters"][0]["music"]] == ["一", "二"]
+
+
+def test_pack_snapshot_of_needs_both_keys():
+    """清单 → 快照段：两个键要么都在、要么都不在；只有一半按"不带"处理（坏数据不当半信半疑地用）。"""
+    assert packs.pack_snapshot_of({"tracks": []}) is None
+    assert packs.pack_snapshot_of({"albums": ALBUMS}) is None
+    assert packs.pack_snapshot_of({"characters": CHARS}) is None
+    assert packs.pack_snapshot_of({"albums": ALBUMS, "characters": CHARS}) == {
+        "albums": ALBUMS, "characters": CHARS}
+
+
 # ------------------------------------------------------------------ 曲库扫描与助手
 
 def test_scan_library_skips_dot_entries(tmp_path):

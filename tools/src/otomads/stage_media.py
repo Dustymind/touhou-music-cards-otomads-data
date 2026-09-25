@@ -21,7 +21,9 @@
 
 归档布局（解出来就是部署根）::
 
-    manifest.json                 # {"schema":1,"pack":"otomads","tracks":[[专辑, 曲目, 地址], …],
+    manifest.json                 # {"schema":1,"pack":"otomads","revision":…,
+                                  #  "tracks":[[专辑, 曲目, 地址, 版本], …],
+                                  #  "albums":[…],"characters":[…],   ← 本包自己的曲目表（D145）
                                   #  "loudness":"loudness/otomads.json"}（有表才写这个键）
     media/otomads/<文件>.mp3       # 文件名 = 磁盘文件名（`作者 - 标题.mp3`），**不能改**
     loudness/otomads.json         # 本源响度表：**跟着源走**（D139），路径与 manifest 里声明的一致
@@ -35,6 +37,10 @@
 * 响度表路径写在 manifest 的 ``loudness`` 键里、**相对 manifest 自身**（前端优先按它取表，没声明才
   回落到应用侧那份 —— 见主仓库 D139）。表由本仓库的 ``measure_loudness`` / ``fetch_audio`` 生成，
   路径取源注册表里 ``loudness`` 声明的那个（默认 ``loudness/otomads.json``）。
+* **曲目表也写在 manifest 里**（``albums`` / ``characters``，主仓库 D145）：**曲目**来自曲包 TOML
+  （``<仓库根>/packs/``），**地址**来自磁盘文件 —— 应用拿它代替随前端部署的那份自带数据，
+  于是加曲目只动本仓库 + 铺源。曲库里多一个没有曲包条目的 mp3 时：清单行数会多（源状态那一行按行数），
+  但**曲目表以曲包为准**（那一首选不到 —— 这正是 C 之前的老症状，现在它是有意的）。
 
 **幂等、可重复**：同一份曲库打两次，归档逐字节相同（tar 成员按名排序、mtime/uid/gid 归零、gzip mtime 归零）。
 """
@@ -108,7 +114,7 @@ def media_url(album: str, title: str, base: str | None = None) -> str:
 def build_manifest(titles: list[str], album: str = DEFAULT_ALBUM,
                    pack_id: str | None = None, base: str | None = None,
                    loudness: str | None = None, revisions: dict[str, str] | None = None,
-                   revision: str | None = None) -> dict:
+                   revision: str | None = None, snapshot: dict | None = None) -> dict:
     """``{"schema":1,"pack":…,"revision":…,"tracks":[[专辑, 曲目, 地址, 版本], …],"loudness":…}``
     （行形状与助手一致；第 4 位是逐曲版本号，顶层 `revision` 是整表版本号）。
 
@@ -118,6 +124,11 @@ def build_manifest(titles: list[str], album: str = DEFAULT_ALBUM,
     `packformat.media_revision`）。行里的前三项与助手**逐字一致**，第 4 位与顶层键才是新增的
     —— 它们只进清单，不改地址。前端把版本拼进媒体地址：音频变了但链接没变时 URL 会跟着变
     ⇒ 不吃浏览器/CDN 的缓存；而且**逐曲**的写法只让变过的那几首换 URL，不会让整包 321 MB 全部重下。
+
+    ``snapshot``（主仓库 D145，C 路线）：曲包真源 → 的"包数据"段（`albums` + `characters`，
+    `packformat.pack_snapshot`）。给了就并进 manifest 的这两个**顶层**键 —— 静态源与助手从此
+    都自带"这个包有哪些曲目"，应用因此不必为加一首曲目重新部署。**不给 ⇒ 输出与改前逐字一致**
+    （老调用方 / 老清单语义不变）。
     """
     rows: list[list[str]] = []
     for title in titles:
@@ -130,7 +141,23 @@ def build_manifest(titles: list[str], album: str = DEFAULT_ALBUM,
         manifest["revision"] = revision
     if loudness:
         manifest["loudness"] = loudness
+    if snapshot:
+        manifest["albums"] = snapshot["albums"]
+        manifest["characters"] = snapshot["characters"]
     return manifest
+
+
+def repo_snapshot(pack_id: str = DEFAULT_ALBUM) -> dict | None:
+    """本仓库曲包真源 → 清单里的「包数据」段；**没有曲包**（或目录是空的）⇒ ``None``。
+
+    与 :func:`otomads.local_source.pack_snapshot_from_repo` 同一个口径（都读 ``<仓库根>/packs/``），
+    只是 `pack()` 手里已经有 ``tracks``（按部署布局的文件名）而这里的曲目来自曲包 TOML ——
+    两者是同一份数据的两种视图：清单里的**地址**按磁盘文件、**曲目表**按 TOML（D145）。
+    """
+    if not packformat.available():
+        return None
+    _packs, albums, tracks, cards = packformat.load_packs()
+    return packformat.pack_snapshot(albums, tracks, cards)
 
 
 def declared_loudness(pack_id: str = DEFAULT_ALBUM) -> tuple[str, pathlib.Path] | None:
@@ -197,6 +224,8 @@ def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
                    for title, path in tracks.items()},
         revision=packformat.media_revision([(f"{title}{path.suffix}", path)
                                             for title, path in tracks.items()]),
+        # 曲目表跟着源走（D145）：清单里的**曲目**按曲包 TOML，**地址**按磁盘文件
+        snapshot=repo_snapshot(album),
     )
     with tempfile.TemporaryDirectory() as tmp:
         root = pathlib.Path(tmp)
@@ -283,7 +312,8 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
         else:
             table = None
         manifest = build_manifest(sorted(tracks), album, base=base,
-                                  loudness=table[0] if table else None)
+                                  loudness=table[0] if table else None,
+                                  snapshot=repo_snapshot(album))
         (out / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
         copied_cards = 0
         if cards is not None and cards.is_dir():
@@ -311,10 +341,11 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
     tracks = audio_files(out / MEDIA_DIR / album)
     if manifest_path.is_file():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if base:                                  # 要绝对地址就把媒体地址重烘一遍（**保留响度表声明**）
+        if base:                                  # 要绝对地址就把媒体地址重烘一遍（**保留响度表与曲目表声明**）
             titles = [row[1] for row in manifest.get("tracks", [])]
             manifest = build_manifest(titles, album, manifest.get("pack"), base=base,
-                                      loudness=manifest.get("loudness"))
+                                      loudness=manifest.get("loudness"),
+                                      snapshot=packformat.pack_snapshot_of(manifest))
             manifest_path.write_text(render(manifest), encoding="utf-8")
     else:                                         # 归档里没有 manifest（手工做的）→ 按铺好的文件生成
         manifest = build_manifest(sorted(tracks), album, base=base)

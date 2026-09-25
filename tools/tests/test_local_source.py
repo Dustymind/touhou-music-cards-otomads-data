@@ -133,3 +133,55 @@ def test_served_manifest_is_never_cached_and_carries_revision(server, library):
         assert resp.headers["Cache-Control"] == "no-store"
     assert len(payload["revision"]) == 16
     assert all(len(row) == 4 for row in payload["tracks"])
+
+
+# --------------------------------------------- 曲目表跟着源走（D145，C 路线）
+
+def test_build_manifest_without_a_snapshot_stays_unchanged(library):
+    """老调用方（**不传** ``snapshot``）的输出逐字不变：键、顺序、行形状都与改前一致。
+
+    "多两个顶层键"必须只发生在**显式要曲目表**的调用上 —— 否则老清单 / 老前端会看到没约定的东西。
+    """
+    manifest = local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
+    assert list(manifest) == ["schema", "pack", "revision", "tracks"]   # 连插入顺序都不变（JSON 文本才不变）
+    assert manifest["tracks"][0][:2] == ["otomads", "thwy - 岁月"]
+    assert manifest["tracks"][0][2] == "http://127.0.0.1:8011" + local_source.media_path(
+        "otomads", "thwy - 岁月")
+    assert "albums" not in json.dumps(manifest) and "characters" not in json.dumps(manifest)
+
+
+def test_served_manifest_carries_the_pack_snapshot(server, library, tmp_path, monkeypatch):
+    """助手发的 manifest 带**本包自己的曲目表**（``albums`` + ``characters``，D145）。
+
+    **曲目表按曲包 TOML、地址按磁盘文件** —— 同一份数据的两种视图：磁盘上是 `作者 - 标题.mp3`，
+    TOML 里作者与标题是分开的两个字段（D95/D96 的口径不能改；应用按归一化曲名把两边配上）。
+    """
+    packs_dir = tmp_path / "packs"
+    (packs_dir / "otomads").mkdir(parents=True)
+    (packs_dir / "otomads.toml").write_text(
+        '[pack]\nid = "otomads"\n\n[[album]]\nkey = "otomads"\nname = "otomads"\n'
+        'kind = "other"\npack = "otomads"\norder = 100\nshow_album_name = false\n',
+        encoding="utf-8")
+    (packs_dir / "otomads" / "cirno.toml").write_text(
+        'key = "cirno"\ncard = ["チルノ-mad.png"]\n\n[[track]]\nalbum = "otomads"\n'
+        'author = "thwy"\ntitle = "岁月"\nextra = "角色曲"\n', encoding="utf-8")
+    monkeypatch.setattr(local_source.packformat.repo, "DATA", tmp_path)
+
+    with urllib.request.urlopen(f"{server}/manifest.json") as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+    assert payload["pack"] == "otomads"
+    assert [row[1] for row in payload["tracks"]] == ["thwy - 岁月", "01. 曲目"]
+    assert payload["albums"] == [{"key": "otomads", "name": "otomads", "kind": "other",
+                                  "pack": "otomads", "order": 100, "showAlbumName": False}]
+    assert payload["characters"] == [
+        {"key": "cirno", "music": [["otomads", "岁月", "角色曲", "thwy"]], "card": ["チルノ-mad.png"]}]
+
+
+def test_served_manifest_without_packs_falls_back_to_the_old_shape(server, library, tmp_path,
+                                                                   monkeypatch):
+    """没有曲包真源（独立跑时指到别处 / 目录空）⇒ 清单退回老形状，**不报错**（前端照旧走兜底）。"""
+    monkeypatch.setattr(local_source.packformat.repo, "DATA", tmp_path / "empty")
+    with urllib.request.urlopen(f"{server}/manifest.json") as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+    assert "albums" not in payload and "characters" not in payload
+    assert len(payload["tracks"]) == 2

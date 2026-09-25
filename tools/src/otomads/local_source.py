@@ -3,8 +3,10 @@
 应用会向它请求两样东西：
 
 1. ``GET /manifest.json`` —— 曲目表，形状与远端源表一致：``[专辑, 曲目, URL]`` 数组，
-   外加 ``pack`` 标识（预留给多重架构：本地曲目属于哪个曲包）。**动态生成**：
-   扫一遍曲库就知道有哪些曲目，URL 按请求的 Host 拼，所以换端口/加文件都不用重新生成。
+   外加 ``pack`` 标识（预留给多重架构：本地曲目属于哪个曲包），以及**本包自己的曲目表**
+   （``albums`` + ``characters``，主仓库 D145：应用拿它代替随前端部署的那份自带数据 ⇒
+   加曲目只动数据仓库）。**动态生成**：扫一遍曲库就知道有哪些曲目，URL 按请求的 Host 拼，
+   所以换端口/加文件都不用重新生成。
 2. ``GET /media/<专辑>/<曲目>.mp3`` —— 音频本体，支持 Range 与 CORS。
 
 manifest 里的音频地址按**请求**现拼（所以换域名/端口不用重新生成）：优先取反向代理的
@@ -134,7 +136,7 @@ def media_path(album: str, title: str) -> str:
 
 
 def build_manifest(root: str, base_url: str, pack_id: str,
-                   loudness: str | None = None) -> dict:
+                   loudness: str | None = None, snapshot: dict | None = None) -> dict:
     """曲库 → manifest（``[专辑, 曲目, 绝对地址]`` 行）。
 
     可选 ``loudness``：本源响度表的路径，**相对 manifest 自身**（例如 ``loudness/otomads.json``）。
@@ -151,6 +153,11 @@ def build_manifest(root: str, base_url: str, pack_id: str,
 
     版本号写**两处**：行里的第 4 位（**逐曲** —— 只让变过的那几首换 URL，不牵动整包 321 MB），
     外加顶层的 ``revision``（整表兜底，给"只看顶层"的消费者）。两者都是同一套算法的输出。
+
+    可选 ``snapshot``（主仓库 D145，C 路线）：曲包真源 → 的"包数据"段（``albums`` + ``characters``，
+    :func:`otomads.packformat.pack_snapshot`），原样并进 manifest 的这两个**顶层**键。应用拿它代替
+    随前端部署的那份自带曲目表 ⇒ 加曲目只动数据仓库。**不传这个参数时输出与改前逐字一致**
+    （老调用方 / 老清单语义不变；前端没看到这两个键就照旧走自带那份兜底）。
     """
     files = library_files(root)
     rows: list[list[str]] = []
@@ -166,7 +173,23 @@ def build_manifest(root: str, base_url: str, pack_id: str,
     }
     if loudness:
         manifest["loudness"] = loudness
+    if snapshot:
+        manifest["albums"] = snapshot["albums"]
+        manifest["characters"] = snapshot["characters"]
     return manifest
+
+
+def pack_snapshot_from_repo() -> dict | None:
+    """本仓库曲包真源 → 清单里的「包数据」段；**没有曲包**（或目录是空的）⇒ ``None``（老形状）。
+
+    工具按 ``__file__`` 定位仓库根 ⇒ "在哪份里跑就带哪份的曲目表"：在主仓库 submodule 里跑就是 pin 的
+    那份，在独立克隆里跑就是克隆里那份（硬规矩见主仓库 D145）。**每次请求现读**（35 个 TOML，几毫秒）——
+    于是"往 TOML 里加一首"立刻反映到 manifest 上，不必重启助手（D145 §7.4 的验收就是这么走的）。
+    """
+    if not packformat.available():
+        return None
+    _packs, albums, tracks, cards = packformat.load_packs()
+    return packformat.pack_snapshot(albums, tracks, cards)
 
 
 def find_bindable_port(host: str, port: int, tries: int) -> int | None:
@@ -251,7 +274,8 @@ class LocalMusicHandler(http.server.SimpleHTTPRequestHandler):
     # ---- manifest ----
     def _send_manifest(self, body: bool) -> None:
         payload = json.dumps(
-            build_manifest(self.server.music_root, self.base_url, self.server.pack_id),  # type: ignore[attr-defined]
+            build_manifest(self.server.music_root, self.base_url, self.server.pack_id,  # type: ignore[attr-defined]
+                           snapshot=pack_snapshot_from_repo()),
             ensure_ascii=False, indent=1).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -391,7 +415,8 @@ def main(argv: list[str] | None = None) -> int:
         print(base_url)
         return 0
     if args.print_table:
-        print(json.dumps(build_manifest(conf["root"], base_url, conf["pack_id"]),
+        print(json.dumps(build_manifest(conf["root"], base_url, conf["pack_id"],
+                                       snapshot=pack_snapshot_from_repo()),
                          ensure_ascii=False, indent=1))
         return 0
     return serve(conf, strict_port=args.strict_port)

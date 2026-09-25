@@ -318,6 +318,62 @@ def audio_descriptors(tracks: list[dict]) -> list[list[str]]:
     return sorted(rows)
 
 
+def music_entry(track: dict) -> list:
+    """一条曲目 → 运行时 ``music`` 条目：``[专辑, 曲名, 附加信息]`` + 可选作者（第 4 位）+ 可选多作者（第 5 位）。
+
+    形状**必须与主仓库 ``tmc.build._pack_music`` 逐字一致**（D94/D135/D145）：应用侧把源给的这份
+    "曲目条目"按 (专辑, 曲名) 与源清单里的地址配起来，两边形状一旦漂移就会"看得见、点不响"。
+    任何一侧改了这里，另一侧的 `tools/tests` 里那份**共享测试向量**会红。
+    """
+    entry: list = [track["album"], track["title"], track["extra"]]
+    if track.get("author"):
+        entry.append(track["author"])       # 可选第 4 位：署名整串（成品文件名那一段）
+    if track.get("authors"):
+        entry.append(track["authors"])      # 可选第 5 位：多作者数组（与第 4 位同源，D135）
+    return entry
+
+
+def pack_snapshot(albums: list[dict], tracks: list[dict],
+                  cards: dict[str, list[str]] | None = None) -> dict[str, list[dict]]:
+    """曲包真源 → 源清单里的「包数据」段（``{"albums": […], "characters": […]}``，主仓库 D145）。
+
+    这是 C 路线的数据侧一半：源在自己的 ``manifest.json`` 里多带一段"这个包有哪些曲目"，
+    应用拿它 + 自己的身份表（``data/characters/*.toml`` 的原曲数据集）在运行时拼出音MAD 数据集 ——
+    于是**加曲目 / 改裁切 / 换音频只动本仓库 + 铺源**，主仓库连 pin 都不用动。
+
+    只给"角色 → 曲目"，**不复制身份**（``name`` / ``order`` / ``searchNames`` 的真源仍是主仓库，契约 §5 S1）：
+    应用启动时本来就把原曲数据集取全了，身份去那里取。将来真要"音MAD 自有身份"（S2）时，
+    角色条目可以**可选**地自带 ``name`` / ``order`` / ``searchNames``（应用侧已经接收这三个字段）。
+
+    输入就是 :func:`load_packs` 已经会返回的那几样：``albums`` 是包自带专辑，``tracks`` 是全部曲目，
+    ``cards`` 是 ``{角色 key: [卡面文件名]}``。纯函数：不读盘、不改入参。
+    """
+    music: dict[str, list[list]] = {}
+    for track in tracks:
+        music.setdefault(track["character"], []).append(music_entry(track))
+    faces = cards or {}
+    characters: list[dict] = []
+    for key, entries in music.items():
+        record: dict = {"key": key, "music": entries}
+        face = faces.get(key)
+        if face:
+            record["card"] = list(face)     # 音MAD 侧自己的卡面覆盖（有才覆盖，D137）
+        characters.append(record)
+    return {"albums": [dict(album) for album in albums], "characters": characters}
+
+
+def pack_snapshot_of(manifest: dict) -> dict[str, list[dict]] | None:
+    """清单 → 它带的「包数据」段；**老清单没有这两个键** ⇒ ``None``（调用方按"不带"处理）。
+
+    两个键要么都在、要么都不在：只有一半的清单是坏数据，这里按"不带"处理（应用侧同样严格校验，
+    形状不对就整段不用、走自带那份兜底 —— 绝不半信半疑地用）。
+    """
+    albums, characters = manifest.get("albums"), manifest.get("characters")
+    if not albums or not characters:
+        return None
+    return {"albums": albums, "characters": characters}
+
+
 def loudness_path(pack_id: str) -> pathlib.Path | None:
     """该曲包**本源**的响度表路径：源注册表里的可选 `loudness` 键（相对仓库根）。
 

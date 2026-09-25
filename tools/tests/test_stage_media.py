@@ -348,3 +348,75 @@ def test_pack_manifest_carries_media_revisions(library, tmp_path):
     assert len(moved) == 1, moved
     # 地址一个字没动 —— 失效的只有版本号那一位
     assert [row[2] for row in manifest_of(again)["tracks"]] == [row[2] for row in manifest["tracks"]]
+
+
+# --------------------------------------------- 曲目表跟着源走（D145，C 路线）
+
+def declare_pack(data_repo: pathlib.Path, pack_id: str = "otomads",
+                 character: str = "cirno") -> pathlib.Path:
+    """在临时"数据仓库"里写一份最小曲包（清单 + 一角色一份），返回曲包根。"""
+    packs_dir = data_repo / "packs"
+    (packs_dir / pack_id).mkdir(parents=True, exist_ok=True)
+    (packs_dir / f"{pack_id}.toml").write_text(
+        f'[pack]\nid = "{pack_id}"\n\n[[album]]\nkey = "{pack_id}"\nname = "{pack_id}"\n'
+        f'kind = "other"\npack = "{pack_id}"\norder = 100\nshow_album_name = false\n',
+        encoding="utf-8")
+    (packs_dir / pack_id / f"{character}.toml").write_text(
+        f'key = "{character}"\n\n[[track]]\nalbum = "{pack_id}"\n'
+        f'title = "岁月"\nauthor = "Rendering-Liu"\nextra = "角色曲"\n', encoding="utf-8")
+    return packs_dir
+
+
+def test_pack_manifest_carries_the_pack_snapshot(library, data_repo, tmp_path):
+    """D145：`pack` 写出的清单里带 `albums` + `characters`（源自带"这个包有哪些曲目"）。
+
+    **曲目表按曲包 TOML、地址按磁盘文件**：这里曲包只声明了一首，而曲库有两个文件 ——
+    于是清单行的**条目数**（源状态那一行按它显示）与快照的**曲目表**本来就是两件事。
+    """
+    declare_pack(data_repo)
+    out = tmp_path / "media.tar.gz"
+    sm.pack(library, out)
+    manifest = manifest_of(out)
+
+    assert len(manifest["tracks"]) == 2                       # 地址表：磁盘上有什么
+    assert manifest["albums"] == [{"key": "otomads", "name": "otomads", "kind": "other",
+                                   "pack": "otomads", "order": 100, "showAlbumName": False}]
+    assert manifest["characters"] == [
+        {"key": "cirno", "music": [["otomads", "岁月", "角色曲", "Rendering-Liu"]]}]
+    # 归档仍然可复现（多两个键不影响"同一份素材打两次逐字节相同"）
+    again = tmp_path / "again.tar.gz"
+    sm.pack(library, again)
+    assert out.read_bytes() == again.read_bytes()
+
+
+def test_pack_without_packs_keeps_the_old_manifest_shape(library, data_repo, tmp_path):
+    """没有曲包真源 ⇒ 清单退回老形状（既不报错、也不凭空造键）。"""
+    out = tmp_path / "media.tar.gz"
+    sm.pack(library, out)
+    manifest = manifest_of(out)
+    assert "albums" not in manifest and "characters" not in manifest
+    assert sm.build_manifest(["a"], "otomads") == {
+        "schema": 1, "pack": "otomads", "tracks": [["otomads", "a", "media/otomads/a.mp3"]]}
+
+
+def test_stage_base_rewrite_keeps_the_pack_snapshot(library, data_repo, tmp_path):
+    """`--base` 只重烘媒体地址，**不能把曲目表弄丢**（和响度表声明一个道理）。"""
+    declare_pack(data_repo)
+    archive = tmp_path / "media.tar.gz"
+    sm.pack(library, archive)
+    out = tmp_path / "dist"
+    sm.stage(out, archive=str(archive), base="https://h/sub/")
+    manifest = read_manifest(out)
+    assert all(row[2].startswith("https://h/sub/") for row in manifest["tracks"])
+    assert manifest["characters"] == [
+        {"key": "cirno", "music": [["otomads", "岁月", "角色曲", "Rendering-Liu"]]}]
+
+
+def test_stage_from_library_carries_the_pack_snapshot(library, data_repo, tmp_path):
+    """`stage --from <曲库>` 写出的清单同样带曲目表（本机全静态构建那条路）。"""
+    declare_pack(data_repo)
+    out = tmp_path / "dist"
+    sm.stage(out, library=library)
+    manifest = read_manifest(out)
+    assert manifest["albums"][0]["key"] == "otomads"
+    assert [c["key"] for c in manifest["characters"]] == ["cirno"]
