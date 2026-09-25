@@ -119,8 +119,10 @@ gh release upload media otomads-media.tar.gz --clobber \
 gh workflow run trigger-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
 ```
 
-**构建在 Cloudflare 那边跑**（Pages 项目连的是本仓库、生产分支 `main`），命令就一条
-`python3 tools/build_cdn_site.py`（见 `tools/build_cdn_site.py` 的 docstring）：取归档 → 拿本仓库的
+**构建在 Cloudflare 那边跑**（一个只放静态资源的 **Worker**，由 **Workers Builds** 连本仓库、生产分支
+`main`）：Build command 是 `python3 tools/build_cdn_site.py`（见它的 docstring），Deploy command 是
+`npx wrangler deploy`，资源目录由仓库根的 **`wrangler.jsonc`**（`assets.directory = ./dist`）指定 ——
+面板**不带** "Build output directory" 那一格（那是老 Pages 项目的）：取归档 → 拿本仓库的
 `packs/` 对照自检（**不过就不铺**，线上保持原样）→ 解到 `dist/` → 打印摘要。要点：
 
 - **素材不在 git 里**（单文件 >100 MB GitHub 直接拒）⇒ 构建必须去下 Release 里的归档；公开仓库
