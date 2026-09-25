@@ -1,9 +1,16 @@
-# 手动触发一次 CDN 构建（CF Pages 的 Deploy Hook）——给"git 里没有任何变化"的更新用（D148）。
+# 让 Cloudflare 重新构建素材站（POST 一次 Deploy Hook，D148）。
 #
-# 用途有两个（2026-09-25 实测：**push 并不会触发这家项目的构建** —— 所以这不是"可选"按钮）：
-#   ① 只换了音频（D142/D143 那种：packs 没变、只有音频字节变了）⇒ 推不动构建，必须显式触发；
-#   ② 平时改完数据仓库、想立刻重铺一次时，比去 CF 面板点 Retry 更顺手（留痕在 Actions 里，
-#      也不用把那个 URL 敲进 shell 历史）。
+# **两条入口**：
+#   * `push`（main）：**任何 push 都会重建** —— 这样构建侧的改动（`wrangler.jsonc`、`media-worker.mjs`、
+#     `tools/**`、`.github/workflows`）改完推上去就自动生效，不必去面板点。2026-09-25 实测过
+#     "push 不会自己触发 CF 那边的构建"（轮询 `build-info.json` 五分钟为证），所以这一步是**补上那个缺口**的；
+#   * `workflow_dispatch`：手动按钮 —— 给**换过归档**的更新用（`gh release upload media … --clobber`
+#     不产生任何 git 事件 ⇒ 推不动构建），比去 CF 面板点 Retry 更顺手、也留痕在 Actions 里。
+#
+# ⚠️ **但"改仓库里的数据文件"不会改变线上内容**：站点内容来自 `media` Release 里的归档
+# （manifest 的逐曲版本号是本机文件的 mtime 指纹，音频库不在 git 里）⇒ 加曲目/换音频必须：
+#     pnpm media:pack → gh release upload media otomads-media.tar.gz --clobber -R … → 这条工作流（或面板 Retry）。
+# 一次 push 触发的重建会下载 340 MB、跑一遍自检、部署（约 2–3 分钟；静态资源免费、不限量）。
 #
 # 一次性配置（本仓库 Settings → Secrets and variables → Actions）：
 #   * secret `CF_DEPLOY_HOOK` —— CF 面板：Workers & Pages → **otomads-cdn-git** → Settings → Builds →
@@ -12,6 +19,8 @@
 name: trigger-cdn
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       reason:
@@ -38,7 +47,8 @@ jobs:
       - name: POST 一次构建
         env:
           CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
-          REASON: ${{ inputs.reason }}
+          # push 触发时 `inputs.reason` 是空的，用 commit 标题顶上
+          REASON: ${{ inputs.reason || github.event.head_commit.message }}
         run: |
           set -euo pipefail
           code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$CF_DEPLOY_HOOK")
