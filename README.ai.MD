@@ -15,11 +15,12 @@
 | 站点侧：`wrangler.jsonc` / `media-worker.mjs` / `tools/**` / 工作流 | 改 → `git push` | 不要 |
 | **新音频 / 重新裁剪** | 抓 → 量响度 → 打包 → **先传归档、再 push**（五步见下） | 要 |
 | **新增 / 替换卡图** | 同上一行（卡图只在本地打包时进得去） | 要 |
-| 只重裁了音频、曲目表没动 | 上一行的 ①–④，末尾补一次 `gh workflow run trigger-cdn.yml` | 要 |
+| 只重裁了音频、曲目表没动 | 上一行的 ①–④，末尾推个空提交或 `gh workflow run publish.yml` | 要 |
 | 只想本地听一遍 | 起 `local_source`，页面加 `?localmusic=127.0.0.1:8011` | 要 |
 
-为什么前三种不用本机：站点内容来自 `media` Release 里那份归档。push 之后 CI 跑 `repack-media` ——
-拿**上一份归档里的音频** + 仓库现在的 `packs/` 与响度表重打一份清单，内容变了才换归档，然后让 Cloudflare 重建站点。
+为什么前三种不用本机：站点内容来自 `media` Release 里那份归档。push 之后 CI 跑 `publish` 工作流 ——
+第②段拿**上一份归档里的音频** + 仓库现在的 `packs/` 与响度表重打一份清单（内容变了才换归档），
+第③段重新构建站点并用 `wrangler` 部署上线。
 逐曲版本号是**内容**哈希 ⇒ 本机打的包与 CI 重打的包**逐字节相同**（`tools/tests/test_repack.py` 盯着这条）。
 
 ## 新音频：五步（顺序是命门）
@@ -46,12 +47,12 @@ git commit -am "..." && git push
 ```
 
 ⚠️ **④⑤ 不能反**：先推源码的话，CI 只能拿**旧归档**重打 ⇒ 新曲目"没音频" ⇒ 归档被换成少了那首的版本，
-还照常触发上线（自检只在日志里警告）。弄反了就重做 ④⑤ 覆盖回来。
+还照常上线（自检只在日志里警告）。弄反了就重做 ④⑤ 覆盖回来。
 
-**只换了音频、`packs/` 一个字没改**（没有 git 事件）⇒ ④ 之后自己触发一次：
+**只换了音频、`packs/` 一个字没改**（没有 git 事件）⇒ ④ 之后手动触发一次：
 
 ```bash
-gh workflow run trigger-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
+gh workflow run publish.yml -R Dustymind/touhou-music-cards-otomads-data
 ```
 
 抓取是并发的（`--jobs`，默认 4）：瓶颈全在网络，`--jobs` 给太大容易撞 bilibili 的 **412 风控**。
@@ -102,9 +103,23 @@ uv run --project tools pytest                            # 141 条
 ## 部署怎么走
 
 ```
-push → repack-media（重打归档；变了才换 media 资产）→ POST Deploy Hook（变没变都发）
-     → Cloudflare Workers Builds 重建站点（python3 tools/build_cdn_site.py → npx wrangler deploy）
+push(main) ─▶ ① test（pytest + node --test）
+           ─▶ ② repack（重打归档；变了才换 media 资产）
+           ─▶ ③ deploy（下归档 → python3 tools/build_cdn_site.py → npx wrangler deploy）→ 线上
 ```
+
+**全在 GitHub Actions 里**（`.github/workflows/publish.yml`，D150）。不用 Cloudflare 的 Workers Builds 与
+Deploy Hook：那条路依赖 CF 侧的 Git 集成，连接一失效就**零构建**，而 Deploy Hook 照样回 2xx
+（2026-09-25 静默失败了一整天，站点一直停在旧构建上）⇒ 已退役，面板上那个项目可以删掉。
+
+**一次性设置**（只这一步要人做）：CF 面板建一个 API Token（模板 **Edit Cloudflare Workers**；自定义则要
+`Workers Scripts:Edit` + `Workers Routes:Edit`），然后：
+
+```bash
+gh secret set CLOUDFLARE_API_TOKEN -R Dustymind/touhou-music-cards-otomads-data
+```
+
+没配这个 secret 时第③段会**跳过并打一条 notice**（不算失败），所以其余两段照常可用。
 
 - 归档内容：`manifest.json` + `media/otomads/*.mp3` + `loudness/otomads.json`（+ 可选 `cards-otomads/*`）。
 - manifest 里的媒体地址默认是**相对**的 ⇒ 同一份归档放域名根或子目录都行；要给绝对地址就在 `stage` 时加 `--base https://host/sub/`。
@@ -114,7 +129,7 @@ push → repack-media（重打归档；变了才换 media 资产）→ POST Depl
 - 响度表也跟着源走：manifest 用 `"loudness": "loudness/otomads.json"` 声明（路径相对 manifest），消费方优先用它。
 - 归档当**不可信输入**处理：解包会拒绝绝对路径、`..`、符号/硬链接；铺之前先 `review` 自检
   （清单键、每行文件都在、与 `packs/` 对照），不过就不铺、线上保持原样。
-- 三个工作流：`tests`（141 条 pytest + 7 条 `node --test`）、`repack-media`（push 主链路）、`trigger-cdn`（手动，只重建站点）。
+- 两条工作流：`tests`（push/PR 只跑测试：141 条 pytest + 7 条 `node --test`）与 `publish`（push 主链路：测试 → 重打 → 部署；手动入口带 `dry_run`）。
 - 站点侧代码必须在仓库里（`wrangler.jsonc` + `media-worker.mjs`）：静态资源那条路**不认 `Range`**，
   所以 `/media/*` 交给小脚本接管，按 `Range` 切 206 并**自己带 CORS**。
 - 线上那份在 `otomads-cdn.tsukinomiyako-mangesui.top`（CORS `*`、支持 Range）。换宿主 = 重铺一份 + 改 `table_url`。
@@ -153,9 +168,9 @@ loudness/otomads.json           # 本源的响度均衡表（键 = 文件名 ste
 local-source.toml.example       # 本地曲库配置模板（复制成 local-source.toml）
 tools/                          # uv 工程：助手 / 格式层 / 抓取 / 响度 / 打包 / 录入（见 tools/README.md）
 tools/build_cdn_site.py         # Cloudflare 构建入口（下归档 → 自检 → 铺 dist/）
-wrangler.jsonc                  # Workers Builds 的项目配置
+wrangler.jsonc                  # Worker + 静态资源 + 自定义域名的部署配置（`wrangler deploy` 读它）
 media-worker.mjs                # 接管 /media/*：Range + CORS
-.github/workflows/              # tests / repack-media / trigger-cdn
+.github/workflows/              # tests / publish（测试 → 重打归档 → 构建部署）
 ```
 
 ## 现状与沿革
