@@ -43,6 +43,36 @@ from otomads import stage_media  # noqa: E402
 DEFAULT_URL = ("https://github.com/Dustymind/touhou-music-cards-otomads-data"
                "/releases/download/media/otomads-media.tar.gz")
 
+#: 站点自己的响应头，写进构建产物（Workers 静态资源认 `_headers`，放在**资源目录里**、不会被当资源发出去）。
+#:
+#: **必须写**：Workers 静态资源默认**不带任何 CORS 头**，而应用是在别的源上用 `fetch()` 读这份 manifest 的
+#: ⇒ 少了 `Access-Control-Allow-Origin` 就会被浏览器挡掉，表现成"源状态一直 error、曲目表永远走兜底"
+#: （换到新家但等于没改）。老 Pages 项目自带这个头，搬过来时丢了 —— 2026-09-25 实测踩到。
+#: 顺带把缓存策略显式钉住（值取自老站实测：清单/响度表每次校验、媒体 4 小时），不再依赖 zone 规则。
+HEADERS_FILE = """\
+# 素材站的响应头（由 tools/build_cdn_site.py 生成；Workers 静态资源会解析它、不会把它当资源发出去）
+#
+# 少了 CORS 这一条，应用（在别的源上）fetch 这份 manifest 会被浏览器挡掉 —— 换到新家也等于没改。
+/*
+  Access-Control-Allow-Origin: *
+  Access-Control-Expose-Headers: Content-Range, Content-Length, Accept-Ranges
+  X-Content-Type-Options: nosniff
+
+# 清单与响度表：每次校验。它们是"当前状态"，被压住就等于线上没更新（D144 的口径）
+/manifest.json
+  Cache-Control: public, max-age=0, must-revalidate
+
+/loudness/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# 媒体：地址带 `?v=<逐曲版本>`，版本一变 URL 就变 ⇒ 放心让浏览器存 4 小时（与老站实测一致）
+/media/*
+  Cache-Control: public, max-age=14400, must-revalidate
+"""
+
+#: `_headers` 在部署根里的固定名字（Workers / Pages 都认这个名字）
+HEADERS_NAME = "_headers"
+
 
 def fetch(url: str, target: pathlib.Path) -> pathlib.Path:
     """取归档到 `target`（认 `file://` 与 http(s)，后者跟随重定向）。"""
@@ -76,6 +106,8 @@ def main() -> int:
     if out.exists():
         shutil.rmtree(out)                      # 构建目录要干净：上一次的残留不能混进来
     stage_media.extract(archive, out)
+    (out / HEADERS_NAME).write_text(HEADERS_FILE, encoding="utf-8")
+    print(f"    写 {out}/{HEADERS_NAME}：CORS `*` + 清单/响度表每次校验 + 媒体 4 小时")
 
     manifest = stage_media.manifest_of(archive)
     entries = sum(len(character["music"]) for character in manifest["characters"])

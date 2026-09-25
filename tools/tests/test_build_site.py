@@ -70,9 +70,20 @@ def test_build_script_lays_the_archive_out_byte_for_byte(archive, tmp_path):
             laid = out / name
             assert laid.is_file(), f"没铺出来：{name}"
             assert laid.read_bytes() == tar.extractfile(name).read(), f"字节不同：{name}"
-        # 输出目录里**只有**归档的东西（不多不少：构建不该往里塞别的东西）
-        top = sorted({name.split("/", 1)[0] for name in names})
+        # 输出目录里**只有**归档的东西 + 构建自己写的 `_headers`（不多不少）
+        top = sorted({name.split("/", 1)[0] for name in names} | {"_headers"})
     assert sorted(entry.name for entry in out.iterdir()) == top
+
+
+def test_build_script_writes_the_cors_headers(archive, tmp_path):
+    """`_headers` 必须带着 CORS 与缓存策略 —— 少了 CORS 这一条，应用跨源 fetch manifest 会被浏览器挡掉
+    （2026-09-25 实测：Workers 静态资源默认不发任何 CORS 头，而老 Pages 项目自带）。"""
+    out = tmp_path / "dist"
+    assert run_script(archive, tmp_path, out).returncode == 0
+    headers = (out / "_headers").read_text(encoding="utf-8")
+    assert "Access-Control-Allow-Origin: *" in headers
+    assert "Cache-Control: public, max-age=0, must-revalidate" in headers     # 清单/响度表
+    assert "Cache-Control: public, max-age=14400, must-revalidate" in headers  # 媒体
 
 
 def test_build_script_refuses_a_broken_archive(archive, tmp_path):
