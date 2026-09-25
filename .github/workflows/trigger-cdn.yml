@@ -1,11 +1,12 @@
 # 手动触发一次 CDN 构建（CF Pages 的 Deploy Hook）——给"git 里没有任何变化"的更新用（D148）。
 #
-# 背景：CF Pages 的 Git 集成按 **push** 触发构建；而"重新抓 / 重裁音频"这类更新（D142/D143）**不改任何
-# 被跟踪的文件**（packs 没变、只有音频字节变了）⇒ 推不动构建。这时要么去 CF 面板点 Retry deployment，
-# 要么（本工作流）POST 一下 Deploy Hook —— 效果一样，但留痕在 Actions 里、也不用把 URL 敲进 shell 历史。
+# 用途有两个（2026-09-25 实测：**push 并不会触发这家项目的构建** —— 所以这不是"可选"按钮）：
+#   ① 只换了音频（D142/D143 那种：packs 没变、只有音频字节变了）⇒ 推不动构建，必须显式触发；
+#   ② 平时改完数据仓库、想立刻重铺一次时，比去 CF 面板点 Retry 更顺手（留痕在 Actions 里，
+#      也不用把那个 URL 敲进 shell 历史）。
 #
 # 一次性配置（本仓库 Settings → Secrets and variables → Actions）：
-#   * secret `CF_DEPLOY_HOOK` —— CF 面板：Workers & Pages → otomads-cdn → Settings → Builds →
+#   * secret `CF_DEPLOY_HOOK` —— CF 面板：Workers & Pages → **otomads-cdn-git** → Settings → Builds →
 #     Add deploy hook（名字随意、分支选 `main`）→ 复制那个 URL。
 #     ⚠️ 这个 URL **本身就是凭据**（拿到就能触发构建），别贴到公开地方。
 name: trigger-cdn
