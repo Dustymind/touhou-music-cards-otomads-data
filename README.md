@@ -92,6 +92,8 @@ uv run --project tools python -m otomads.stage_media pack --out otomads-media.ta
 
 ## 角色数据编辑指南
 
+> 注：自定义卡面尚未形成规范（我也没想好怎么设计音 MAD 卡面啊）
+
 位置：`packs/otomads/[character-name].toml`
 
 注意：  
