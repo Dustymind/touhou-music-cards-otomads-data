@@ -6,10 +6,15 @@
 from __future__ import annotations
 
 import argparse
+import array
+import math
 import pathlib
 import json
 import os
+import shutil
+import subprocess
 import sys
+import types
 
 import pytest
 
@@ -290,10 +295,163 @@ def test_render_without_trim_hardlinks_the_raw_file(tmp_path):
     assert os.stat(out).st_ino == os.stat(raw).st_ino        # 同一 inode：省磁盘，且证明是硬链接
 
 
+# ------------------------------------------------ 裁剪 = 解码后精确切 + 重编码（2026-09-25）
+
+def capture_ffmpeg(monkeypatch) -> list[list[str]]:
+    """顶掉 `subprocess.run`，把 ffmpeg 命令记下来；**并把临时文件真造出来**。
+
+    不造文件的话 `render()` 末尾的 `os.replace(tmp, out)` 会因为 tmp 不存在而炸 ✗。
+    只换 `fetch_audio` 里的 `subprocess` 名字，不动全局的（免得影响 pytest 自己）。
+    """
+    calls: list[list[str]] = []
+
+    def fake_run(command, **_kwargs):
+        calls.append(list(command))
+        pathlib.Path(command[-1]).write_bytes(b"ID3" + b"\x00" * 16)
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(fetch_audio, "subprocess",
+                        types.SimpleNamespace(run=fake_run, DEVNULL=subprocess.DEVNULL))
+    return calls
+
+
+def test_render_with_trim_decodes_and_reencodes(tmp_path, monkeypatch):
+    """裁剪**不许**再用 `-c copy`（帧边界 + 冷启动解码：见 docs/packs-audio-v1.md §5）。
+
+    命令的形状必须是"回退 0.5s 粗定位 → 输出侧丢掉预热段 → 限时长 → libmp3lame 重编码"。
+    """
+    calls = capture_ffmpeg(monkeypatch)
+    raw = tmp_path / ".raw" / "abcdef.mp3"
+    out = tmp_path / "demo" / "作者 - 标题.mp3"
+
+    fetch_audio.render(raw, out, (2.339, 30.0), tmp_path / fetch_audio.TMP_DIR)
+
+    assert len(calls) == 1
+    command = calls[0]
+    assert "-c" not in command and "copy" not in command, "不许流拷贝"
+    assert command[0] == "ffmpeg"
+    # 粗定位：2.339 − 0.5 = 1.839；输出侧再丢掉这 0.5 秒（起点因此是采样点级精确的）
+    assert command[command.index("-ss") + 1] == "1.839"
+    assert command[command.index("-ss", command.index("-ss") + 1) + 1] == "0.500"
+    assert command.index("-ss") < command.index("-i") < len(command) - 1 - command[::-1].index("-ss")
+    assert command[command.index("-t") + 1] == "30.000"
+    assert command[command.index("-c:a") + 1] == "libmp3lame"
+    assert command[command.index("-q:a") + 1] == "0"
+    assert "-nostdin" in command
+    assert out.exists()                                        # 原子改名生效
+
+
+def test_render_with_trim_clamps_the_warmup_at_the_file_start(tmp_path, monkeypatch):
+    """起点落在 0.5 秒以内 ⇒ 回退到文件头即可，不能再往前退（会变负数）。"""
+    calls = capture_ffmpeg(monkeypatch)
+    raw = tmp_path / ".raw" / "abcdef.mp3"
+    out = tmp_path / "demo" / "作者 - 标题.mp3"
+
+    fetch_audio.render(raw, out, (0.2, 5.0), tmp_path / fetch_audio.TMP_DIR)
+
+    command = calls[0]
+    assert command[command.index("-ss") + 1] == "0.000"        # 退到文件头，不是 -0.300
+    assert command[command.index("-ss", command.index("-ss") + 1) + 1] == "0.200"
+
+
+def test_render_with_trim_only_start_runs_to_the_end(tmp_path, monkeypatch):
+    """`stop_time` 缺省（`duration is None`）⇒ 不许给 `-t`，否则就裁短了。"""
+    calls = capture_ffmpeg(monkeypatch)
+    raw = tmp_path / ".raw" / "abcdef.mp3"
+    out = tmp_path / "demo" / "作者 - 标题.mp3"
+
+    fetch_audio.render(raw, out, (1.388, None), tmp_path / fetch_audio.TMP_DIR)
+
+    assert "-t" not in calls[0]
+
+
+def test_render_version_invalidates_previous_trims_but_not_link_only_tracks(tmp_path, monkeypatch):
+    """**回归守卫**：换渲染口径必须让"裁过的曲目"自动重裁，否则幂等检查会直接跳过它们。
+
+    旧状态（`-c copy` 那会儿）里没有 `render` 键、`outHash` 也对得上 ⇒ 不认口径就会一直 skip，
+    表现成"改了代码但音频一个字节都没变"。未裁剪的曲目是硬链接、与口径无关，**不该**被连累重跑。
+    """
+    monkeypatch.setattr(fetch_audio, "download", stub_download)
+    trimmed = make_track(title="裁过", author="A", source="https://example.com/a",
+                         start_time="00:00:10.000", stop_time="00:00:20.000")
+    whole = make_track(title="整首", author="B", source="https://example.com/b")
+    state: dict = {"version": 1, "tracks": {}}
+    outputs: dict = {}
+    args = dry_args(dry_run=False)
+    monkeypatch.setattr(fetch_audio, "render",
+                        lambda raw, out, wanted, tmp: (out.parent.mkdir(parents=True, exist_ok=True),
+                                                       out.write_bytes(b"ID3" + b"\x00" * 8)))
+
+    run_track(trimmed, library=tmp_path, state=state, outputs=outputs, args=args, changed=set())
+    run_track(whole, library=tmp_path, state=state, outputs=outputs, args=args, changed=set())
+    assert state["tracks"]["demo\u0001裁过"]["render"] == fetch_audio.RENDER_VERSION
+    assert state["tracks"]["demo\u0001整首"]["render"] == fetch_audio.LINK_RENDER
+
+    # 口径没变 ⇒ 两条都 skip（幂等）
+    again = run_track(trimmed, library=tmp_path, state=state, outputs={}, args=args, changed=set())
+    assert again["status"] == "skip"
+
+    # 模拟"旧状态"：把 render 键抹掉（= `-c copy` 时代落盘的模样），outHash 仍然对得上
+    state["tracks"]["demo\u0001裁过"].pop("render")
+    state["tracks"]["demo\u0001整首"].pop("render")
+    stale = run_track(trimmed, library=tmp_path, state=state, outputs={}, args=args, changed=set())
+    assert stale["status"] == "trimmed", "换了渲染口径却没重裁 —— 幂等检查把新代码跳过去了"
+    untouched = run_track(whole, library=tmp_path, state=state, outputs={}, args=args, changed=set())
+    assert untouched["status"] == "skip", "未裁剪的成品是硬链接，不该被渲染口径连累重跑"
+
+
 def stub_download(source: str, raw) -> None:
     """替掉真下载：写一个假的"原件"，让流程的其余部分可以离线跑。"""
     raw.parent.mkdir(parents=True, exist_ok=True)
     raw.write_bytes(b"ID3" + b"\x00" * 32)
+
+
+# ------------------------------------------- 裁剪精度（唯一一条真跑 ffmpeg 的用例）
+
+def decode_pcm(path, rate: int) -> array.array:
+    """解码成单声道 16 bit PCM（不引 numpy：测试的依赖只有 pytest）。"""
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-f", "s16le",
+                          "-acodec", "pcm_s16le", "-ar", str(rate), "-ac", "1", "-"],
+                         capture_output=True, check=True, stdin=subprocess.DEVNULL).stdout
+    samples = array.array("h")
+    samples.frombytes(raw)
+    return samples
+
+
+def rms(samples, start: int = 0, count: int | None = None) -> float:
+    chunk = samples[start:] if count is None else samples[start:start + count]
+    return math.sqrt(sum(value * value for value in chunk) / len(chunk)) if chunk else 0.0
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None,
+                    reason="需要真的 ffmpeg/ffprobe —— 这一条**故意不做替身**（替身测不出音频对不对）")
+def test_render_trims_at_the_sample_and_keeps_the_first_frame(tmp_path):
+    """**回归守卫**：裁剪要落在采样点上，而且开头那一帧不许是坏的。
+
+    改之前的两处实测缺陷（`-c copy`）：
+
+    * 只能切在 mp3 帧边界 ⇒ 时长与 `stop − start` 差 8…32 ms（真曲目上见过 −90 ms）；
+    * 输入定位让 mp3 解码器**冷启动**、拿不到比特池 ⇒ 成品第 0 帧 RMS 只有真值的 2%（有时整帧静音）。
+
+    白噪（非周期）当信号：冷启动坏掉就是"整帧接近静音"，一眼可辨。
+    """
+    rate = 48000
+    raw = tmp_path / ".raw" / "noise.mp3"
+    raw.parent.mkdir(parents=True)
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi",
+                    "-i", f"anoisesrc=c=white:r={rate}:d=3.0:a=0.5", "-ac", "2",
+                    "-c:a", "libmp3lame", "-q:a", "0", str(raw)],
+                   check=True, stdin=subprocess.DEVNULL)
+    out = tmp_path / "demo" / "作者 - 标题.mp3"
+
+    fetch_audio.render(raw, out, (1.000, 1.000), tmp_path / fetch_audio.TMP_DIR)
+
+    got = decode_pcm(out, rate)
+    truth = decode_pcm(raw, rate)
+    assert abs(len(got) - rate) <= 2, f"时长应当恰是 1.000 s，实际 {len(got) / rate:.6f} s"
+    head, expected = rms(got, 0, 1152), rms(truth, rate, 1152)
+    assert head > 0.5 * expected, (
+        f"开头那一帧是坏的（RMS {head:.1f} vs 真值 {expected:.1f}）—— 解码器冷启动没修好")
 
 
 def test_duplicate_source_downloads_once_and_links(tmp_path, monkeypatch):

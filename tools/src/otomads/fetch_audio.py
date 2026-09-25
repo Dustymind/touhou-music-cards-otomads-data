@@ -10,7 +10,8 @@
                      它管的不只是离线 —— 只要不想让这一步联网/升级，就用它）
     --jobs N         并发（默认 4；1 = 串行）。**下载/裁剪**与之后的**量响度**共用它
 
-流程：依赖检查 → yt-dlp 更新 → **并发**下载 → 裁剪（`-c copy`）→ 顺带量响度 → 汇总。
+流程：依赖检查 → yt-dlp 更新 → **并发**下载 → 裁剪（解码后精确切 + 重编码，只对带区间的曲目）
+→ 顺带量响度 → 汇总。
 产物：``<曲库>/<专辑>/<作者> - <标题>.mp3``（运行时唯一被读到的文件），
 原件留在 ``<曲库>/.raw/``、状态在 ``<曲库>/.state/<pack>.json``（都在点目录里，
 曲库助手的扫描会跳过它们 —— 见 `local_source.scan_library`）。
@@ -20,10 +21,12 @@
 起作用 —— bilibili 的音频是**单个文件**直链，没有分片可并行。可测的账（本机 32 核）：
 
 * `import yt_dlp` + `YoutubeDL()` + extractor 匹配 ≈ 0.13 秒/首；
-* 4 分钟 m4a → mp3 全量重编码 ≈ 1.0 秒/首，`-c copy` 裁剪 ≈ 0.08 秒/首；
-* 86 首的**本地**开销合计 ≈ 23 秒 —— 其余 **100% 是网络**（playurl 往返 + 音频本体），
-  而那段时间 CPU 完全空闲。所以并行重叠的是**网络等待**，收益随 `--jobs` 增长，
-  上限由带宽与站点风控决定（bilibili 对高并发有 412 风控：先用 4 试）。
+* 4 分钟 m4a → mp3 全量重编码 ≈ 1.0 秒/首；
+* 裁剪（解码后精确切 + V0 重编码）≈ 0.4–0.6 秒/首，而且**只有 16 首**带区间 ⇒ 合计不到 10 秒；
+* 86 首的**本地**开销合计 ≈ 30 秒（比 `-c copy` 那会儿多约 7 秒，就是上面这 16 首裁剪的差价）
+  —— 其余 **100% 是网络**（playurl 往返 + 音频本体），而那段时间 CPU 完全空闲。
+  所以并行重叠的是**网络等待**，收益随 `--jobs` 增长，上限由带宽与站点风控决定
+  （bilibili 对高并发有 412 风控：先用 4 试）。
 
 并发正确性靠三处：`_STATE_LOCK`（状态文件）、`_CLAIM_LOCK` + `outputs`（同源同区间只裁一次）、
 `_raw_lock()`（同一 source 只下一份原件）。
@@ -55,6 +58,20 @@ STATE_DIR = ".state"
 TMP_DIR = ".state/tmp"
 REEXEC_FLAG = "TMC_FETCH_REEXEC"
 DEFAULT_JOBS = 4
+
+#: 裁剪用 libmp3lame 的**最高档 VBR**（V0，约 245 kbps）：裁剪必须重编码，二次有损躲不掉，
+#: 那就把这一遍的损失压到最小（实测成品体积与 `-c copy` 基本持平：1581 vs 1586 KiB / 967 vs 980 KiB）。
+TRIM_ENCODER = ["-c:a", "libmp3lame", "-q:a", "0"]
+#: 定位到裁剪点**之前**这么多秒再开始解码，然后在输出侧把这一段丢掉（见 `render`）。
+#: 0.5 秒 ≈ 19–21 个 mp3 帧，远多于 mp3 解码器喂热比特池所需的两三帧 —— 留余量不心疼（多解 0.5 秒音频）。
+TRIM_WARMUP = 0.5
+#: **渲染口径的版本号**，进状态签名：改了成品是怎么产出的，旧状态就自动作废、重裁一遍。
+#: 2026-09-25：裁剪从 `-c copy` 改成"解码后精确切 + 重编码"（三处实测问题见 `render`），
+#: 必须 +1 —— 否则旧的 `outHash` 仍然对得上，幂等检查会直接跳过那 16 首 ✗。
+RENDER_VERSION = "encode-v1"
+#: 不裁剪的成品是"与原件同一 inode 的硬链接"，字节与渲染口径**无关** ⇒ 签名位留空。
+#: （不留空的话，改一次裁剪实现会连带 70 首未裁剪的曲目全部重链 + 重量响度，纯属噪音。）
+LINK_RENDER = ""
 
 #: 状态文件与"同源同区间只裁一次"的登记表都要跨线程用：一个锁管前者，一个锁管后者
 _STATE_LOCK = threading.Lock()
@@ -224,23 +241,47 @@ def ensure_raw(source: str, raw_path: pathlib.Path, *, force: bool, stale_source
 
 def render(raw: pathlib.Path, out: pathlib.Path, wanted: tuple[float, float | None] | None,
            tmp_dir: pathlib.Path) -> None:
-    """产出成品：不裁剪 → 直接硬链接；裁剪 → ffmpeg `-c copy` 到临时文件再**原子改名**。
+    """产出成品：不裁剪 → 直接硬链接；裁剪 → **解码后精确切再重编码** 到临时文件再**原子改名**。
 
     原子改名是硬链接方案的前提：就地写会把共享 inode 的另一首一起改掉 ✗。
+
+    **为什么不是 `-c copy`**（2026-09-25 之前就是它，实测三处问题，证据见 `docs/packs-audio-v1.md` §5）：
+
+    1. **起点只能落在 mp3 帧边界上**。用户给的区间是 `2.339 / 1.388 / 1.060 / 5.168 / 3.557`
+       这种毫秒值 —— 本来就是要**点在拍上**；帧长 24 ms（48 kHz）/ 26 ms（44.1 kHz），
+       落不到就只能就近取整。实测：起点 `1.388s` 的成品偏 **+90 ms**、`2.339s` 偏 +1 ms、
+       44.1 kHz 合成用例偏 −9.5 ms，源里有安静段（码率起伏 ⇒ 定位按字节估算）时见过 −78 ms。
+    2. **容器时长与 `stop − start` 对不上**：实测 +8…+32 ms 偏长，也见过 −90 ms 偏短。
+    3. **头一帧是坏的**。输入定位（`-ss` 放在 `-i` **前**）让解码器**冷启动**，而 mp3 的帧要用
+       **比特池**（前几帧的主数据）—— 冷启动那一帧根本解不出内容。实测成品第 0 帧 RMS 只有真值的
+       **2%**，有时整整一帧（24 ms）静音 ⇒ 听感就是"开头掉了一小块"。**这一条 `-c copy` 和
+       朴素的"解码后重编码"都会中**，所以修法不是简单换个编码器。
+
+    所以三段式：`-ss <start − 0.5s>` 粗定位 → 输出侧 `-ss 0.5s` 丢掉预热段 → `-t <时长>` → 重编码。
+    输出侧那次 `-ss` 同时解决 1 和 3：起点回到**采样点级**精确，而被丢掉的预热段正好把冷冷解出来的
+    头几帧一起丢掉（比特池喂热了）。实测：起点偏差 **0.000 ms**、解码时长**恰等于** `stop − start`、
+    首帧 RMS 与真值一致（100%）、逐样本残差比 `-c copy` 还小。
+
+    **不重采样**：源是 44.1 / 48 kHz，都是 mp3 原生支持的采样率 —— 再插一道 SRC 只是白添失真
+    （ffmpeg 在编码器不支持某个采样率时会自动插重采样，这里用不上）。
     """
     if wanted is None:
         link_or_copy(raw, out)
         return
     start, duration = wanted
+    back = min(TRIM_WARMUP, start)           # 起点本来就在 0.5 秒内 ⇒ 回退到文件头即可
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp_dir.mkdir(parents=True, exist_ok=True)
     tmp = tmp_dir / f"{out.stem}.tmp.mp3"
     command = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
                "-nostdin",                  # 见下：别让 ffmpeg 去碰用户的终端
-               "-ss", f"{start:.3f}", "-i", str(raw)]
+               "-ss", f"{start - back:.3f}", "-i", str(raw)]
+    if back:
+        # 输出侧的 `-ss`：丢掉预热段。它落在 `-i` **之后**，所以不解码器冷启动，只丢已解出来的样本。
+        command += ["-ss", f"{back:.3f}"]
     if duration is not None:                 # None = 一直裁到文件结尾
         command += ["-t", f"{duration:.3f}"]
-    command += ["-c", "copy", str(tmp)]
+    command += [*TRIM_ENCODER, str(tmp)]
     # `stdin=DEVNULL`：ffmpeg 只要看到 stdin 是终端就会接管它（`-nostdin` 只管"要不要读"，
     # 不管"stdin 是不是 tty"），跑完可能让终端不回显 ✗。并发时更危险（多个 ffmpeg 同时抢）。
     subprocess.run(command, check=True, capture_output=True, text=True, stdin=subprocess.DEVNULL)
@@ -419,13 +460,16 @@ def process_track(track: dict, *, library: pathlib.Path, state: dict,
         return {"status": "missing", "title": title,
                 "detail": "没有 source，曲库里也没有这个文件（补 source 或手工放入曲库）"}, {}
 
-    signature = {"source": source, "start": track.get("start_time", ""), "stop": track.get("stop_time", "")}
+    signature = {"source": source, "start": track.get("start_time", ""), "stop": track.get("stop_time", ""),
+                 # 裁剪的成品带 **渲染口径**；不裁剪的成品是硬链接，口径与它无关（见 LINK_RENDER）
+                 "render": RENDER_VERSION if wanted else LINK_RENDER}
     raw_path = library / RAW_DIR / f"{packs.source_key(source)}.mp3"
     # 状态里这些字段是**内联**存的（见下方写回），所以这里也按内联比
     fresh = (raw_path.exists() and out_path.exists()
              and entry.get("source") == signature["source"]
              and entry.get("start", "") == signature["start"]
              and entry.get("stop", "") == signature["stop"]
+             and entry.get("render", "") == signature["render"]
              and entry.get("outHash") == hash_file(out_path))
     if fresh and not args.force:
         return {"status": "skip", "title": title, "detail": "已是目标状态"}, {}
@@ -452,7 +496,8 @@ def process_track(track: dict, *, library: pathlib.Path, state: dict,
             # **认领与产出必须在同一把锁里**：登记表里的路径是给别的线程拿去硬链接的，
             # 认领了却还没产出的话，后到的线程会发现 `twin.exists()` 为假 → 白裁一遍 ✗
             # （实测：8 条里两条同源曲目都走成 `fetched`）。代价是"渲染"在锁里串行 ——
-            # 但 `-c copy` 只要 ~0.08 秒，而不同 source 用的是不同的键，互不阻塞 ✓
+            # 裁剪现在是解码 + 重编码（≈ 0.4–0.6 秒/首，见模块 docstring 的账），比 `-c copy`
+            # 慢一个量级，但**只有 16 首带区间**，且不同 source 用的是不同的键、互不阻塞 ✓
             with _CLAIM_LOCK:
                 twin = outputs.get(twin_key)
                 if twin is not None and twin != out_path and twin.exists():
