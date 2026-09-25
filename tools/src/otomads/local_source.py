@@ -182,14 +182,11 @@ def build_manifest(root: str, base_url: str, pack_id: str,
 def pack_snapshot_from_repo() -> dict | None:
     """本仓库曲包真源 → 清单里的「包数据」段；**没有曲包**（或目录是空的）⇒ ``None``（老形状）。
 
-    工具按 ``__file__`` 定位仓库根 ⇒ "在哪份里跑就带哪份的曲目表"：在主仓库 submodule 里跑就是 pin 的
-    那份，在独立克隆里跑就是克隆里那份（硬规矩见主仓库 D145）。**每次请求现读**（35 个 TOML，几毫秒）——
-    于是"往 TOML 里加一首"立刻反映到 manifest 上，不必重启助手（D145 §7.4 的验收就是这么走的）。
+    实现在 :func:`otomads.packformat.repo_snapshot`（那里也解释了"在哪份里跑就带哪份的曲目表"）——
+    这里只留一个与助手语义一致的名字。**每次请求现读**（35 个 TOML，几毫秒）⇒ 往 TOML 里加一首
+    立刻反映到 manifest 上，不必重启助手（D145 §7.4 的验收就是这么走的）。
     """
-    if not packformat.available():
-        return None
-    _packs, albums, tracks, cards = packformat.load_packs()
-    return packformat.pack_snapshot(albums, tracks, cards)
+    return packformat.repo_snapshot()
 
 
 def find_bindable_port(host: str, port: int, tries: int) -> int | None:

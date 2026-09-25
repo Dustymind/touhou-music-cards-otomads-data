@@ -55,6 +55,7 @@ import sys
 import tarfile
 import tempfile
 import urllib.request
+from urllib.parse import unquote
 
 from . import local_source as ls
 from . import packformat
@@ -147,19 +148,6 @@ def build_manifest(titles: list[str], album: str = DEFAULT_ALBUM,
     return manifest
 
 
-def repo_snapshot(pack_id: str = DEFAULT_ALBUM) -> dict | None:
-    """本仓库曲包真源 → 清单里的「包数据」段；**没有曲包**（或目录是空的）⇒ ``None``。
-
-    与 :func:`otomads.local_source.pack_snapshot_from_repo` 同一个口径（都读 ``<仓库根>/packs/``），
-    只是 `pack()` 手里已经有 ``tracks``（按部署布局的文件名）而这里的曲目来自曲包 TOML ——
-    两者是同一份数据的两种视图：清单里的**地址**按磁盘文件、**曲目表**按 TOML（D145）。
-    """
-    if not packformat.available():
-        return None
-    _packs, albums, tracks, cards = packformat.load_packs()
-    return packformat.pack_snapshot(albums, tracks, cards)
-
-
 def declared_loudness(pack_id: str = DEFAULT_ALBUM) -> tuple[str, pathlib.Path] | None:
     """本源在注册表里声明的响度表 → ``(相对 manifest 的路径, 磁盘路径)``；没声明就是 ``None``。
 
@@ -225,7 +213,7 @@ def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
         revision=packformat.media_revision([(f"{title}{path.suffix}", path)
                                             for title, path in tracks.items()]),
         # 曲目表跟着源走（D145）：清单里的**曲目**按曲包 TOML，**地址**按磁盘文件
-        snapshot=repo_snapshot(album),
+        snapshot=packformat.repo_snapshot(),
     )
     with tempfile.TemporaryDirectory() as tmp:
         root = pathlib.Path(tmp)
@@ -313,7 +301,7 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
             table = None
         manifest = build_manifest(sorted(tracks), album, base=base,
                                   loudness=table[0] if table else None,
-                                  snapshot=repo_snapshot(album))
+                                  snapshot=packformat.repo_snapshot())
         (out / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
         copied_cards = 0
         if cards is not None and cards.is_dir():
@@ -386,10 +374,130 @@ def verify(out: pathlib.Path, album: str = DEFAULT_ALBUM) -> list[str]:
     return problems
 
 
+# ------------------------------------------------------------------ review（铺之前自检，D147）
+
+def manifest_of(path: pathlib.Path) -> dict:
+    """读出归档里的 `manifest.json`（铺之前要检查、部署之后要比对，都从它开始）。"""
+    with tarfile.open(path, "r:gz") as archive:
+        try:
+            raw = archive.extractfile(MANIFEST_NAME)
+        except KeyError:
+            raise SystemExit(f"❌ 归档里没有 {MANIFEST_NAME}：{path}") from None
+        return json.load(raw)          # **在 with 里读**：成员是绑定在归档上的，出了 with 就关了
+
+
+def archive_snapshot(manifest: dict) -> dict | None:
+    """归档 manifest 里的「包数据」段（`albums` + `characters`，D145）；老清单没有 ⇒ `None`。"""
+    return packformat.pack_snapshot_of(manifest)
+
+
+def _music_by_key(snapshot: dict | None) -> dict[str, list]:
+    """`{角色 key: [music 条目, …]}`（快照的规范形，便于两个快照对比）。"""
+    if not snapshot:
+        return {}
+    return {character["key"]: character["music"] for character in snapshot["characters"]}
+
+
+def compare_snapshots(archive: dict | None, repo: dict | None) -> list[str]:
+    """归档里的曲目表 ↔ 本仓库 `packs/` 现在的曲目表 → 差异描述（**只警告**，见 `review_archive`）。"""
+    left, right = _music_by_key(archive), _music_by_key(repo)
+    if not right:
+        return []
+    notes: list[str] = []
+    missing = sorted(set(right) - set(left))                    # 仓库有、归档没有（还没抓？）
+    if missing:
+        notes.append(f"归档里少了 {len(missing)} 个角色的曲目（{'、'.join(missing[:3])}"
+                     + ("…" if len(missing) > 3 else "") + "）—— 改完 packs 忘了重打包？")
+    extra = sorted(set(left) - set(right))
+    if extra:
+        notes.append(f"归档里有 {len(extra)} 个角色在仓库 packs 里已经没有了（{'、'.join(extra[:3])}"
+                     + ("…" if len(extra) > 3 else "") + "）—— 归档比仓库旧？")
+    changed = [key for key in sorted(set(left) & set(right)) if left[key] != right[key]]
+    if changed:
+        counts = [f"{key}（归档 {len(left[key])} / 仓库 {len(right[key])} 条）" for key in changed[:3]]
+        notes.append(f"{len(changed)} 个角色的曲目条目与归档不一致（改完 packs 忘了重打包？）："
+                     f"{'、'.join(counts)}"
+                     + ("…" if len(changed) > 3 else ""))
+    return notes
+
+
+def review_archive(path: pathlib.Path, *, compare_with_repo: bool = True) -> tuple[list[str], list[str]]:
+    """铺之前自检一个素材归档 → ``(硬失败, 警告)``。
+
+    归档是**部署物**：坏一个字节就是线上坏，而目标站（Cloudflare Pages 的素材站）**没有别的守卫**
+    —— 它只是被铺上去。判据与 :func:`verify` 同一套（那边管"打"、这里管"铺"），另加两条：
+
+    **硬失败**（一定是坏的部署）
+
+    * 清单缺 `schema` / `pack` / `tracks` / `albums` / `characters` —— 后两个是 D145 的"包数据"，
+      缺了应用只会走兜底，**这次部署等于没生效**；
+    * 行形状不对，或**地址表里的每一行都要有对应文件**（缺 = 播到那首 404）；
+    * `characters` 里一条曲目都没有（同上）。
+
+    **只警告**（合法的中间态，不该拦住部署）
+
+    * 曲目表里有、地址表里没有（那一首还没抓 / 还没打包）；
+    * 地址表里有、曲目表里没有（曲库里多放了一个没写进曲包的 mp3 —— 按 D145 的口径曲目表以曲包为准）；
+    * **归档与本仓库 `packs/` 不一致**（D147）：归档少 = 改完 packs 忘了重打包；归档多 = 归档比仓库旧。
+      两个方向都只是"这次铺的不是仓库现在这份"，不是坏部署 —— 但值得在 CI 日志里吼一声。
+    """
+    problems: list[str] = []
+    warnings: list[str] = []
+    if not path.is_file():
+        return [f"找不到归档：{path}"], []
+
+    with tarfile.open(path, "r:gz") as archive:
+        names = archive.getnames()
+        members = {name for name in names if name.startswith(MEDIA_DIR + "/")}
+        try:
+            raw = archive.extractfile(MANIFEST_NAME)
+        except KeyError:
+            return [f"归档里没有 {MANIFEST_NAME}"], []
+        manifest = json.load(raw)
+
+    for key in ("schema", "pack", "tracks", "albums", "characters"):
+        if key not in manifest:
+            problems.append(f"manifest 缺 {key}")
+    if problems:
+        return problems, warnings
+
+    rows = manifest["tracks"]
+    for row in rows:
+        if not isinstance(row, list) or len(row) < 3 or not all(isinstance(x, str) for x in row[:3]):
+            problems.append(f"manifest 行形状不对：{row!r}")
+    good_rows = [row for row in rows if isinstance(row, list) and len(row) >= 3]
+    entries = [entry for character in manifest["characters"] for entry in character["music"]]
+    if not entries:
+        problems.append("characters 里一条曲目都没有（应用只会走兜底 ⇒ 这次部署等于没生效）")
+
+    pack_id = manifest["pack"]
+    for row in good_rows:
+        # 地址可能是相对的（`media/…`）或绝对的（`https://host/media/…`）：只看末尾那段。
+        # 地址里的文件名是**百分号编码**的（与 :func:`local_source.media_path` 同一套 quote），
+        # 而归档成员名是原始 UTF-8 ⇒ 比之前先 unquote（D96/D141：两者必须是同一个名字）
+        tail = str(row[2]).split("?", 1)[0].rstrip("/")
+        encoded = pathlib.PurePosixPath(tail).name
+        if f"{MEDIA_DIR}/{pack_id}/{unquote(encoded)}" not in members:
+            problems.append(f"地址表里有、文件没有：{unquote(encoded)}（{row[1]}）")
+
+    missing_rows = [entry[1] for entry in entries
+                    if not any(packformat.titles_match(row[1], entry[1]) for row in good_rows)]
+    if missing_rows:
+        warnings.append(f"曲目表里有 {len(missing_rows)} 条在地址表里找不到（还没抓/还没打包？）："
+                        f"{'、'.join(missing_rows[:3])}" + ("…" if len(missing_rows) > 3 else ""))
+    extra_rows = [row[1] for row in good_rows
+                  if not any(packformat.titles_match(row[1], entry[1]) for entry in entries)]
+    if extra_rows:
+        warnings.append(f"地址表里有 {len(extra_rows)} 条不在曲目表里（曲包里没写 ⇒ 应用里选不到，"
+                        f"合法）：{'、'.join(extra_rows[:3])}" + ("…" if len(extra_rows) > 3 else ""))
+
+    if compare_with_repo:
+        warnings.extend(compare_snapshots(archive_snapshot(manifest), packformat.repo_snapshot()))
+    return problems, warnings
+
+
 def loudness_coverage(out: pathlib.Path, album: str = DEFAULT_ALBUM) -> dict:
     """manifest 声明的响度表 ↔ 音频的对应关系（D139）。
-
-    只报数、**不当错误**：表里缺某首 = 那一首还没量过（合法，前端系数按 1）；表里有对不上的键 =
     改名后的残留（也是提示）。归档里没声明表就返回 ``{}`` 的空壳（``declared`` 为 None）。
     """
     report: dict = {"declared": None, "keys": 0, "missing": [], "extra": []}
@@ -448,7 +556,31 @@ def main(argv: list[str] | None = None) -> int:
                         help="配合 --from：音MAD 卡面目录（内容铺到 cards-otomads/）")
     _add_common(stager)
 
+    reviewer = sub.add_parser("review", help="铺之前自检一个归档（CDN 工作流用；本地也能跑）")
+    reviewer.add_argument("--archive", type=pathlib.Path,
+                          default=pathlib.Path("otomads-media.tar.gz"),
+                          help="要自检的归档（默认 otomads-media.tar.gz）")
+    reviewer.add_argument("--no-packs", action="store_true",
+                          help="不比对本仓库的 packs/（归档不是这份仓库打的时候）")
+    _add_common(reviewer)
+
     args = parser.parse_args(argv)
+
+    if args.command == "review":
+        problems, warnings = review_archive(args.archive, compare_with_repo=not args.no_packs)
+        for warning in warnings:
+            print(f"⚠️  {warning}")
+        for problem in problems[:10]:
+            print(f"  - {problem}")
+        if problems:
+            print(f"❌ 归档自检没过（{len(problems)} 处）：{args.archive}")
+            return 1
+        manifest = manifest_of(args.archive)
+        entries = sum(len(character["music"]) for character in manifest["characters"])
+        print(f"✅ 归档自检通过：{args.archive} → {len(manifest['tracks'])} 行地址 / "
+              f"{len(manifest['characters'])} 个角色 / {entries} 条曲目条目 / "
+              f"顶层 revision {manifest.get('revision')}")
+        return 0
 
     if args.command == "pack":
         summary = pack(args.library, args.out, args.album, args.cards)

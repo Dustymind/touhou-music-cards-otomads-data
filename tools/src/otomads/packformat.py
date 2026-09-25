@@ -137,6 +137,28 @@ def source_key(source: str) -> str:
     return hashlib.sha1(source.strip().encode("utf-8")).hexdigest()[:16]
 
 
+def normalize_title(value: str) -> str:
+    """曲名归一化：去 `作者 - ` 前缀 → 压空白 → 去首尾 → 小写。
+
+    **与主仓库 `src/music/sources.ts::normalizeTitle` 同一口径**（那边是运行时的曲目解析）：
+    清单行里的曲名是**磁盘名的 stem**（`作者 - 标题`），而曲目表 `/ 曲包 TOML` 里作者是独立字段，
+    两边要比就得先归一化。两份实现零 import 依赖，靠主仓库 `tools/tests/test_build.py` 里那条
+    **按字面量对正则**的守卫盯着（与 `AUTHOR_JOIN` 同一个套路，D147）。
+
+    ⚠️ 作者名里带 `-` 时前缀剥不掉（`Rendering-Liu - 岁月` 会原样留下）—— 所以匹配还要靠
+    :func:`titles_match` 的后缀那条（前端 `resolveTrack` 的兜底也是这么写的）。
+    """
+    stripped = re.sub(r"^[^-]{1,60}?\s+-\s+", "", value)
+    return re.sub(r"\s+", " ", stripped).strip().lower()
+
+
+def titles_match(stored: str, wanted: str) -> bool:
+    """清单行 / 磁盘名 `stored` 是否就是曲目表里的 `wanted`（归一化相等，或以 ` - 曲名` 结尾）。"""
+    stored_norm = normalize_title(stored)
+    wanted_norm = normalize_title(wanted)
+    return stored_norm == wanted_norm or stored_norm.endswith(f" - {wanted_norm}")
+
+
 def available() -> bool:
     """曲包真源是否可用（数据仓库永远有 `packs/`；保留它是为了让调用方写法一致）。"""
     return any(root.is_dir() and any(root.glob("*.toml")) for root in repo.pack_roots())
@@ -360,6 +382,19 @@ def pack_snapshot(albums: list[dict], tracks: list[dict],
             record["card"] = list(face)     # 音MAD 侧自己的卡面覆盖（有才覆盖，D137）
         characters.append(record)
     return {"albums": [dict(album) for album in albums], "characters": characters}
+
+
+def repo_snapshot() -> dict[str, list[dict]] | None:
+    """**本仓库** `packs/` 现在的「包数据」段；没有曲包（或目录是空的）⇒ ``None``。
+
+    工具按 ``__file__`` 定位仓库根 ⇒ "在哪份里跑就带哪份的曲目表"：在主仓库 submodule 里跑就是 pin 的
+    那份，在独立克隆里跑就是克隆里那份（硬规矩见主仓库 D145）。**每次调用现读**（35 个 TOML，几毫秒）——
+    于是"往 TOML 里加一首"立刻反映到结果上（助手不必重启，`review` 也永远对着当前的真源比）。
+    """
+    if not available():
+        return None
+    _packs, albums, tracks, cards = load_packs()
+    return pack_snapshot(albums, tracks, cards)
 
 
 def pack_snapshot_of(manifest: dict) -> dict[str, list[dict]] | None:
