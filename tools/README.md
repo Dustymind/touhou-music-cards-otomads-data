@@ -4,14 +4,14 @@
 
 | 模块 | 作用 |
 |---|---|
-| `otomads.local_source` | 本地曲库助手：`/manifest.json` + `/media/...`（Range/CORS、端口回退、按请求头现拼地址） |
-| `otomads.packformat` | 曲包格式层：读 `packs/`、严格校验键名、音频路径/时间工具、`loudness_path()` |
+| `otomads.local_source` | 本地曲库助手：`/manifest.json` + `/media/...`（Range/CORS、端口回退、按请求头现拼地址；清单里还带**本包自己的曲目表** `albums`/`characters`，主仓库 D145） |
+| `otomads.packformat` | 曲包格式层：读 `packs/`、严格校验键名、音频路径/时间工具、`pack_snapshot()`（曲目表快照）、`loudness_path()` |
 | `otomads.ingest_pack` | 把录入行按角色追加进 `packs/<包>/<key>.toml`（幂等；校验 `characters.toml` 清单） |
 | `otomads.fetch_audio` | yt-dlp 抓取 + ffmpeg 裁剪；**并发**（`--jobs`，默认 4）；按源刷新 `loudness/<包>.json` |
 | `otomads.loudness` / `otomads.measure_loudness` | 逐曲响度均衡：度量核心 + CLI |
 | `otomads.parse_ingest_rows` | 录入原始行 → `tools/ingest_rows_<日期>.json` |
 | `otomads.ingest_otomads` / `otomads.ingest_local_audio` | 批量下载 / 本地待转音频入库 |
-| `otomads.stage_media` | 静态部署两步：`pack` 打归档（`manifest.json` + `media/<专辑>/*.mp3` + **本源响度表** + 可选卡面；**可复现**）、`stage` 铺进 `dist/`（从归档或本地曲库；自检 manifest ↔ 音频 ↔ 响度表覆盖）。归档按**不可信输入**处理（拒绝对路径/`..`/链接）。主仓库 D138/D139 |
+| `otomads.stage_media` | 静态部署两步：`pack` 打归档（`manifest.json` + `media/<专辑>/*.mp3` + **本源响度表** + 可选卡面；**可复现**）、`stage` 铺进 `dist/`（从归档或本地曲库；自检 manifest ↔ 音频 ↔ 响度表覆盖）。归档按**不可信输入**处理（拒绝对路径/`..`/链接）。主仓库 D138/D139/D145 |
 
 ## 独立跑（不依赖主仓库）
 
