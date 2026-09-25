@@ -1,0 +1,169 @@
+# 素材站（默认 CDN：`otomads-cdn.tsukinomiyako-mangesui.top`）的部署（D147）。
+#
+# **工作流住在源仓库**：CDN 上的东西就是本仓库的曲包 —— manifest 由本仓库的工具生成、媒体是本仓库
+# `packs/` 的成品 ⇒ "谁的数据谁铺"。铺之前还能拿本仓库的 `packs/` 当基准对一遍（别的仓库做不到）。
+#
+#   本地   pnpm media:pack          # 在主仓库跑：曲库（377 MB）在那台机器上，不在任何仓库里
+#          gh release upload media otomads-media.tar.gz --clobber \
+#              -R Dustymind/touhou-music-cards-otomads-data
+#   然后   Actions → deploy-cdn → Run workflow
+#          （或 gh workflow run deploy-cdn.yml -R Dustymind/touhou-music-cards-otomads-data）
+#
+# 为什么打包不能进 CI：manifest 里每首曲目的 `revision` 是**本机那份文件**的名字+大小+mtime（D144），
+# 曲库又不在仓库里 ⇒ 只有手上有曲库的机器打得出正确的清单。归档本身**自包含**
+# （manifest + `media/otomads/*.mp3` + `loudness/otomads.json`）⇒ 拿到归档就能铺。
+#
+# 现状（2026-09-25 实测）：CDN 的响应头里有逐路径的 `cache-control`（清单/响度表
+# `max-age=0, must-revalidate`、媒体 `max-age=14400`），而**归档里没有 `_headers` 文件** ⇒
+# 那套缓存策略来自 zone 级规则 / Pages 默认，**不在部署物里**，所以这里不动它（动它反而改变现状）。
+#
+# 一次性配置（Settings → Secrets and variables → Actions）：
+#   * secret `CLOUDFLARE_API_TOKEN` —— Cloudflare → My Profile → API Tokens → 模板
+#     “Edit Cloudflare Workers”，或自定义：**Account → Cloudflare Pages → Edit**
+#     （账号 `5102f3861137b0abc1a12e2c793c19d2`）
+#   * secret `CLOUDFLARE_ACCOUNT_ID` —— `5102f3861137b0abc1a12e2c793c19d2`
+#   * 可选 variable `CF_PAGES_PROJECT`（默认 `otomads-cdn`）
+#   * 可选 variable `OTOMADS_CDN_HOST`（默认下面的 CDN 域名，用于部署后的线上复核）
+name: deploy-cdn
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 从哪个 Release 取素材归档
+        required: true
+        default: media
+      asset:
+        description: 资产名
+        required: true
+        default: otomads-media.tar.gz
+      dry_run:
+        description: 只下载 + 自检，不部署
+        type: boolean
+        default: false
+
+permissions:
+  contents: read          # 读本仓库的 Release 资产
+
+# 部署是"整站替换"：两个并发只会互相盖，所以串行
+concurrency:
+  group: otomads-cdn
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT || 'otomads-cdn' }}
+      CDN_HOST: ${{ vars.OTOMADS_CDN_HOST || 'https://otomads-cdn.tsukinomiyako-mangesui.top' }}
+      TAG: ${{ inputs.tag }}
+      ARCHIVE: ${{ inputs.asset }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"      # 工具要求 ≥3.11（`tomllib`）；跑 `review` 只用标准库
+
+      - name: 前置检查
+        run: |
+          set -euo pipefail
+          [ -n "${CLOUDFLARE_API_TOKEN:-}" ] || {
+            echo "::error::缺 secret CLOUDFLARE_API_TOKEN（Cloudflare Pages:Edit）"; exit 1; }
+          [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || {
+            echo "::error::缺 secret CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          python3 --version
+          echo "Pages 项目：$PAGES_PROJECT ｜ 复核地址：$CDN_HOST ｜ 归档：$TAG / $ARCHIVE"
+
+      - name: 取归档
+        run: |
+          set -euo pipefail
+          echo "Release $TAG 上的资产："
+          gh release view "$TAG" --json assets \
+            --jq '.assets[] | "  \(.name)  \(.size) B  更新于 \(.updatedAt)"'
+          gh release download "$TAG" --pattern "$ARCHIVE" --dir .
+          sha256sum "$ARCHIVE" | tee archive.sha256
+          echo '（本地刚打完包的话，这个 sha256 应当与 `sha256sum otomads-media.tar.gz` 一致）'
+
+      - name: 归档自检（含"归档 ↔ 本仓库 packs"对照）
+        run: PYTHONPATH=tools/src python3 -m otomads.stage_media review --archive "$ARCHIVE"
+
+      - name: 解到部署根
+        run: |
+          set -euo pipefail
+          mkdir -p cdn
+          tar -xzf "$ARCHIVE" -C cdn
+          du -sh cdn
+          ls -1 cdn
+
+      - name: 解析 Pages 的生产分支
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          set -euo pipefail
+          # **不写死 main**：写错的话 wrangler 会把这次部署当成 preview，自定义域名一动不动 ——
+          # 表现是"CI 全绿、线上没变"，最难查。所以分支从项目设置里读。
+          body=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PAGES_PROJECT")
+          BRANCH=$(printf '%s' "$body" | python3 -c 'import json,sys; payload=json.load(sys.stdin); sys.exit("Pages API 报错：" + json.dumps(payload.get("errors"), ensure_ascii=False)) if not payload.get("success") else print(payload["result"]["production_branch"])')
+          echo "项目 $PAGES_PROJECT 的生产分支：$BRANCH"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+
+      - name: 部署到 Cloudflare Pages
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          set -euo pipefail
+          # 直传（这个项目本来就是 `wrangler pages deploy` 建的）。wrangler 按内容哈希去重：
+          # 只有 manifest.json 变了时，实际上传的就是那几十 KB。
+          npx --yes wrangler@4 pages deploy cdn \
+            --project-name "$PAGES_PROJECT" \
+            --branch "$BRANCH" \
+            --commit-dirty=true
+
+      - name: 线上复核（CDN 那份 manifest 与归档**逐字节相同**）
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          set -euo pipefail
+          tar -xzOf "$ARCHIVE" manifest.json > archive-manifest.json
+          want=$(sha256sum < archive-manifest.json | cut -d' ' -f1)
+          echo "归档里的 manifest：$want"
+          for attempt in $(seq 1 12); do
+            # 带 `?ci=` 绕开边缘缓存：这一步要看的是"源站换了没有"
+            if curl -fsS "$CDN_HOST/manifest.json?ci=$GITHUB_RUN_ID" -o live-manifest.json; then
+              got=$(sha256sum < live-manifest.json | cut -d' ' -f1)
+              if [ "$got" = "$want" ]; then
+                mkdir -p deploy-record
+                cp archive-manifest.json deploy-record/manifest.json
+                cp archive.sha256 deploy-record/
+                {
+                  echo "项目 $PAGES_PROJECT（生产分支 $BRANCH）"
+                  echo "归档 $TAG / $ARCHIVE"
+                  echo "归档 sha256 $(cut -d' ' -f1 < archive.sha256)"
+                  echo "manifest sha256 $want"
+                } > deploy-record/summary.txt
+                PYTHONPATH=tools/src python3 -m otomads.stage_media review --archive "$ARCHIVE" --no-packs
+                echo "✅ 线上 manifest 与归档一致（第 $attempt 次尝试）"
+                exit 0
+              fi
+              echo "…第 $attempt 次：线上还是旧内容（$got）"
+            else
+              echo "…第 $attempt 次：还取不到 $CDN_HOST/manifest.json"
+            fi
+            sleep 10
+          done
+          echo "::error::CDN 上的 manifest 与归档不一致 —— Pages 还在传播？域名没指向 $PAGES_PROJECT？"
+          exit 1
+
+      - name: 存一份部署记录（90 天）
+        if: ${{ always() && inputs.dry_run == false }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: otomads-cdn-deploy-${{ github.run_number }}
+          # 只存"这次铺了什么"（几十 KB）：**归档本体不适合当 artifact** ——
+          # 它是本地打出来的（CI 里没有 run 可以挂），而且 artifact 会过期、永远要鉴权，
+          # 当"部署源"用会把自托管的人挡在门外。归档继续走 Release 资产。
+          path: deploy-record/
+          retention-days: 90
+          if-no-files-found: warn
