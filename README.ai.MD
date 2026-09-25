@@ -119,10 +119,14 @@ gh release upload media otomads-media.tar.gz --clobber \
 gh workflow run trigger-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
 ```
 
-**构建在 Cloudflare 那边跑**（一个只放静态资源的 **Worker**，由 **Workers Builds** 连本仓库、生产分支
-`main`）：Build command 是 `python3 tools/build_cdn_site.py`（见它的 docstring），Deploy command 是
-`npx wrangler deploy`，资源目录由仓库根的 **`wrangler.jsonc`**（`assets.directory = ./dist`）指定 ——
-面板**不带** "Build output directory" 那一格（那是老 Pages 项目的）：取归档 → 拿本仓库的
+**构建在 Cloudflare 那边跑**（一个 **Worker**，由 **Workers Builds** 连本仓库、生产分支 `main`）：
+Build command 是 `python3 tools/build_cdn_site.py`（见它的 docstring），Deploy command 是
+`npx wrangler deploy`，配置在仓库根的 **`wrangler.jsonc`**（`assets.directory = ./dist`）——
+面板**不带** "Build output directory" 那一格（那是老 Pages 项目的）。另外 `wrangler.jsonc` 还挂了
+**`media-worker.mjs`**（`main` + `assets.binding` + `run_worker_first = ["/media/*"]`）：静态资源那条路
+实测**不认 Range**（音频跳转要多下字节），这个小脚本只接管 `/media/*`、按 `Range` 切 206，并**自己带 CORS**
+（`_headers` 不作用于 Worker 生成的响应）。所以：**Worker 的代码必须在仓库里** —— 在 CF 面板上改代码
+（或本地 `wrangler deploy`）只能撑到下一次构建 ✗：取归档 → 拿本仓库的
 `packs/` 对照自检（**不过就不铺**，线上保持原样）→ 解到 `dist/` → 打印摘要。要点：
 
 - **素材不在 git 里**（单文件 >100 MB GitHub 直接拒）⇒ 构建必须去下 Release 里的归档；公开仓库

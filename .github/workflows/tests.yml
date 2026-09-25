@@ -35,6 +35,10 @@ jobs:
           # （CI 第一次跑就抓到了这个错误假设）。
           python -m pip install --quiet -e ./tools "pytest>=8.0"
 
+      - name: 媒体 Worker 脚本（Range 解析）
+        # Worker 本体只能在 CF 上跑，但 `Range` → 闭区间那段解析完全可以在本地钉死
+        run: node --test tools/tests/media_worker.test.mjs
+
       - name: pytest
         working-directory: tools
         # `-rs`：把跳过原因也打出来（CI 里悄悄 skip 掉几条等于没有覆盖）

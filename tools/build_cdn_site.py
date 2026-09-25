@@ -68,7 +68,8 @@ HEADERS_FILE = """\
 /loudness/*
   Cache-Control: public, max-age=0, must-revalidate
 
-# 媒体：地址带 `?v=<逐曲版本>`，版本一变 URL 就变 ⇒ 放心让浏览器存 4 小时（与老站实测一致）
+# 媒体：**现在由 media-worker.mjs 自己设这个头**（`/media/*` 先过脚本，而 `_headers` 不作用于
+# Worker 生成的响应）；这一条是"万一脚本没生效"的兜底，也当自文档留着。
 /media/*
   Cache-Control: public, max-age=14400, must-revalidate
 """

@@ -14,9 +14,18 @@
   "name": "otomads-cdn-git",
   // 静态资源用不到新的运行时特性，取 CF 报错里建议的那个日期即可（改动它会换一套运行时默认值）。
   "compatibility_date": "2026-09-23",
+  // 只接管 `/media/*` 的小脚本（补 Range + 自带 CORS，见 `media-worker.mjs` 的注释）。
+  // 没有它就是个"纯静态资源 Worker"：不认 Range（实测 200 + 整份），而 `_headers` 也管不到
+  // Worker 生成的响应 —— 音频那一类请求因此必须进脚本。
+  "main": "./media-worker.mjs",
   "assets": {
     // 构建产物目录（`tools/build_cdn_site.py` 写的就是它）。相对本文件所在目录 = 仓库根。
     "directory": "./dist",
+    // 脚本里用 `env.ASSETS.fetch(request)` 取真正的文件
+    "binding": "ASSETS",
+    // **只让 /media/* 先进脚本**：其余路径（清单、响度表、404）照旧由静态资源那条路直接服务 ——
+    // 那样它们是免费的、走边缘缓存的，`_headers` 也照样生效。
+    "run_worker_first": ["/media/*"],
     // 找不到就是 404，**不做 SPA 回退**：老站的行为就是这个（根路径 `/` 也是 404），
     // 而这个站点只放 manifest / 媒体 / 响度表 —— 回退成 HTML 只会让前端把 HTML 当 JSON 解析。
     "not_found_handling": "none"
