@@ -107,8 +107,12 @@ uv run --project tools python -m otomads.stage_media stage --from <曲库> --out
 ```
 
 主仓库有配套包装：`pnpm media:pack` / `pnpm media:stage` / `OTOMADS_MEDIA_URL=<URL> pnpm media:pull`。
-**部署方式**：静态音MAD 源由人**手动**铺 —— 主仓库的 Pages 工作流**不**拉素材（用户裁定，见主仓库 D138）；
-而且主仓库是**私有**的，Release 资产对匿名请求返回 404，所以要取就带令牌：
+**部署方式**（D146 起分两半）：**打包仍然只能在本地**（manifest 里每首的 `revision` 是本机文件的
+名字+大小+mtime，而曲库不在任何仓库里）；**铺到线上**交给主仓库的
+`.github/workflows/deploy-otomads-cdn.yml`（从 Release 归档 → Cloudflare Pages 项目 `otomads-cdn`，
+跑完还会拿"线上 manifest 与归档逐字节相同"复核）。主仓库的 Pages 工作流**仍然不碰素材**（D138 的取舍没变），
+它现在也**暂时停用**了（应用由 Vercel 部署，见主仓库 D146）。
+主仓库是**私有**的，Release 资产对匿名请求返回 404，所以要取就带令牌：
 `gh release download <tag> --pattern otomads-media.tar.gz`，或本机 `pnpm media:pack` 现打一份。
 **线上那一份**铺在 `otomads-cdn.tsukinomiyako-mangesui.top`（Cloudflare，CORS `*`、支持 Range）——
 `sources/otomads.toml` 的默认 `table_url` 就指向它（主仓库 D141）⇒ 应用与静态站都不必自带素材。
