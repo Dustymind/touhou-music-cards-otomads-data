@@ -26,14 +26,19 @@ jobs:
         with:
           python-version: "3.12"      # 工具要求 ≥3.11（`tomllib`）
 
-      - name: 装 pytest
+      - name: 装依赖
         run: |
           python -m pip install --quiet --upgrade pip
-          python -m pip install --quiet "pytest>=8.0"
+          # 依赖从 `tools/pyproject.toml` 走（不写死版本）：运行时只要 yt-dlp，测试还要 pytest。
+          # ⚠️ `yt-dlp` 是**必须**的：fetch 那条路径上有 6 条用例会调 `installed_ytdlp()` ——
+          # `import yt_dlp` 虽然写在函数里（延迟导入），但那些用例真的会走到 ⇒ 只装 pytest 会红
+          # （CI 第一次跑就抓到了这个错误假设）。
+          python -m pip install --quiet -e ./tools "pytest>=8.0"
 
       - name: pytest
         working-directory: tools
-        run: python -m pytest --junitxml=../pytest-report.xml
+        # `-rs`：把跳过原因也打出来（CI 里悄悄 skip 掉几条等于没有覆盖）
+        run: python -m pytest -rs --junitxml=../pytest-report.xml
 
       - name: 上传测试报告（失败也传）
         if: ${{ always() }}
