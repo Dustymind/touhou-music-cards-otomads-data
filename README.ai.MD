@@ -107,7 +107,7 @@ uv run --project tools python -m otomads.stage_media stage --from <曲库> --out
 ```
 
 主仓库有配套包装：`pnpm media:pack` / `pnpm media:stage` / `OTOMADS_MEDIA_URL=<URL> pnpm media:pull`。
-**部署方式**（D147 起，三件事各归各位）：
+**部署方式**（D148 起：**CF Pages 的 Git 集成自己构建**，本仓库只管打包与发布）：
 
 ```bash
 # ① 打包：**只能在本地**（manifest 里每首的 `revision` 是本机文件的名字+大小+mtime，D144；曲库不在仓库里）
@@ -115,12 +115,21 @@ pnpm media:pack                      # 在主仓库跑（曲库在那台机器�
 # ② 发布归档：发到**本仓库**的 Release（tag `media`，公开仓库 ⇒ 匿名可下）
 gh release upload media otomads-media.tar.gz --clobber \
     -R Dustymind/touhou-music-cards-otomads-data
-# ③ 铺到线上：本仓库的 Actions → deploy-cdn（取归档 → 对照本仓库 packs 自检 → 铺 Cloudflare Pages）
-gh workflow run deploy-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
+# ③ 触发构建：push 到 `main` 会自动构建；**只换了音频**（git 无变化）时补一下：
+gh workflow run trigger-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
 ```
 
-工作流跑完会拿"**线上 manifest 与归档逐字节相同**"当成功判据，并在日志里对照本仓库 `packs/`
-（归档少了 = 改完 packs 忘了重打包；只警告、不拦）。自托管的人直接下归档，**不用令牌**：
+**构建在 Cloudflare 那边跑**（Pages 项目连的是本仓库、生产分支 `main`），命令就一条
+`python3 tools/build_cdn_site.py`（见 `tools/build_cdn_site.py` 的 docstring）：取归档 → 拿本仓库的
+`packs/` 对照自检（**不过就不铺**，线上保持原样）→ 解到 `dist/` → 打印摘要。要点：
+
+- **素材不在 git 里**（单文件 >100 MB GitHub 直接拒）⇒ 构建必须去下 Release 里的归档；公开仓库
+  ⇒ **CF 那边不需要任何令牌**；
+- **manifest 不在构建里重生成**：逐曲版本号是打包那台机器的 mtime 指纹，容器里没有那些文件 ⇒ 原样铺；
+- **只换音频的更新推不动构建**（git 没变化）⇒ 用 `trigger-cdn`（POST 一次 Deploy Hook）；若没配那个
+  secret，也可以去 CF 面板点 **Retry deployment**。
+
+自托管的人直接下归档，**不用令牌**：
 
 ```bash
 gh release download media --pattern otomads-media.tar.gz -R Dustymind/touhou-music-cards-otomads-data
@@ -128,8 +137,9 @@ gh release download media --pattern otomads-media.tar.gz -R Dustymind/touhou-mus
 curl -LO https://github.com/Dustymind/touhou-music-cards-otomads-data/releases/download/media/otomads-media.tar.gz
 ```
 
-主仓库的 Pages 工作流**不碰素材**（D138 的取舍没变），而且现在**暂时停用**了（应用由 Vercel 部署，
-见主仓库 D146）。
+本仓库另外两个工作流：`tests`（push/PR 跑 135 条 pytest）、`deploy-cdn`（**wrangler 直传的旧路**，
+D147 留下的回滚手段：CF 那条验证绿了再删）。主仓库的 Pages 工作流**不碰素材**（D138 的取舍没变），
+而且现在**暂时停用**了（应用由 Vercel 部署，见主仓库 D146）。
 **线上那一份**铺在 `otomads-cdn.tsukinomiyako-mangesui.top`（Cloudflare，CORS `*`、支持 Range）——
 `sources/otomads.toml` 的默认 `table_url` 就指向它（主仓库 D141）⇒ 应用与静态站都不必自带素材。
 换宿主/换路径时：重铺一份 + 改 `table_url`（绝对地址即可，manifest 里的相对地址会自动跟着走）。
