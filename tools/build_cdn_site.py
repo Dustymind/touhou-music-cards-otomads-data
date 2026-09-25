@@ -33,7 +33,6 @@ import os
 import pathlib
 import shutil
 import sys
-import urllib.request
 from datetime import datetime, timezone
 
 #: 让 `import otomads` 生效：这个脚本在 `tools/` 下，包在 `tools/src/`（CF 的构建镜像里没有 uv，
@@ -83,23 +82,12 @@ HEADERS_NAME = "_headers"
 BUILD_INFO_NAME = "build-info.json"
 
 
-def fetch(url: str, target: pathlib.Path) -> pathlib.Path:
-    """取归档到 `target`（认 `file://` 与 http(s)，后者跟随重定向）。"""
-    print(f"⬇️  取归档：{url}")
-    if url.startswith("file://"):
-        shutil.copyfile(url[len("file://"):], target)
-    else:
-        urllib.request.urlretrieve(url, target)
-    print(f"    落盘 {target}（{target.stat().st_size} B）")
-    return target
-
-
 def main() -> int:
     url = os.environ.get("OTOMADS_MEDIA_URL", DEFAULT_URL)
     archive = pathlib.Path(os.environ.get("OTOMADS_ARCHIVE", "otomads-media.tar.gz"))
     out = pathlib.Path(os.environ.get("OTOMADS_OUT", "dist"))
 
-    fetch(url, archive)
+    stage_media.download_archive(url, archive)   # 与 `stage --archive` 同一份实现
 
     problems, warnings = stage_media.review_archive(archive)
     for warning in warnings:
@@ -117,10 +105,14 @@ def main() -> int:
     stage_media.extract(archive, out)
     (out / HEADERS_NAME).write_text(HEADERS_FILE, encoding="utf-8")
     print(f"    写 {out}/{HEADERS_NAME}：CORS `*` + 清单/响度表每次校验 + 媒体 4 小时")
+    # `file_digest` 流式读（≥3.11）；以前是 `hashlib.sha256(archive.read_bytes())` ——
+    # 会把整份 ~322 MB 归档读进内存，峰值白涨 300 MB，而 sha 结果完全一样。
+    with archive.open("rb") as handle:
+        archive_sha256 = hashlib.file_digest(handle, "sha256").hexdigest()
     info = {
         "builtAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "archive": url,
-        "archiveSha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+        "archiveSha256": archive_sha256,
         "commit": os.environ.get("WORKERS_CI_COMMIT_SHA", os.environ.get("GITHUB_SHA", "")),
         "branch": os.environ.get("WORKERS_CI_BRANCH", os.environ.get("GITHUB_REF_NAME", "")),
     }
