@@ -158,6 +158,12 @@ uv run --project tools python -m otomads.stage_media stage --from <曲库> --out
 代价是二次有损（`.raw` 本身已是 mp3）与 ≈ 0.4–0.6 秒/首的编码开销，**只对带区间的 16 首**付。
 口径、实测与"为什么不是换个编码器就完事"见主仓库 `docs/packs-audio-v1.md` §5。
 
+**manifest 带媒体版本号**（主仓库 D144，2026-09-25）：助手与 `stage_media` 写出的清单，
+顶层有 `revision`、每行第 4 位是**该曲目自己的**版本号（`packformat.media_revision`：文件名+大小+mtime）。
+前端把它拼成 `?v=` 追加到媒体地址 —— 音频变了但链接没变时，URL 会跟着变，于是浏览器/CDN 不会拿旧的顶
+（CDN 给 `.mp3` 发的是 `max-age=14400`）。**逐曲**那一位是关键：只让变过的那几首换 URL，
+不会让整包 321 MB 全部重下。行形状前三位与原来逐字一致，第 4 位是可选的。
+
 **一条 `source` = 一首曲目**（主仓库 D143，2026-09-25）：抓取传 `noplaylist`，所以指向 bilibili
 **多 P 视频**时**默认取 p1**；要别的 P 就把 `?p=N` 写进 `source`（由 yt-dlp 按参数解析，工具不改写 URL）。
 解析出多个条目会**直接报错**。状态里记了 `fetch`（抓取口径），**改了抓取实现要把它 +1** ——
