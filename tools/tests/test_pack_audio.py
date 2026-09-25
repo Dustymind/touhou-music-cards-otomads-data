@@ -903,3 +903,69 @@ def test_measure_loudness_without_pack_dir_skips_coverage(tmp_path, monkeypatch,
     monkeypatch.setattr(sys, "argv", ["measure_loudness", str(tmp_path), "--pack", "demo"])
     assert measure_loudness.main() == 1                  # 一首都没量到 ⇒ 退出码 1（原有口径）
     assert "⚠️" not in capsys.readouterr().out
+
+
+# ---------------------- 跨仓库共享向量：时间解析 / 裁剪区间 / 键集合（D150 追加）
+
+#: **共享测试向量**：与 主仓库 `tools/tests/test_build.py` 里那份**同一份字面量**（两个仓库零 import 依赖，
+#: 只能靠"同一批字面量 + 各自测自己的实现"来对口径）。三组分别盯着：
+#:   ① 时间解析（`parse_time` 接受/拒绝哪些写法）
+#:   ② 裁剪区间（`trim_seconds` 的单侧语义与非法区间）
+#:   ③ 四组键集合 —— **一边加键，另一边就把整包判成"不认识的键"而拒收**（`_reject_unknown` 是硬失败）
+PACK_TIME_VECTOR = [
+    ("00:00:00.000", 0.0),
+    ("00:00:01.500", 1.5),
+    ("01:02:03.250", 3723.25),
+    ("12:34:56.789", 45296.789),
+    ("0:00:00.000", 0.0),          # 小时允许 1 位
+]
+
+PACK_TIME_BAD = [
+    "00:00:00",        # 缺毫秒
+    "00:00:00.00",     # 毫秒必须 3 位
+    "1:02:03",         # 缺毫秒
+    "00:60:00.000",    # 分钟越界
+    "00:00:60.000",    # 秒越界
+    "1:2:3.000",       # 分秒必须 2 位
+    "abc",
+]
+
+PACK_TRIM_VECTOR = [
+    ({}, None),                                                    # 两个键都没写 ⇒ 不裁剪
+    ({"start_time": "00:00:02.000"}, (2.0, None)),                  # 只给起点 ⇒ 裁到文件尾
+    ({"stop_time": "00:00:03.000"}, (0.0, 3.0)),                    # 只给终点 ⇒ 从文件头
+    ({"start_time": "00:00:01.000", "stop_time": "00:00:04.500"}, (1.0, 3.5)),
+    ({"start_time": "00:00:04.000", "stop_time": "00:00:04.000"}, "raises"),   # 零长度非法
+    ({"start_time": "00:00:05.000", "stop_time": "00:00:04.000"}, "raises"),   # 起点晚于终点
+]
+
+PACK_KEYS_VECTOR = {
+    "pack": {"id", "label_en", "label_zh", "kind", "order"},
+    "album": {"key", "name", "kind", "pack", "order", "show_album_name"},
+    "track": {"album", "author", "authors", "title", "extra", "source", "start_time", "stop_time"},
+    "character": {"key", "card"},
+}
+
+
+def test_parse_time_matches_the_shared_vector():
+    for text, expected in PACK_TIME_VECTOR:
+        assert packs.parse_time(text) == pytest.approx(expected)
+    for text in PACK_TIME_BAD:
+        with pytest.raises(ValueError):
+            packs.parse_time(text)
+
+
+def test_trim_seconds_matches_the_shared_vector():
+    for track, expected in PACK_TRIM_VECTOR:
+        if expected == "raises":
+            with pytest.raises(ValueError):
+                packs.trim_seconds(track)
+        else:
+            assert packs.trim_seconds(track) == expected
+
+
+def test_key_sets_match_the_shared_vector():
+    assert packs.PACK_KEYS == PACK_KEYS_VECTOR["pack"]
+    assert packs.ALBUM_KEYS == PACK_KEYS_VECTOR["album"]
+    assert packs.TRACK_KEYS == PACK_KEYS_VECTOR["track"]
+    assert packs.CHARACTER_KEYS == PACK_KEYS_VECTOR["character"]
