@@ -107,16 +107,25 @@ uv run --project tools python -m otomads.stage_media stage --from <曲库> --out
 ```
 
 主仓库有配套包装：`pnpm media:pack` / `pnpm media:stage` / `OTOMADS_MEDIA_URL=<URL> pnpm media:pull`。
-**部署方式**（D148 起：**CF Pages 的 Git 集成自己构建**，本仓库只管打包与发布）：
+**部署方式**（D148 起：**Cloudflare 的 Workers Builds 自己构建**，本仓库只管打包与发布）：
+
+**分两种情况 —— 只改曲目表元数据不用碰本机，只有"新音频"才走本地打包。**
 
 ```bash
-# ① 打包：**只能在本地**（manifest 里每首的 `revision` 是本机文件的名字+大小+mtime，D144；曲库不在仓库里）
-pnpm media:pack                      # 在主仓库跑（曲库在那台机器上）
-# ② 发布归档：发到**本仓库**的 Release（tag `media`，公开仓库 ⇒ 匿名可下）
+# 【A】只改曲目表 / 响度表（标题、作者、附加信息、卡面、删曲目）：改完推一下就行，**不用打包**
+git -C <本仓库> commit -am "..." && git -C <本仓库> push      # repack-media 自动重打 + 触发 CF 重建
+
+# 【B】新音频（新抓 / 重裁）：必须在本地，且**顺序不能反**
+pnpm media:pack                      # ① 在主仓库跑（曲库在那台机器上；逐曲版本号 = 内容哈希，D149）
 gh release upload media otomads-media.tar.gz --clobber \
-    -R Dustymind/touhou-music-cards-otomads-data
-# ③ 触发构建：**push 到 `main` 就自动重建**（`trigger-cdn` 工作流 POST 一次 Deploy Hook）；
-#    ⚠️ 但第 ② 步的 `gh release upload` **不产生任何 git 事件** ⇒ 换完归档要显式触发一次：
+    -R Dustymind/touhou-music-cards-otomads-data                       # ② 先换归档资产
+git -C <本仓库> commit -am "..." && git -C <本仓库> push               # ③ 再推源码（packs/ 是真源，必须推）
+#    ③ 的 push 会跑 repack-media：它拿 ② 刚换上的归档重打 ⇒ 逐字节相同 ⇒ 不换资产，但仍 POST 一次
+#    hook ⇒ CF 重建时下到的就是新归档 ✓
+# ⚠️ 反过来（先推源码）不行：CI 只能拿**旧归档**重打 ⇒ 新曲目没有音频 ⇒ 资产被换成少了那首的版本
+#    并触发上线（review 只在日志里警告）。真发生了就把 ② ③ 重做一遍覆盖。
+
+# 【C】只重裁了音频、曲目表一个字没改（没有 git 事件）：② 之后自己触发一次
 gh workflow run trigger-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
 ```
 
@@ -126,7 +135,7 @@ gh workflow run trigger-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
 |---|---|
 | `packs/*.toml`（标题/作者/附加信息/卡面、删曲目）、`loudness/otomads.json` | ✅ **自动**：`repack-media` 工作流用**上一份归档的媒体** + 仓库现在的真源重打 ⇒ 变了就换 `media` 资产 ⇒ 触发 CF 重建 |
 | `wrangler.jsonc`、`media-worker.mjs`、`tools/**`、`.github/workflows/**` | ✅ **自动**（构建侧的输入，同一条链路里的重建就带上了） |
-| **新音频**（新抓/重裁的 mp3） | ❌ 必须在**bilibili 认的出口 IP** 后面（本机）：`pnpm media:pack` → `gh release upload media … --clobber` → `gh workflow run trigger-cdn.yml`（或再推一次）。**实测 GitHub 托管 runner 抓不了**：三条真 source 全是 `HTTP Error 412`（数据中心 IP 的风控；86 条 source 全是 bilibili）|
+| **新音频**（新抓/重裁的 mp3） | ❌ 必须在**bilibili 认的出口 IP** 后面（本机），而且**先换归档、再推源码**：`pnpm media:pack` → `gh release upload media … --clobber` → push（packs 变了才需要）→ 没推就补一次 `gh workflow run trigger-cdn.yml`。**实测 GitHub 托管 runner 抓不了**：三条真 source 全是 `HTTP Error 412`（数据中心 IP 的风控；86 条 source 全是 bilibili）|
 | 只改文档 | 归档逐字节没变 ⇒ **不换资产**，只重建一次站点（约 2–3 分钟） |
 
 `repack-media` 的关键前提：版本号用**内容**哈希（D149）—— 照 mtime 算的话 CI 重打的清单与本机打的永远对不上，
@@ -144,7 +153,9 @@ Build command 是 `python3 tools/build_cdn_site.py`（见它的 docstring），D
 
 - **素材不在 git 里**（单文件 >100 MB GitHub 直接拒）⇒ 构建必须去下 Release 里的归档；公开仓库
   ⇒ **CF 那边不需要任何令牌**；
-- **manifest 不在构建里重生成**：逐曲版本号是打包那台机器的 mtime 指纹，容器里没有那些文件 ⇒ 原样铺；
+- **manifest 在 CI 里可以被重生成**（D149）：`repack-media` 用**上一份归档的媒体 + 仓库现在的真源**重打，
+  逐曲版本号是**内容**哈希 ⇒ 与本机打包逐字节相同；站点构建（`tools/build_cdn_site.py`）本身仍是**原样铺**
+  归档里那份清单，不重算；
 - **只换音频的更新推不动构建**（git 没变化）⇒ 用 `trigger-cdn`（POST 一次 Deploy Hook）；若没配那个
   secret，也可以去 CF 面板点 **Retry deployment**。
 
