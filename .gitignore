@@ -14,3 +14,8 @@ __pycache__/
 
 # 编辑器 / 系统
 .DS_Store
+
+# Worker 那边的本地产物（`wrangler dev` / 本地跑构建脚本时会生成；站点配置在仓库根，
+# 所以这些默认落在仓库里 —— 都不是要提交的东西，D148）
+.wrangler/
+/dist/
