@@ -158,6 +158,11 @@ uv run --project tools python -m otomads.stage_media stage --from <曲库> --out
 代价是二次有损（`.raw` 本身已是 mp3）与 ≈ 0.4–0.6 秒/首的编码开销，**只对带区间的 16 首**付。
 口径、实测与"为什么不是换个编码器就完事"见主仓库 `docs/packs-audio-v1.md` §5。
 
+**一条 `source` = 一首曲目**（主仓库 D143，2026-09-25）：抓取传 `noplaylist`，所以指向 bilibili
+**多 P 视频**时**默认取 p1**；要别的 P 就把 `?p=N` 写进 `source`（由 yt-dlp 按参数解析，工具不改写 URL）。
+解析出多个条目会**直接报错**。状态里记了 `fetch`（抓取口径），**改了抓取实现要把它 +1** ——
+不然链接没变、`outHash` 也对得上，幂等检查会把该重下的全部跳过。
+
 ## 响度表与曲目的对应关系（自查）
 
 `measure_loudness` 与 `fetch_audio` 写完表后会**自查一次**并打印提示（只提示、不报错）：
