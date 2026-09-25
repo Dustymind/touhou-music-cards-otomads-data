@@ -425,6 +425,32 @@ def loudness_path(pack_id: str) -> pathlib.Path | None:
     return None
 
 
+def content_revision(path) -> str:
+    """文件的**内容**哈希（sha1 前 16 位）—— 归档侧用的版本号口径（D149）。
+
+    为什么归档不再用 mtime（`media_revision` 那套）：**CI 要能重打归档**。媒体来自上一份归档，
+    而 tar 里的 mtime 是归零的（可复现），照 mtime 算出来的版本号既与本机打包的对不上、
+    也不随"内容变了但大小没变"而动。改成内容哈希之后：同一份音频在**任何机器**上算出来都一样 ⇒
+    本机 `pnpm media:pack` 与 CI 的重打产出**逐字节相同**的清单（有测试钉着）。
+
+    代价：要读文件内容。370 MB 的 sha1 大约 1 秒级，而"重新打包"本来就是秒级操作 —— 值当。
+    （**本机助手**仍用 mtime：它每次请求现算，没必要为缓存键去哈希整个曲库。）
+    """
+    digest = hashlib.sha1()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()[:16]
+
+
+def revisions_of(entries) -> str:
+    """`[(清单里的名字, 路径), …]` → **整表**版本号（按名字排序后哈希"名字 + 内容版本"，可复现）。"""
+    digest = hashlib.sha1()
+    for name, path in sorted(entries, key=lambda item: item[0]):
+        digest.update(f"{name}\t{content_revision(path)}\n".encode())
+    return digest.hexdigest()[:16]
+
+
 def media_revision(entries) -> str:
     """`[(清单里的名字, 文件路径), …]` → **数据版本号**（16 位十六进制，sha1 截断）。
 

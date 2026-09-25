@@ -1,11 +1,11 @@
 # 让 Cloudflare 重新构建素材站（POST 一次 Deploy Hook，D148）。
 #
-# **两条入口**：
-#   * `push`（main）：**任何 push 都会重建** —— 这样构建侧的改动（`wrangler.jsonc`、`media-worker.mjs`、
-#     `tools/**`、`.github/workflows`）改完推上去就自动生效，不必去面板点。2026-09-25 实测过
-#     "push 不会自己触发 CF 那边的构建"（轮询 `build-info.json` 五分钟为证），所以这一步是**补上那个缺口**的；
-#   * `workflow_dispatch`：手动按钮 —— 给**换过归档**的更新用（`gh release upload media … --clobber`
-#     不产生任何 git 事件 ⇒ 推不动构建），比去 CF 面板点 Retry 更顺手、也留痕在 Actions 里。
+# **现在的分工**（D149 起）：`push` 那条自动链路已经交给 **`repack-media.yml`** —— 它先用上一份归档的媒体
+# 重打一份（带上仓库现在的曲目表/响度表）、变了就换资产，**最后**才 POST 这个 hook。这样不会出现
+# "归档还没重打完就先构建一次旧的"。
+#
+# 这个工作流保留 `workflow_dispatch` 手动入口：想**只重建站点**（不重打归档）时用它，
+# 比如 CF 那边刚改过设置、或者上次构建失败要重来。
 #
 # ⚠️ **但"改仓库里的数据文件"不会改变线上内容**：站点内容来自 `media` Release 里的归档
 # （manifest 的逐曲版本号是本机文件的 mtime 指纹，音频库不在 git 里）⇒ 加曲目/换音频必须：
@@ -19,8 +19,6 @@
 name: trigger-cdn
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       reason:

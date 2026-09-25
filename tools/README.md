@@ -27,6 +27,7 @@ uv run python -m otomads.fetch_audio --jobs 4       # 抓取/裁剪（并发 4�
 uv run python -m otomads.ingest_pack --pack otomads \
     --rows tools/ingest_rows_<日期>.json --dry-run  # 看录入计划
 uv run python -m otomads.stage_media review --archive <归档>   # 铺之前自检（CDN 工作流用的就是它）
+uv run python -m otomads.stage_media repack --previous <归档> --out <归档>   # CI 用：仓库真源 + 旧归档的媒体重打
 python3 tools/build_cdn_site.py                     # CF Pages 的构建入口（本地演练：加 OTOMADS_MEDIA_URL=file://…）
 uv run pytest                                       # 工具测试（CI 里由 .github/workflows/tests.yml 跑）
 ```

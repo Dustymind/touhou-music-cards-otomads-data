@@ -120,13 +120,17 @@ gh release upload media otomads-media.tar.gz --clobber \
 gh workflow run trigger-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
 ```
 
-**哪些改动会/不会自动上线**（D148 实测过）：
+**哪些改动会自动上线**（D149 起）：
 
 | 你改什么 | push 之后 |
 |---|---|
-| `wrangler.jsonc`、`media-worker.mjs`、`tools/**`、`.github/workflows/**` | **自动生效**（这些是**构建侧的输入**；2026-09-25 实测：11:40:28 推送 → 11:40:53 线上已换构建） |
-| `packs/*.toml`、`loudness/otomads.json`（仓库里的**数据**） | **线上不变**：站点内容来自 `media` Release 的归档，不是仓库文件 ⇒ 必须 ⓐ`pnpm media:pack` ⓑ传归档 ⓒ触发一次 |
-| `media` Release 的归档 | 不会自动（`gh release upload` 没有 git 事件）⇒ 手动触发一次（上面第 ③ 步） |
+| `packs/*.toml`（标题/作者/附加信息/卡面、删曲目）、`loudness/otomads.json` | ✅ **自动**：`repack-media` 工作流用**上一份归档的媒体** + 仓库现在的真源重打 ⇒ 变了就换 `media` 资产 ⇒ 触发 CF 重建 |
+| `wrangler.jsonc`、`media-worker.mjs`、`tools/**`、`.github/workflows/**` | ✅ **自动**（构建侧的输入，同一条链路里的重建就带上了） |
+| **新音频**（新抓/重裁的 mp3） | ❌ 只能在有曲库的机器上：`pnpm media:pack` → `gh release upload media … --clobber` → `gh workflow run trigger-cdn.yml`（或再推一次） |
+| 只改文档 | 归档逐字节没变 ⇒ **不换资产**，只重建一次站点（约 2–3 分钟） |
+
+`repack-media` 的关键前提：版本号用**内容**哈希（D149）—— 照 mtime 算的话 CI 重打的清单与本机打的永远对不上，
+客户端每次都要重下 324 MB；`tools/tests/test_repack.py` 钉着"本机打包 == CI 重打，逐字节相同"。
 
 **构建在 Cloudflare 那边跑**（一个 **Worker**，由 **Workers Builds** 连本仓库、生产分支 `main`）：
 Build command 是 `python3 tools/build_cdn_site.py`（见它的 docstring），Deploy command 是

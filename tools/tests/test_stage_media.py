@@ -337,10 +337,16 @@ def test_pack_manifest_carries_media_revisions(library, tmp_path):
     bare = sm.build_manifest(["a"], "otomads")
     assert "revision" not in bare and len(bare["tracks"][0]) == 3
 
-    # 文件变了 ⇒ **只有那一首**的版本号跟着变（逐曲，不是整包一起换）
+    # 内容变了 ⇒ **只有那一首**的版本号跟着变（逐曲，不是整包一起换）
+    # （D149：归档侧改用**内容**哈希 —— mtime 变了不动版本号，因为版本号要能跨机器重算，
+    #   否则 CI 重打的清单与本机打的永远对不上，客户端每次都要重下全部）
     victim = library / "otomads" / "Rendering-Liu - 岁月.mp3"
     stamp = victim.stat()
     os.utime(victim, ns=(stamp.st_atime_ns, stamp.st_mtime_ns + 1_000_000))
+    touched = tmp_path / "touched.tar.gz"
+    sm.pack(library, touched)
+    assert manifest_of(touched) == manifest            # 只动 mtime ⇒ 清单逐字不变 ✓
+    victim.write_bytes(victim.read_bytes() + b"\x00")  # 动**内容**（大小也变了）
     again = tmp_path / "again.tar.gz"
     sm.pack(library, again)
     moved = [row for row, old in zip(manifest_of(again)["tracks"], manifest["tracks"])

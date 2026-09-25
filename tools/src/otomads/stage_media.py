@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import hashlib
 import json
 import pathlib
 import shutil
@@ -208,10 +209,10 @@ def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
     manifest = build_manifest(
         sorted(tracks), album,
         loudness=table[0] if table else None,
-        revisions={title: packformat.media_revision([(f"{title}{path.suffix}", path)])
-                   for title, path in tracks.items()},
-        revision=packformat.media_revision([(f"{title}{path.suffix}", path)
-                                            for title, path in tracks.items()]),
+        # 版本号用**内容**哈希（D149）：这样 CI 从上一份归档重打出来的清单与本机打出来的**逐字节相同**
+        revisions={title: packformat.content_revision(path) for title, path in tracks.items()},
+        revision=packformat.revisions_of([(f"{title}{path.suffix}", path)
+                                          for title, path in tracks.items()]),
         # 曲目表跟着源走（D145）：清单里的**曲目**按曲包 TOML，**地址**按磁盘文件
         snapshot=packformat.repo_snapshot(),
     )
@@ -377,6 +378,67 @@ def verify(out: pathlib.Path, album: str = DEFAULT_ALBUM) -> list[str]:
     for title in sorted(set(on_disk) - seen):
         problems.append(f"磁盘上有但 manifest 没列：{title}")
     return problems
+
+
+# ------------------------------------------------------------------ repack（CI 侧重打，D149）
+
+def repack(previous: pathlib.Path, out: pathlib.Path) -> dict:
+    """用**本仓库现在的 `packs/` + 响度表**重打一份归档：**媒体来自上一份归档**（D149）。
+
+    为什么需要它：CI 里没有曲库（音频不在任何仓库里）⇒ "从零打包"只能在有曲库的机器上做。
+    但**改仓库里那些数据**（曲目表的标题/作者/附加信息/卡面、删曲目、重算的响度表）不需要新音频 ——
+    这类改动可以让 CI 拿上一份归档里的媒体 + 仓库现在的真源重打一份 ⇒ **推一下仓库就自动上线**。
+
+    不含：**新音频**（`fetch_audio` 只能在有曲库的机器上跑）。声明了却没有音频的曲目照旧不出现，
+    由调用方（CI 里紧接着跑的 `review`）警告出来 —— 与本地打包时的口径一致（那种曲目本来就播不了）。
+
+    产物与 :func:`pack` **同一口径**（行、专辑、曲目表、响度表、可复现），版本号用内容哈希
+    ⇒ CI 重打的清单与本机打的**逐字节相同**（有测试钉着）。
+    """
+    if not previous.is_file():
+        raise SystemExit(f"❌ 上一份归档不存在：{previous}")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = pathlib.Path(tmp)
+        extract(previous, root)                     # 归档是**不可信输入**，走同一条安全检查
+        before = manifest_of(previous)
+        album = str(before.get("pack") or DEFAULT_ALBUM)
+        media = root / MEDIA_DIR / album
+        tracks = audio_files(media)
+        if not tracks:
+            raise SystemExit(f"❌ 上一份归档里没有 {MEDIA_DIR}/{album}/ 的音频：{previous}")
+
+        table = declared_loudness(album)
+        if table is not None and not table[1].is_file():
+            print(f"⚠️  注册表声明的响度表不存在，归档里不带它：{table[1]}")
+            table = None
+        if table is not None:                       # 表在**仓库**里 ⇒ 重算过的表会跟着重打进来
+            target = root / table[0]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(table[1], target)
+
+        manifest = build_manifest(
+            sorted(tracks), album, before.get("pack"),
+            loudness=table[0] if table else None,
+            revisions={title: packformat.content_revision(path) for title, path in tracks.items()},
+            revision=packformat.revisions_of([(f"{title}{path.suffix}", path)
+                                              for title, path in tracks.items()]),
+            snapshot=packformat.repo_snapshot(),
+        )
+        (root / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        _write_archive(root, out)
+
+    # "换了没有"要**比归档本身**：响度表变了而清单没变的情况也得算改了（清单里只记了表的路径）
+    def digest(path: pathlib.Path) -> str:
+        hasher = hashlib.sha1()
+        with open(path, "rb") as handle:
+            for block in iter(lambda: handle.read(1 << 20), b""):
+                hasher.update(block)
+        return hasher.hexdigest()
+
+    return {"archive": out, "tracks": len(tracks), "loudness": 1 if table else 0,
+            "bytes": out.stat().st_size, "changed": digest(previous) != digest(out),
+            "manifest": manifest}
 
 
 # ------------------------------------------------------------------ review（铺之前自检，D147）
@@ -561,6 +623,13 @@ def main(argv: list[str] | None = None) -> int:
                         help="配合 --from：音MAD 卡面目录（内容铺到 cards-otomads/）")
     _add_common(stager)
 
+    repacker = sub.add_parser("repack", help="用仓库现在的 packs/ + 响度表重打一份归档（CI 用，D149）")
+    repacker.add_argument("--previous", type=pathlib.Path, required=True,
+                          help="上一份归档（**媒体**的来源）")
+    repacker.add_argument("--out", type=pathlib.Path, default=pathlib.Path("otomads-media.tar.gz"),
+                          help="重打到哪（默认 otomads-media.tar.gz）")
+    _add_common(repacker)
+
     reviewer = sub.add_parser("review", help="铺之前自检一个归档（CDN 工作流用；本地也能跑）")
     reviewer.add_argument("--archive", type=pathlib.Path,
                           default=pathlib.Path("otomads-media.tar.gz"),
@@ -570,6 +639,14 @@ def main(argv: list[str] | None = None) -> int:
     _add_common(reviewer)
 
     args = parser.parse_args(argv)
+
+    if args.command == "repack":
+        summary = repack(args.previous, args.out)
+        print(f"✅ 重打 {summary['archive']}：{summary['tracks']} 首 / "
+              f"{summary['bytes'] / 1048576:.1f} MB / 响度表 {'带上' if summary['loudness'] else '没带'}")
+        print("   与上一份相比：" + ("**变了** —— 该换资产、该重铺" if summary["changed"]
+                                    else "没变 —— 不必换资产（站点侧改动仍可照常重铺）"))
+        return 0
 
     if args.command == "review":
         problems, warnings = review_archive(args.archive, compare_with_repo=not args.no_packs)
