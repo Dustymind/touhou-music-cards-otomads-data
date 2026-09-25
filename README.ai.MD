@@ -143,9 +143,10 @@ gh release download media --pattern otomads-media.tar.gz -R Dustymind/touhou-mus
 curl -LO https://github.com/Dustymind/touhou-music-cards-otomads-data/releases/download/media/otomads-media.tar.gz
 ```
 
-本仓库另外两个工作流：`tests`（push/PR 跑 135 条 pytest）、`deploy-cdn`（**wrangler 直传的旧路**，
-D147 留下的回滚手段：CF 那条验证绿了再删）。主仓库的 Pages 工作流**不碰素材**（D138 的取舍没变），
-而且现在**暂时停用**了（应用由 Vercel 部署，见主仓库 D146）。
+本仓库现在两个工作流：`tests`（push/PR 跑 135 条 pytest + 7 条 `node --test`）与 `trigger-cdn`
+（POST 一次 Deploy Hook 触发 CF 构建 —— **push 不触发构建**，所以换了音频就得用它或去面板点 Retry）。
+旧的 `deploy-cdn`（wrangler 直传）随老 Pages 项目一起退场了（D148）。主仓库的 Pages 工作流**不碰素材**
+（D138 的取舍没变），而且现在**暂时停用**了（应用由 Vercel 部署，见主仓库 D146）。
 **线上那一份**铺在 `otomads-cdn.tsukinomiyako-mangesui.top`（Cloudflare，CORS `*`、支持 Range）——
 `sources/otomads.toml` 的默认 `table_url` 就指向它（主仓库 D141）⇒ 应用与静态站都不必自带素材。
 换宿主/换路径时：重铺一份 + 改 `table_url`（绝对地址即可，manifest 里的相对地址会自动跟着走）。
