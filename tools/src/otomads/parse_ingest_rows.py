@@ -13,9 +13,10 @@
     uv run python -m otomads.parse_ingest_rows - < rows.txt  # 从标准输入读
 """
 from __future__ import annotations
-import datetime, json, pathlib, re, sys, tomllib
+import datetime, json, pathlib, re, sys
 
 from . import paths
+from .ingest_pack import character_keys
 
 
 # 中文名 → 本项目角色 key（key 是罗马字，见 public/data/characters.json）
@@ -66,8 +67,7 @@ def parse_line(line: str) -> tuple[str, str, str, str] | None:
 def main() -> int:
     source = sys.argv[1] if len(sys.argv) > 1 else "-"
     text = sys.stdin.read() if source == "-" else pathlib.Path(source).read_text(encoding="utf-8")
-    roster = tomllib.loads(paths.characters_file().read_text(encoding="utf-8"))
-    keys = {c["key"] for c in roster.get("character", [])}
+    keys = character_keys()          # 与 ingest_pack 共用一处真源（报错也统一成友好提示）
 
     rows, problems = [], []
     for line in (l.strip() for l in text.splitlines()):

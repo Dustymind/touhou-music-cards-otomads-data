@@ -85,7 +85,8 @@ def character_keys() -> set[str]:
     """本仓库 `characters.toml` 清单里的角色 key（由主仓库 `pnpm data:roster` 生成）。"""
     path = repo.characters_file()
     if not path.exists():
-        raise SystemExit(f"缺少角色清单：{repo.shown(path)}（先在主仓库跑 `pnpm data:roster`）")
+        raise SystemExit(f"缺少角色清单：{repo.shown(path)}"
+                         f"（应用侧的 `pnpm data:roster` 会生成它；也可以手工维护）")
     roster = tomllib.loads(path.read_text(encoding="utf-8"))
     return {entry["key"] for entry in roster.get("character", [])}
 
