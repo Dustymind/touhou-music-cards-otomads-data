@@ -1,0 +1,56 @@
+# 手动触发一次 CDN 构建（CF Pages 的 Deploy Hook）——给"git 里没有任何变化"的更新用（D148）。
+#
+# 背景：CF Pages 的 Git 集成按 **push** 触发构建；而"重新抓 / 重裁音频"这类更新（D142/D143）**不改任何
+# 被跟踪的文件**（packs 没变、只有音频字节变了）⇒ 推不动构建。这时要么去 CF 面板点 Retry deployment，
+# 要么（本工作流）POST 一下 Deploy Hook —— 效果一样，但留痕在 Actions 里、也不用把 URL 敲进 shell 历史。
+#
+# 一次性配置（本仓库 Settings → Secrets and variables → Actions）：
+#   * secret `CF_DEPLOY_HOOK` —— CF 面板：Workers & Pages → otomads-cdn → Settings → Builds →
+#     Add deploy hook（名字随意、分支选 `main`）→ 复制那个 URL。
+#     ⚠️ 这个 URL **本身就是凭据**（拿到就能触发构建），别贴到公开地方。
+name: trigger-cdn
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 为什么重铺（写进运行摘要，便于日后回看）
+        required: false
+        default: ""
+
+permissions: {}          # 这一步不需要仓库权限，只要那个 hook URL
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 前置检查
+        env:
+          CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+        run: |
+          set -euo pipefail
+          [ -n "${CF_DEPLOY_HOOK:-}" ] || {
+            echo "::error::缺 secret CF_DEPLOY_HOOK（CF 面板 → 项目 → Settings → Builds → Add deploy hook）"
+            exit 1; }
+
+      - name: POST 一次构建
+        env:
+          CF_DEPLOY_HOOK: ${{ secrets.CF_DEPLOY_HOOK }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$CF_DEPLOY_HOOK")
+          echo "Deploy Hook → HTTP $code"
+          case "$code" in
+            2*) ;;
+            *) echo "::error::Deploy Hook 返回 $code（URL 过期/写错了？在 CF 面板重新生成一个）"; exit 1 ;;
+          esac
+          {
+            echo "### 已请求一次 CDN 构建"
+            echo ""
+            echo "- 项目：CF Pages（Git 集成，生产分支 \`main\`）"
+            [ -n "$REASON" ] && echo "- 原因：$REASON"
+            echo "- 去看 CF 面板的 Deployments：这次那条的 Source 列会写 **Deploy Hook**"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "✅ 已触发；构建结果以 CF 面板为准（这里**不**等它跑完 —— 要等就用 deploy-cdn 那条老路）"
