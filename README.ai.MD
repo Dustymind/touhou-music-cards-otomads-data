@@ -115,9 +115,18 @@ pnpm media:pack                      # 在主仓库跑（曲库在那台机器�
 # ② 发布归档：发到**本仓库**的 Release（tag `media`，公开仓库 ⇒ 匿名可下）
 gh release upload media otomads-media.tar.gz --clobber \
     -R Dustymind/touhou-music-cards-otomads-data
-# ③ 触发构建：push 到 `main` 会自动构建；**只换了音频**（git 无变化）时补一下：
+# ③ 触发构建：**push 到 `main` 就自动重建**（`trigger-cdn` 工作流 POST 一次 Deploy Hook）；
+#    ⚠️ 但第 ② 步的 `gh release upload` **不产生任何 git 事件** ⇒ 换完归档要显式触发一次：
 gh workflow run trigger-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
 ```
+
+**哪些改动会/不会自动上线**（D148 实测过）：
+
+| 你改什么 | push 之后 |
+|---|---|
+| `wrangler.jsonc`、`media-worker.mjs`、`tools/**`、`.github/workflows/**` | **自动生效**（这些是**构建侧的输入**；2026-09-25 实测：11:40:28 推送 → 11:40:53 线上已换构建） |
+| `packs/*.toml`、`loudness/otomads.json`（仓库里的**数据**） | **线上不变**：站点内容来自 `media` Release 的归档，不是仓库文件 ⇒ 必须 ⓐ`pnpm media:pack` ⓑ传归档 ⓒ触发一次 |
+| `media` Release 的归档 | 不会自动（`gh release upload` 没有 git 事件）⇒ 手动触发一次（上面第 ③ 步） |
 
 **构建在 Cloudflare 那边跑**（一个 **Worker**，由 **Workers Builds** 连本仓库、生产分支 `main`）：
 Build command 是 `python3 tools/build_cdn_site.py`（见它的 docstring），Deploy command 是
