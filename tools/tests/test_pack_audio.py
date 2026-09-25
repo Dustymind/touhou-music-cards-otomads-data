@@ -191,11 +191,6 @@ def test_load_packs_rejects_bad_layout(tmp_path, monkeypatch, manifest, characte
 
 
 
-def test_audio_descriptors_feed_the_content_hash():
-    rows = packs.audio_descriptors([make_track(title="一", source="https://a", start_time="00:00:01.000")])
-    assert rows == [["demo", "一", "00:00:01.000", "", "https://a"]]
-
-
 # ------------------------------------------------ 曲目表快照（D145，C 路线）
 
 #: **共享测试向量**：与主仓库 `tools/tests/test_build.py` 里那份**同一份字面量**。

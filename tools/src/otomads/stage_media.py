@@ -52,7 +52,6 @@ import hashlib
 import json
 import pathlib
 import shutil
-import sys
 import tarfile
 import tempfile
 import urllib.request

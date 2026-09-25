@@ -16,9 +16,6 @@ DATA = ROOT
 
 #: 本地曲库助手配置（本机自用，已 gitignore）
 DEFAULT_CONFIG = ROOT / "local-source.toml"
-#: 独立跑时默认的曲库位置（`<root>/<专辑>/<曲目>.mp3`）
-DEFAULT_LIBRARY = ROOT / ".music"
-
 
 def packs_dir() -> pathlib.Path:
     """曲包目录：`<DATA>/packs`。"""

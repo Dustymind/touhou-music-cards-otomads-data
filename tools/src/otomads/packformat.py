@@ -62,9 +62,6 @@ import tomllib
 
 from . import paths as repo
 
-#: 曲包的 kind：local 表示曲目地址来自本地曲库助手的 manifest
-PACK_KINDS = ("local",)
-
 #: 各段允许的键。**写错键名必须报错**：早先解析只读自己认识的键，
 #: 拼错的 `starttime` 会被静默丢掉，表现为"数据里写了却不生效"（见 docs/packs-audio-v1.md §1）。
 PACK_KEYS = {"id", "label_en", "label_zh", "kind", "order"}
@@ -329,17 +326,6 @@ def _read_audio_keys(entry: dict, track: dict, where: str) -> None:
         raise SystemExit(f"{where}：{error}") from None
 
 
-def audio_descriptors(tracks: list[dict]) -> list[list[str]]:
-    """曲包音频的**指纹**：`[专辑, 曲名, start_time, stop_time, source]`（按值排序，稳定）。
-
-    主仓库的 `tmc.build` 把它并进 `contentHash` —— 于是"两端的音频来源/裁剪不同"会在联机**握手期**被拒，
-    而不是等抢答时才发现起点不一样（docs/packs-audio-v1.md §6）。
-    """
-    rows = [[track["album"], track["title"], track.get("start_time", ""), track.get("stop_time", ""),
-             track.get("source", "")] for track in tracks]
-    return sorted(rows)
-
-
 def music_entry(track: dict) -> list:
     """一条曲目 → 运行时 ``music`` 条目：``[专辑, 曲名, 附加信息]`` + 可选作者（第 4 位）+ 可选多作者（第 5 位）。
 
@@ -453,6 +439,10 @@ def revisions_of(entries) -> str:
 
 def media_revision(entries) -> str:
     """`[(清单里的名字, 文件路径), …]` → **数据版本号**（16 位十六进制，sha1 截断）。
+
+    ⚠️ **这不是遗留物**（别当成 D149 的旧口径删掉）：归档侧确实换成了 :func:`content_revision`，
+    但**本机曲库助手**（`local_source.build_manifest`，主仓库 `pnpm local` 那条路）仍用它 ——
+    它每次请求现算，没必要为缓存键去哈希整个曲库。
 
     前端把它拼进媒体地址（`?v=<revision>`，主仓库 D144）：**版本一变 = URL 一变** ⇒ 浏览器与
     CDN 都不能拿旧的顶。缓存键因此跟"音频本身"走，而不是跟"链接"走。
