@@ -27,11 +27,14 @@ CF Pages 的 Git 集成（连本仓库、生产分支 `main`）在每次 push �
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import pathlib
 import shutil
 import sys
 import urllib.request
+from datetime import datetime, timezone
 
 #: 让 `import otomads` 生效：这个脚本在 `tools/` 下，包在 `tools/src/`（CF 的构建镜像里没有 uv，
 #: 也不装依赖 —— 工具是**纯标准库**，所以只补一条 sys.path 就够）
@@ -73,6 +76,11 @@ HEADERS_FILE = """\
 #: `_headers` 在部署根里的固定名字（Workers / Pages 都认这个名字）
 HEADERS_NAME = "_headers"
 
+#: 这次构建的标记：`curl <站点>/build-info.json` 一眼看出"线上是哪一次构建、用的哪份归档"。
+#: 为什么需要它：Workers 静态资源的缓存键**不含查询串**，`?ci=` 绕不过去 —— 判断"新构建上没上"
+#: 只能靠一个**新路径**（这个文件之前不存在 ⇒ 第一次请求必然回源）。不是机密，只是自述。
+BUILD_INFO_NAME = "build-info.json"
+
 
 def fetch(url: str, target: pathlib.Path) -> pathlib.Path:
     """取归档到 `target`（认 `file://` 与 http(s)，后者跟随重定向）。"""
@@ -108,6 +116,16 @@ def main() -> int:
     stage_media.extract(archive, out)
     (out / HEADERS_NAME).write_text(HEADERS_FILE, encoding="utf-8")
     print(f"    写 {out}/{HEADERS_NAME}：CORS `*` + 清单/响度表每次校验 + 媒体 4 小时")
+    info = {
+        "builtAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "archive": url,
+        "archiveSha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+        "commit": os.environ.get("WORKERS_CI_COMMIT_SHA", os.environ.get("GITHUB_SHA", "")),
+        "branch": os.environ.get("WORKERS_CI_BRANCH", os.environ.get("GITHUB_REF_NAME", "")),
+    }
+    (out / BUILD_INFO_NAME).write_text(json.dumps(info, ensure_ascii=False, indent=1) + "\n",
+                                      encoding="utf-8")
+    print(f"    写 {out}/{BUILD_INFO_NAME}：{info['commit'][:12] or '(无 commit 信息)'} @ {info['builtAt']}")
 
     manifest = stage_media.manifest_of(archive)
     entries = sum(len(character["music"]) for character in manifest["characters"])

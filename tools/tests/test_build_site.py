@@ -70,8 +70,8 @@ def test_build_script_lays_the_archive_out_byte_for_byte(archive, tmp_path):
             laid = out / name
             assert laid.is_file(), f"没铺出来：{name}"
             assert laid.read_bytes() == tar.extractfile(name).read(), f"字节不同：{name}"
-        # 输出目录里**只有**归档的东西 + 构建自己写的 `_headers`（不多不少）
-        top = sorted({name.split("/", 1)[0] for name in names} | {"_headers"})
+        # 输出目录里**只有**归档的东西 + 构建自己写的两个文件（`_headers` 与 `build-info.json`）
+        top = sorted({name.split("/", 1)[0] for name in names} | {"_headers", "build-info.json"})
     assert sorted(entry.name for entry in out.iterdir()) == top
 
 
