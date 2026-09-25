@@ -260,7 +260,12 @@ def _safe_members(archive: tarfile.TarFile) -> list[tarfile.TarInfo]:
     return members
 
 
-def _extract(archive_path: pathlib.Path, out: pathlib.Path) -> None:
+def extract(archive_path: pathlib.Path, out: pathlib.Path) -> None:
+    """把归档解到 `out`（= 部署根）——**按不可信输入处理**：拒绝对路径、`..`、链接/设备。
+
+    归档可能来自网络（Release 资产 / 对象存储），所以这条路是**唯一**该用来铺盘的地方：
+    手写 `tarfile.extractall` 会踩经典的路径穿越。`stage` 与 CF Pages 的构建脚本都走它。
+    """
     with tarfile.open(archive_path, "r:*") as archive:
         out.mkdir(parents=True, exist_ok=True)
         members = _safe_members(archive)
@@ -323,7 +328,7 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
                 raise SystemExit(f"❌ 归档不存在：{local}")
         if not str(local).endswith(ARCHIVE_SUFFIXES):
             raise SystemExit(f"❌ 只认 tar 归档（{ARCHIVE_SUFFIXES}），收到 {local.name}")
-        _extract(local, out)
+        extract(local, out)
 
     manifest_path = out / MANIFEST_NAME
     tracks = audio_files(out / MEDIA_DIR / album)
