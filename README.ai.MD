@@ -64,10 +64,15 @@ uv run --project tools pytest
   匹配键与响度表键，不能变），所以把一个老条目改成数组**不用重抓/重裁音频**。
   多作者只影响**显示**：主仓库播放页与关于页按"英文/拼音首字母"排序后并列。
   `python -m otomads.ingest_pack` 也认：录入行里把那一项写成数组（`"author": ["甲", "乙"]`）即落盘成 `authors`。
-- 音频与卡面素材都**不在本仓库**：`kind = "local"`，由本机曲库助手从 `<曲库>` 提供。
-- `sources/otomads.toml` 的 `table_url` 必须是**真相对路径**（`manifest.json`，**不带前导 `/`**）：
-  带前导 `/` 是域名根绝对路径，站点部署在子目录（GitHub Pages 项目页）时会打到根上 → 404 →
-  音MAD 所有曲目解析不出地址。主仓库 `tmc.build` / `tmc.validate` 会守这条（主仓库决策 D131）。
+- 音频与卡面素材都**不在本仓库**：素材由**源**提供（默认是项目 CDN，见下一条）。
+- `sources/otomads.toml` 的 `table_url` 有两种合法形态（主仓库 `tmc.build` / `tmc.validate` 会守，D131）：
+  **绝对 URL**（本仓库**默认**用的就是这种：`https://otomads-cdn.tsukinomiyako-mangesui.top/manifest.json`）
+  或**真相对路径**（`manifest.json`，**不带前导 `/`**，同源取表）。带前导 `/` 是域名根绝对路径，
+  站点部署在子目录（GitHub Pages 项目页）时会打到根上 → 404 → 音MAD 所有曲目解析不出地址。
+  CDN 那份 manifest 里的曲目地址是**相对路径**，由前端按 **manifest 所在的那一层**解析（主仓库 D141）
+  ⇒ 换域名/换子路径都不用改素材；响度表由 manifest 的 `loudness` 键声明（D139），同样相对 manifest。
+  `kind = "local"` 是**故意保留的**：设置页「本地曲库地址」与 `?localmusic=` 只覆盖 kind=local 的源 ——
+  本机开发就是靠它把默认源指回自己的曲库（`?localmusic=127.0.0.1:8011`，或在设置页填地址再点「应用」）。
 
 ## 加一首曲目
 
@@ -104,12 +109,16 @@ uv run --project tools python -m otomads.stage_media stage --from <曲库> --out
 **部署方式**：静态音MAD 源由人**手动**铺 —— 主仓库的 Pages 工作流**不**拉素材（用户裁定，见主仓库 D138）；
 而且主仓库是**私有**的，Release 资产对匿名请求返回 404，所以要取就带令牌：
 `gh release download <tag> --pattern otomads-media.tar.gz`，或本机 `pnpm media:pack` 现打一份。
+**线上那一份**铺在 `otomads-cdn.tsukinomiyako-mangesui.top`（Cloudflare，CORS `*`、支持 Range）——
+`sources/otomads.toml` 的默认 `table_url` 就指向它（主仓库 D141）⇒ 应用与静态站都不必自带素材。
+换宿主/换路径时：重铺一份 + 改 `table_url`（绝对地址即可，manifest 里的相对地址会自动跟着走）。
 
 **三条口径**（改这里之前先读）：
 
 * `manifest.json` 的媒体地址默认写**相对**（`media/otomads/<文件>.mp3`）⇒ 归档与**部署基地址无关**：
   域名根与子目录（GitHub Pages 项目页）用**同一份归档**；要绝对地址就 `--base https://host/sub/`。
-  前端把解析出来的 URL 直接赋给 `audio.src`，相对地址按**页面**解析，所以两种都成立。
+  前端按 **manifest 所在的那一层**解析这些相对地址（主仓库 D141）⇒ 同一份归档既能铺在**应用同源**下，
+  也能铺在**另一个域名**（CDN / R2）上，后者正是注册表默认源现在的形态。
 * **响度表跟着源走**（主仓库 D139）：注册表声明的表会被打进归档的 `loudness/otomads.json`，并在 manifest 里用
   `"loudness": "loudness/otomads.json"` 声明（路径**相对 manifest 自身**）。前端**优先**按它取，没声明才回落到
   应用侧那份（`public/data/<模式>/loudness/`）—— 所以同一个源换宿主（R2 / 别的域名 / 独立静态站）不用改应用。

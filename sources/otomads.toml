@@ -1,30 +1,42 @@
 # 音乐源注册表（一个模式一份；前端读取，改这里就能加/改音源，不需要改代码）。
-# kind: remote = 远程镜像；local = 本机助手（tools/src/tmc/local_source.py）
+# kind: remote = 远程镜像；local = 可被「本地曲库地址」/`?localmusic=` 覆盖的曲库源
 # order: 默认 fallback 顺序（用户在设置页可调）；enabled: 默认开关状态
 # proxyable: 预留 —— 出现混合内容/跨域时可由助手代理
-# table_url 用**相对路径**（不带前导 `/`）= 相对**数据集目录**，同源取表（单端口部署下即同源）。
+#
+# table_url 的两种合法形态（守卫：主仓库 `tmc.build.table_url_problem` + `tmc.validate`，D131）：
+#   * **绝对 URL**（`https://…/manifest.json`）—— 源挂在**别的域名**上（本文件就是这种）；
+#   * **真相对路径**（`manifest.json`，**不带前导 `/`**）—— 相对应用所在那一层，同源取表。
 #   ✗ 不要写成 `/manifest.json`：那是**域名根**绝对路径，站点一旦部署在子目录
 #     （GitHub Pages 项目页 `user.github.io/<repo>/`、任意子路径反代）就会打到根上 → 404 →
-#     音MAD 所有曲目解析不出地址。守卫：主仓库 `tmc.validate` + `tools/tests/test_build.py`（D131）。
+#     音MAD 所有曲目解析不出地址。
 #
-# 为什么按模式拆（主仓库契约 docs/sources-separation-v1.md）：远程镜像里只有**原曲**曲目，本地助手只服务**音MAD**，
-# 拆开之后音MAD 模式不会再下载那三份用不上的镜像表（约 334 KB），也不再需要"切模式时偷偷把本地源打开"。
+# 默认源 = **项目 CDN**（D141）：manifest 与音频、响度表都在 CDN 上同一个目录里。
+#   * manifest 里的曲目地址是**相对路径**（`media/otomads/…`），由前端按 **manifest 所在的那一层**解析
+#     （主仓库 D141）⇒ 换域名、换子路径都不用改这份素材；
+#   * 响度表由 manifest 用 `loudness` 键声明，路径同样相对 manifest（D139）⇒ 表跟着源走；
+#   * 想在自己的机器/自己的域名上跑：把 table_url 改回 `manifest.json`（同源）或换成自己的绝对地址。
 #
-# 音MAD：只有本地曲库助手（地址只能从它的 /manifest.json 解析）。
-# `enabled = true` 是**必须的**：本模式除了它没有别的源（tmc.validate 会守这条）。
-# 本机分开跑（应用 5173 + 助手 8011）时用 ?localmusic=127.0.0.1:8011 或设置页填地址覆盖。
+# `kind = "local"` 是**故意保留的**（不是"本机助手专用"的意思）：
+#   设置页的「本地曲库地址」与 `?localmusic=` 只覆盖 kind=local 的源，本机开发
+#   （应用 5173 + 助手 8011）就是靠它把默认源临时指回自己的曲库：`?localmusic=127.0.0.1:8011`，
+#   或在设置页填地址 → 点「应用」（想回默认就点旁边的「重置」）。
 #
-# 注意：本地 manifest 的地址**每台机器不同**，所以源表不进 contentHash（契约 §6）。
+# 音MAD 只有这一个源，`enabled = true` 是**必须的**（tmc.validate 会守这条）。
+# 为什么按模式拆（主仓库契约 docs/sources-separation-v1.md）：远程镜像里只有**原曲**曲目，
+# 音MAD 侧拆出来后不会再下载那三份用不上的镜像表（约 334 KB）。
+#
+# 注意：源的地址**不进 contentHash**（契约 §6）⇒ 改这里不需要联机两端一起更新。
 
 [[source]]
 id = "local"
 label_en = "Local library"
 label_zh = "本地曲库"
-table_url = "manifest.json"
+# 默认：CDN 上那份音MAD 素材（manifest 自带媒体地址与响度表声明）
+table_url = "https://otomads-cdn.tsukinomiyako-mangesui.top/manifest.json"
 loudness = "loudness/otomads.json"   # 本源自己的响度表（otomads.measure_loudness / fetch_audio 生成）
-kind = "local"
+kind = "local"     # 保留 local：设置页「本地曲库地址」/`?localmusic=` 才能把它指回本机曲库
 order = 1          # 本模式只有它一个源
 enabled = true     # 必须默认开：音MAD 除了它没有别的来源（tmc.validate 守）
 proxyable = false
-description_en = "Tracks served by the local helper (tools/src/tmc/local_source.py)."
-description_zh = "由本机助手提供的曲目（tools/src/tmc/local_source.py）。"
+description_en = "Otomads tracks, served by the project CDN. Set the local library address to your own helper to use a local library instead."
+description_zh = "音MAD 曲目，默认由项目 CDN 提供。想用自己的曲库，就把上面的「本地曲库地址」指向本机助手。"
