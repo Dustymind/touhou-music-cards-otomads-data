@@ -65,6 +65,11 @@ TRIM_ENCODER = ["-c:a", "libmp3lame", "-q:a", "0"]
 #: 定位到裁剪点**之前**这么多秒再开始解码，然后在输出侧把这一段丢掉（见 `render`）。
 #: 0.5 秒 ≈ 19–21 个 mp3 帧，远多于 mp3 解码器喂热比特池所需的两三帧 —— 留余量不心疼（多解 0.5 秒音频）。
 TRIM_WARMUP = 0.5
+#: **抓取口径的版本号**，同样是状态签名的一部分：换了"怎么把 source 变成原件"，旧原件就作废、重下。
+#: 2026-09-25：`download()` 补上 `noplaylist`（原来的 `ingest_otomads.py` 有 `--no-playlist`，
+#: 搬到 `fetch_audio` 时丢了 ⇒ 多 P 视频会被当成选集整套抓、各 P 互相覆盖、最后留下**最后一 P**）。
+#: 不 +1 的话那 4 条多 P source 的旧原件（p2）会被 `fresh` 判为"还是目标状态"而跳过 ✗。
+FETCH_VERSION = "single-v1"
 #: **渲染口径的版本号**，进状态签名：改了成品是怎么产出的，旧状态就自动作废、重裁一遍。
 #: 2026-09-25：裁剪从 `-c copy` 改成"解码后精确切 + 重编码"（三处实测问题见 `render`），
 #: 必须 +1 —— 否则旧的 `outHash` 仍然对得上，幂等检查会直接跳过那 16 首 ✗。
@@ -208,6 +213,20 @@ def download(source: str, raw: pathlib.Path) -> None:
 
     `cachedir: False`：并发时每个线程各建一个 `YoutubeDL`，关掉缓存目录就**没有共享写点**
     了（yt-dlp 的 `YoutubeDL` 没有官方线程安全承诺，这里只共享"不写"的部分）。
+
+    **`noplaylist: True` —— 一条 `source` = 一首曲目**（契约 §7 第 7 条），别让 yt-dlp 把一个
+    source 当成播放列表整套抓。对 bilibili 的多 P 视频这条是**必须的**（D143）：
+
+    * **不带它**：多 P 且链接里没写 `?p=` 时，extractor 走 `_yes_playlist()`
+      （`yt_dlp/extractor/bilibili.py` 的 `is_anthology and not part_id and ...`）⇒ 返回**整张选集**，
+      每 P 一个条目；而 `outtmpl` 是**固定的文件名** ⇒ 各 P 互相覆盖，最后留下的是**最后一 P**。
+      实测本包 4 条多 P source 全部中招（`月时盆` 拿到 p2「原曲只使用」而不是 p1「原曲不使用」）。
+    * **带上它**：`_yes_playlist()` 返回 False ⇒ 落到 `part_id = part_id or 1` ⇒ **默认 p1**；
+      链接里写了 `?p=N` 时 `part_id` 已经有值、压根不进那个分支 ⇒ **仍按链接参数解析** ✓。
+      两种写法都对，正是要的行为。
+
+    历史脚本 `ingest_otomads.py` 当年传的是 CLI 的 `--no-playlist`（等价于这个键），
+    是搬到 `fetch_audio` 时丢掉的 —— 这次补回来。
     """
     import yt_dlp
 
@@ -217,25 +236,40 @@ def download(source: str, raw: pathlib.Path) -> None:
         "outtmpl": str(raw.with_suffix("")) + ".%(ext)s",
         "quiet": True, "no_warnings": True, "noprogress": True, "retries": 3,
         "cachedir": False,
+        "noplaylist": True,
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3",
                             "preferredquality": "0"}],
     }
     with yt_dlp.YoutubeDL(options) as ydl:
-        ydl.download([source])
+        # 先只解析、不落地：`noplaylist` 只是"在犹豫时选单个视频"，万一某个 extractor 仍然
+        # 展开成播放列表，宁可**当场报错**，也不能让各条目覆盖同一个文件名、悄悄留下最后一 P
+        # （那正是这次的病；报错也比默默给错音频强）。
+        info = ydl.extract_info(source, download=False)
+        entries = list((info or {}).get("entries") or [])
+        if len(entries) > 1:
+            raise RuntimeError(
+                f"这个 source 解析出 {len(entries)} 个条目（播放列表 / 多 P 选集），"
+                f"而一条 source 只能对应一首曲目 —— 请把 source 指到具体那一个"
+                f"（bilibili 就在链接后面加 `?p=N`）")
+        ydl.process_ie_result(info, download=True)
     if not raw.exists():
         others = sorted(path.name for path in raw.parent.glob(raw.stem + ".*"))
         raise RuntimeError(f"下载完成但没得到 {raw.name}（实际文件：{others or '无'}）")
 
 
-def ensure_raw(source: str, raw_path: pathlib.Path, *, force: bool, stale_source: bool) -> None:
-    """确保原件在 `.raw/`（已在且来源没变就**不重下**）。
+def ensure_raw(source: str, raw_path: pathlib.Path, *, force: bool, stale: bool) -> None:
+    """确保原件在 `.raw/`（已在、且**来源与抓取口径都没变**就**不重下**）。
+
+    `stale` 有两层来源：状态里的 `source` 变了，或 `fetch`（抓取口径，见 `FETCH_VERSION`）
+    变了 —— 后者尤其重要：口径变了但链接没变时，旧原件**必须换掉**（多 P 视频的 p2 就是
+    这么留下来的），但状态里的 `source` 与 `outHash` 全都对得上，不显式判它就会被跳过 ✗。
 
     "要不要下"这个判断和下载本身必须在**同一把锁**里：两条曲目共用同一个 `source` 时，
     后到的线程等前一个下完，再看一眼就发现原件已在 → 直接复用 ✓（`--force` 时确实会各下一遍，
     但那本来就是"强制重来"的语义）。
     """
     with _raw_lock(source):
-        if force or not raw_path.exists() or stale_source:
+        if force or not raw_path.exists() or stale:
             download(source, raw_path)
 
 
@@ -462,14 +496,23 @@ def process_track(track: dict, *, library: pathlib.Path, state: dict,
 
     signature = {"source": source, "start": track.get("start_time", ""), "stop": track.get("stop_time", ""),
                  # 裁剪的成品带 **渲染口径**；不裁剪的成品是硬链接，口径与它无关（见 LINK_RENDER）
-                 "render": RENDER_VERSION if wanted else LINK_RENDER}
+                 "render": RENDER_VERSION if wanted else LINK_RENDER,
+                 # 原件的**抓取口径**（多 P 默认取哪一 P 就是它管的，见 FETCH_VERSION）
+                 "fetch": FETCH_VERSION}
     raw_path = library / RAW_DIR / f"{packs.source_key(source)}.mp3"
+    # 原件要不要重下：来源换了（同一条曲目改了 source）**或抓取口径换了**（旧原件可能是错的）。
+    # 两条都在"状态里的 source/outHash 仍然对得上"时**照样成立** ⇒ 必须显式判，否则会被 fresh 跳过 ✗。
+    # 只在**这条曲目以前抓过**（`entry` 非空）时判：状态里没有它的条目 = 第一次见它，此时原件可能是
+    # 同 source 的孪生曲目刚下的那份 ⇒ 不能凭"没有 fetch 键"就重下（契约 §7 第 10 条：同源只下一份）
+    stale_raw = bool(entry) and (entry.get("source") != source
+                                 or entry.get("fetch") != FETCH_VERSION)
     # 状态里这些字段是**内联**存的（见下方写回），所以这里也按内联比
     fresh = (raw_path.exists() and out_path.exists()
              and entry.get("source") == signature["source"]
              and entry.get("start", "") == signature["start"]
              and entry.get("stop", "") == signature["stop"]
              and entry.get("render", "") == signature["render"]
+             and entry.get("fetch", "") == signature["fetch"]
              and entry.get("outHash") == hash_file(out_path))
     if fresh and not args.force:
         return {"status": "skip", "title": title, "detail": "已是目标状态"}, {}
@@ -478,15 +521,20 @@ def process_track(track: dict, *, library: pathlib.Path, state: dict,
         action = "下载 + 裁剪" if wanted else "下载"
         if not raw_path.exists():
             return {"status": "dry", "title": title, "detail": f"{action} ← {source}"}, {}
+        if stale_raw:
+            # 原件在、但要换掉它（口径/来源变了）—— 计划里要**说出来**，不然会被读成"只重裁"
+            return {"status": "dry", "title": title,
+                    "detail": f"重下{' + 裁剪' if wanted else ''}（"
+                              f"{'抓取口径变了' if entry.get('fetch') != FETCH_VERSION else '来源变了'}）"
+                              f" ← {source}"}, {}
         return {"status": "dry", "title": title,
                 "detail": f"{'裁剪' if wanted else '落成品'}（原件已在）"}, {}
 
     claimed: dict[tuple[str, str, str], pathlib.Path] = {}
     try:
-        # 原件是按 **source** 存的：只要它还在、且这条曲目没换来源，就不重新下载
+        # 原件是按 **source** 存的：只要它还在、且这条曲目的来源与抓取口径都没变，就不重新下载
         # （同一 source 的第二条曲目本来就没有自己的状态，不能因此重下 ✗）
-        stale_source = bool(entry.get("source")) and entry["source"] != source
-        ensure_raw(source, raw_path, force=args.force, stale_source=stale_source)
+        ensure_raw(source, raw_path, force=args.force, stale=stale_raw)
 
         twin_key = (source, signature["start"], signature["stop"])
         if args.force:

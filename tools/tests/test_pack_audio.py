@@ -406,6 +406,122 @@ def stub_download(source: str, raw) -> None:
     raw.write_bytes(b"ID3" + b"\x00" * 32)
 
 
+# ---------------------------------- 一条 source = 一首曲目（多 P 默认取 p1，D143）
+
+def fake_ytdlp(monkeypatch, result: dict) -> list:
+    """装一个假 `yt_dlp`（`download()` 里是**函数内** import ⇒ 换 `sys.modules` 即可），不联网。
+
+    返回被造出来的 `YoutubeDL` 实例列表：用例从 `options` 与 `extracted` / `processed` 上取证。
+    """
+    made: list = []
+
+    class FakeYDL:
+        def __init__(self, options):
+            self.options = options
+            self.extracted: list = []
+            self.processed: list = []
+            made.append(self)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+        def extract_info(self, url, download=False):
+            self.extracted.append((url, download))
+            return result
+
+        def process_ie_result(self, info, download=True):
+            self.processed.append((info, download))
+            # 模拟"落地一个文件"：outtmpl 是 `<raw 去掉后缀>.%(ext)s`
+            pathlib.Path(self.options["outtmpl"].replace(".%(ext)s", ".mp3")).write_bytes(b"ID3" + b"\x00" * 16)
+
+    module = types.ModuleType("yt_dlp")
+    module.YoutubeDL = FakeYDL
+    monkeypatch.setitem(sys.modules, "yt_dlp", module)
+    return made
+
+
+def test_download_asks_yt_dlp_for_a_single_video(tmp_path, monkeypatch):
+    """**回归守卫**：`noplaylist` 必须传给 yt-dlp。
+
+    少了它，bilibili 多 P 视频（链接没写 `?p=`）会被 extractor 当成**整张选集**返回
+    （`_yes_playlist()`），而 `outtmpl` 是固定文件名 ⇒ 各 P 互相覆盖，最后留下**最后一 P**。
+    实测本包 4 条多 P source 全部中招（`月时盆` 拿到 p2「原曲只使用」而不是 p1「原曲不使用」）。
+    历史脚本 `ingest_otomads.py` 传的是 `--no-playlist`，是搬到 `fetch_audio` 时丢的。
+    """
+    made = fake_ytdlp(monkeypatch, {"id": "BVx_p1", "title": "p01"})
+    raw = tmp_path / ".raw" / "abcdef.mp3"
+
+    fetch_audio.download("https://www.bilibili.com/video/BVx/", raw)
+
+    assert made[0].options["noplaylist"] is True
+    assert made[0].options["cachedir"] is False              # 并发时不许有共享写点
+    # 解析阶段**不下载**（先看清是单个视频还是选集），落地只走 process_ie_result
+    assert made[0].extracted == [("https://www.bilibili.com/video/BVx/", False)]
+    assert [flag for _info, flag in made[0].processed] == [True]
+    assert raw.exists()
+
+
+def test_download_refuses_a_source_that_resolves_to_many_entries(tmp_path, monkeypatch):
+    """兜底：万一某个 extractor 无视 `noplaylist`，宁可**报错**也不能悄悄留下最后一 P。"""
+    made = fake_ytdlp(monkeypatch, {"_type": "playlist", "entries": [{"id": "a"}, {"id": "b"}]})
+    raw = tmp_path / ".raw" / "abcdef.mp3"
+
+    with pytest.raises(RuntimeError) as caught:
+        fetch_audio.download("https://example.com/collection", raw)
+
+    message = str(caught.value)
+    assert "2 个条目" in message and "?p=N" in message
+    assert made[0].processed == []                           # 一个字节都没下
+    assert not raw.exists()
+
+
+def test_fetch_version_invalidates_an_old_raw_and_refetches(tmp_path, monkeypatch):
+    """**回归守卫**：抓取口径变了 ⇒ 旧原件必须换掉（光看链接与 `source` 是看不出来的）。
+
+    D142 那轮踩过一次同类坑（渲染口径），这次是抓取口径：链接没变、`outHash` 也对得上，
+    不显式判 `fetch` 就会把"可能是别的 P"的旧原件当成"已是目标状态"跳过 ✗。
+    """
+    downloads: list[str] = []
+
+    def counting_download(source, raw):
+        downloads.append(source)
+        stub_download(source, raw)
+
+    monkeypatch.setattr(fetch_audio, "download", counting_download)
+    track = make_track(title="标题", author="A", source="https://example.com/a")
+    state: dict = {"version": 1, "tracks": {}}
+    args = dry_args(dry_run=False)
+
+    run_track(track, library=tmp_path, state=state, outputs={}, args=args, changed=set())
+    assert state["tracks"]["demo\u0001标题"]["fetch"] == fetch_audio.FETCH_VERSION
+    assert len(downloads) == 1
+
+    run_track(track, library=tmp_path, state=state, outputs={}, args=args, changed=set())
+    assert len(downloads) == 1, "口径没变就不该重下（幂等）"
+
+    state["tracks"]["demo\u0001标题"].pop("fetch")           # 旧版本落盘的模样
+    run_track(track, library=tmp_path, state=state, outputs={}, args=args, changed=set())
+    assert len(downloads) == 2, "抓取口径变了却没重下 —— 旧原件（可能是别的 P）会被留下来"
+
+
+def test_dry_run_says_when_the_raw_will_be_refetched(tmp_path):
+    """计划里要**说出**"原件会被换掉"，不然 `（原件已在）` 会被读成"只重裁"。"""
+    track = make_track(title="标题", author="A", source="https://example.com/a")
+    raw = tmp_path / fetch_audio.RAW_DIR / f"{packs.source_key('https://example.com/a')}.mp3"
+    raw.parent.mkdir(parents=True)
+    raw.write_bytes(b"ID3")
+    state = {"version": 1, "tracks": {"demo\u0001标题": {"source": "https://example.com/a"}}}
+
+    outcome = run_track(track, library=tmp_path, state=state, outputs={},
+                        args=dry_args(), changed=set())
+
+    assert outcome["status"] == "dry"
+    assert "重下" in outcome["detail"] and "抓取口径变了" in outcome["detail"]
+
+
 # ------------------------------------------- 裁剪精度（唯一一条真跑 ffmpeg 的用例）
 
 def decode_pcm(path, rate: int) -> array.array:
