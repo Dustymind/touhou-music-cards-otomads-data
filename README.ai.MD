@@ -73,8 +73,10 @@ uv run --project tools python -m otomads.fetch_audio                    # ③ �
 
 ## 本地跑
 
+需要 **Python ≥ 3.11**（工具用标准库 `tomllib` 读 TOML）与 `uv`；裁剪另需 `ffmpeg`。
+
 ```bash
-uv sync --project tools            # 建 tools/.venv（依赖只有 yt-dlp；裁剪另需 ffmpeg）
+uv sync --project tools            # 建 tools/.venv（依赖只有 yt-dlp）
 cp local-source.toml.example local-source.toml
 uv run --project tools python -m otomads.local_source    # → http://127.0.0.1:8011/manifest.json
 uv run --project tools pytest                            # 141 条
