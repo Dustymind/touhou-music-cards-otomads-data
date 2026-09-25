@@ -107,13 +107,29 @@ uv run --project tools python -m otomads.stage_media stage --from <曲库> --out
 ```
 
 主仓库有配套包装：`pnpm media:pack` / `pnpm media:stage` / `OTOMADS_MEDIA_URL=<URL> pnpm media:pull`。
-**部署方式**（D146 起分两半）：**打包仍然只能在本地**（manifest 里每首的 `revision` 是本机文件的
-名字+大小+mtime，而曲库不在任何仓库里）；**铺到线上**交给主仓库的
-`.github/workflows/deploy-otomads-cdn.yml`（从 Release 归档 → Cloudflare Pages 项目 `otomads-cdn`，
-跑完还会拿"线上 manifest 与归档逐字节相同"复核）。主仓库的 Pages 工作流**仍然不碰素材**（D138 的取舍没变），
-它现在也**暂时停用**了（应用由 Vercel 部署，见主仓库 D146）。
-主仓库是**私有**的，Release 资产对匿名请求返回 404，所以要取就带令牌：
-`gh release download <tag> --pattern otomads-media.tar.gz`，或本机 `pnpm media:pack` 现打一份。
+**部署方式**（D147 起，三件事各归各位）：
+
+```bash
+# ① 打包：**只能在本地**（manifest 里每首的 `revision` 是本机文件的名字+大小+mtime，D144；曲库不在仓库里）
+pnpm media:pack                      # 在主仓库跑（曲库在那台机器上）
+# ② 发布归档：发到**本仓库**的 Release（tag `media`，公开仓库 ⇒ 匿名可下）
+gh release upload media otomads-media.tar.gz --clobber \
+    -R Dustymind/touhou-music-cards-otomads-data
+# ③ 铺到线上：本仓库的 Actions → deploy-cdn（取归档 → 对照本仓库 packs 自检 → 铺 Cloudflare Pages）
+gh workflow run deploy-cdn.yml -R Dustymind/touhou-music-cards-otomads-data
+```
+
+工作流跑完会拿"**线上 manifest 与归档逐字节相同**"当成功判据，并在日志里对照本仓库 `packs/`
+（归档少了 = 改完 packs 忘了重打包；只警告、不拦）。自托管的人直接下归档，**不用令牌**：
+
+```bash
+gh release download media --pattern otomads-media.tar.gz -R Dustymind/touhou-music-cards-otomads-data
+# 或者：
+curl -LO https://github.com/Dustymind/touhou-music-cards-otomads-data/releases/download/media/otomads-media.tar.gz
+```
+
+主仓库的 Pages 工作流**不碰素材**（D138 的取舍没变），而且现在**暂时停用**了（应用由 Vercel 部署，
+见主仓库 D146）。
 **线上那一份**铺在 `otomads-cdn.tsukinomiyako-mangesui.top`（Cloudflare，CORS `*`、支持 Range）——
 `sources/otomads.toml` 的默认 `table_url` 就指向它（主仓库 D141）⇒ 应用与静态站都不必自带素材。
 换宿主/换路径时：重铺一份 + 改 `table_url`（绝对地址即可，manifest 里的相对地址会自动跟着走）。

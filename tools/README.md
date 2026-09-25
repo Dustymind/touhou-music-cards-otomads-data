@@ -11,7 +11,7 @@
 | `otomads.loudness` / `otomads.measure_loudness` | 逐曲响度均衡：度量核心 + CLI |
 | `otomads.parse_ingest_rows` | 录入原始行 → `tools/ingest_rows_<日期>.json` |
 | `otomads.ingest_otomads` / `otomads.ingest_local_audio` | 批量下载 / 本地待转音频入库 |
-| `otomads.stage_media` | 静态部署两步：`pack` 打归档（`manifest.json` + `media/<专辑>/*.mp3` + **本源响度表** + 可选卡面；**可复现**）、`stage` 铺进 `dist/`（从归档或本地曲库；自检 manifest ↔ 音频 ↔ 响度表覆盖）。归档按**不可信输入**处理（拒绝对路径/`..`/链接）。主仓库 D138/D139/D145 |
+| `otomads.stage_media` | 静态部署三步：`pack` 打归档（`manifest.json` + `media/<专辑>/*.mp3` + **本源响度表** + 可选卡面；**可复现**）、`stage` 铺进 `dist/`（从归档或本地曲库；自检 manifest ↔ 音频 ↔ 响度表覆盖）、**`review` 铺之前自检一个待发布的归档**（清单五键、每行都有文件、并对照本仓库 `packs/`；主仓库 D138/D139/D145/**D147**）。归档按**不可信输入**处理（拒绝对路径/`..`/链接） |
 
 ## 独立跑（不依赖主仓库）
 
@@ -25,7 +25,8 @@ uv run python -m otomads.fetch_audio --dry-run      # 看抓取/裁剪计划
 uv run python -m otomads.fetch_audio --jobs 4       # 抓取/裁剪（并发 4；1 = 串行）
 uv run python -m otomads.ingest_pack --pack otomads \
     --rows tools/ingest_rows_<日期>.json --dry-run  # 看录入计划
-uv run pytest                                       # 工具测试
+uv run python -m otomads.stage_media review --archive <归档>   # 铺之前自检（CDN 工作流用的就是它）
+uv run pytest                                       # 工具测试（CI 里由 .github/workflows/tests.yml 跑）
 ```
 
 `local-source.toml`、`.music/`、`.uv/` 都已 gitignore：曲库与配置是机器相关的，不进仓库。
