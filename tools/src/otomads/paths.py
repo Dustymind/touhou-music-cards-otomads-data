@@ -17,6 +17,11 @@ DATA = ROOT
 #: 本地曲库助手配置（本机自用，已 gitignore）
 DEFAULT_CONFIG = ROOT / "local-source.toml"
 
+#: 认的音频扩展名（`local_source.scan_library` / `stage_media.audio_files` / `loudness.measure_library`
+#: 三处扫描共用一套口径 —— 以前 `loudness` 自己写死 `.mp3` 且**会收点开头的文件**）。
+AUDIO_EXTENSIONS = (".mp3",)
+
+
 def packs_dir() -> pathlib.Path:
     """曲包目录：`<DATA>/packs`。"""
     return DATA / "packs"

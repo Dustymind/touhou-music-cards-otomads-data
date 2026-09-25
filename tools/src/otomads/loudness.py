@@ -17,6 +17,8 @@ import statistics
 import subprocess
 from collections.abc import Callable, Iterable, Mapping
 
+from . import paths as repo
+
 #: 只衰减不放大 ✓；下限 0.6（约 −4.4 dB）—— 用"最轻的一首"当目标会把绝大多数曲目压到地板 ✗
 MIN_GAIN, MAX_GAIN = 0.6, 1.0
 
@@ -56,8 +58,15 @@ def measure_library(
     """
     roots = ([directories] if isinstance(directories, (str, pathlib.Path))
              else list(directories))
-    files = sorted(path for root in roots for path in pathlib.Path(root).glob("*.mp3")
-                   if path.is_file())
+    # 与 `local_source.scan_library` / `stage_media.audio_files` 同一套口径：
+    # 只看 `paths.AUDIO_EXTENSIONS`、**跳过点开头的文件**（`glob("*.mp3")` 会收 `.hidden.mp3`，
+    # 那是 pathlib 与 shell 的著名差异）。
+    files = sorted(
+        path for root in roots if pathlib.Path(root).is_dir()
+        for path in pathlib.Path(root).iterdir()
+        if path.is_file() and not path.name.startswith(".")
+        and path.name.lower().endswith(repo.AUDIO_EXTENSIONS)
+    )
     cache: dict[str, float] = {}
     if output.exists():
         cache = json.loads(output.read_text(encoding="utf-8")).get("measuredDb", {})

@@ -65,7 +65,7 @@ DEFAULT_PORT = 8011
 DEFAULT_TRIES = 10
 DEFAULT_ROOT = repo.ROOT / ".music"
 MANIFEST_PATH = "manifest.json"
-AUDIO_EXTENSIONS = (".mp3",)
+AUDIO_EXTENSIONS = repo.AUDIO_EXTENSIONS      # 真源在 `paths`（`stage_media` 也从此处取）
 RANGE_RE = re.compile(r"bytes=(\d*)-(\d*)")
 
 
