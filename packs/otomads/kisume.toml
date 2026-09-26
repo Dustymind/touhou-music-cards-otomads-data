@@ -9,11 +9,33 @@ key = "kisume"
 
 # 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
 # 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
-# [[track]]
-# album = "otomads"
-# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
-# title = "曲名"
-# extra = "角色曲"
-# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
+[[track]]
+album = "otomads"
+author = "驹草JX"                                  # 或 authors = ["甲", "乙"]（只能写一个）
+title = "【东方弟临店】昏暗的冰室"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV1Q3BmYsEBS/"     # 可选：抓取/裁剪用
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
+
+[[track]]
+album = "otomads"
+author = "福州许昊龙炫乐团"
+title = "【东方棍灵殿】昏暗的哈利路大旋风穴"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV1x8CmBnEqk/"
+
+[[track]]
+album = "otomads"
+author = "AZS的蜜柑"
+title = "【东方电气棍】昏暗的小穴♿"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV1FfMcz3EEp/"
+
+[[track]]
+album = "otomads"
+author = "静識Seishiki"
+title = "【原曲不使用】昏暗的风穴"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV15YG8zxEj1/"
+start_time = "00:00:06.500"

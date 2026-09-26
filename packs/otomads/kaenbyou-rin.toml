@@ -9,11 +9,60 @@ key = "kaenbyou-rin"
 
 # 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
 # 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
-# [[track]]
-# album = "otomads"
-# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
-# title = "曲名"
-# extra = "角色曲"
-# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
+[[track]]
+album = "otomads"
+author = "弦卷こころOfficial"                                  # 或 authors = ["甲", "乙"]（只能写一个）
+title = "♿废狱腰烂曲"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV17r421F7H4/"     # 可选：抓取/裁剪用
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
+
+[[track]]
+album = "otomads"
+author = "GensokyoFIPA"
+title = "【MC效果音MAD】下界摇篮曲"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV1AP4y1C7qP/"
+
+[[track]]
+album = "otomads"
+author = "味增汤"
+title = "废园摇篮曲"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV1jW411u7RP/"
+
+[[track]]
+album = "otomads"
+author = "钬__"
+title = "！？废狱狱废？！"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV1xRodBGETy/"
+
+[[track]]
+album = "otomads"
+author = "鬼剑士草贝戋神"
+title = "【东方馅挂炒饭】废狱摇篮曲"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV1VK411A7yK/"
+
+[[track]]
+album = "otomads"
+author = "铝合金键盘"
+title = "【万岁祭单品】废狱摇篮曲"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV1dt411i74u/"
+
+[[track]]
+album = "otomads"
+author = "弦卷こころOfficial"
+title = "电棍：尸体旅行~Be of good cheer!"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1uYjqz5EK2/"
+
+[[track]]
+album = "otomads"
+author = "上海龙教练"
+title = "【单品投稿】MGRの時代 比寒武更久的梦音mad合作 九州拾遗东方例会音mad"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1FAoCB8EcS/"

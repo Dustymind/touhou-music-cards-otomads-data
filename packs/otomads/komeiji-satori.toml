@@ -9,11 +9,32 @@ key = "komeiji-satori"
 
 # 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
 # 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
-# [[track]]
-# album = "otomads"
-# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
-# title = "曲名"
-# extra = "角色曲"
-# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
+[[track]]
+album = "otomads"
+author = "andyW09"                                  # 或 authors = ["甲", "乙"]（只能写一个）
+title = "【地铁音MAD】【广州地铁】少女角～Innumerable Five"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1xB2zYVEW3/"     # 可选：抓取/裁剪用
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
+
+[[track]]
+album = "otomads"
+author = "高興帝"
+title = "【東方頭破七分】少女まさみ"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1ax411c7ip/"
+
+[[track]]
+album = "otomads"
+authors = ["法海酱WAV", "aotermen", "古明地薄暮", "磨人の大妖精"]
+title = "【东方头破七分合作】老女本 3rd eyes"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Vx411W7C4/"
+
+[[track]]
+album = "otomads"
+author = "トイレが好きです"
+title = "少女宫本　～ Gays on Me!"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV18b3BzTE3S/"

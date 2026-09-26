@@ -85,3 +85,10 @@ extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1f5411d73B/"
 cover = "https://i1.hdslb.com/bfs/archive/5e641315c0e1140e3c6e072c65db71b20ea1643a.jpg@703w_1000h_1c.webp"
 start_time = "00:00:02.697"
+
+[[track]]
+album = "otomads"
+author = "叉子桑"
+title = "妖怪之山 ~ A Summer Day's Mountain"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1VK411F7ii/"

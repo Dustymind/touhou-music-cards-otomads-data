@@ -154,8 +154,8 @@ album = "otomads"
 # （可选参数，如需留空可删除）
 # （靠北这个示例有点神人）
 # author = "凡文"
-# 或 author = ["_Karasu_", "DJRicher"]
-# 或 author = ["电棍Otto", "Last炫、", "山泥若"]
+# 或 authors = ["_Karasu_", "DJRicher"] # 注意多一个 s
+# 或 authors = ["电棍Otto", "Last炫、", "山泥若"]
 # 把参与制作了该音 MAD（单体/合作/片段）的人全写上即可。
 # 理论无上限，不过对于人数较多的合作，可以自行决定是否省略该字段填写。
 # 此时直接删除该行即可。

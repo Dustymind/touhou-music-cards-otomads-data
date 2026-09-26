@@ -9,11 +9,40 @@ key = "reiuji-utsuho"
 
 # 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
 # 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
-# [[track]]
-# album = "otomads"
-# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
-# title = "曲名"
-# extra = "角色曲"
-# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
+[[track]]
+album = "otomads"
+author = "超几何冰精"                                  # 或 authors = ["甲", "乙"]（只能写一个）
+title = "灵知的原子信仰"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1A5mMYpE8B/"     # 可选：抓取/裁剪用
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
+
+[[track]]
+album = "otomads"
+author = "芙兰厨陈YuYue"
+title = "全是阿空的灵知の太阳信仰☢"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1d63jzJEHu/"
+
+[[track]]
+album = "otomads"
+author = "轩缘无痕"
+title = "【东方鬼畜音mad】囧仙儿的太阳信仰"
+extra = " 角色曲"
+source = "https://www.bilibili.com/video/BV13t411Y7ev/"
+
+[[track]]
+album = "otomads"
+author = "Anonymität"
+title = "【东方热血汉】热血的太阳修造 ～ Nuclear Shusion"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Bs411x7jt/"
+start_time = "00:00:06.562"
+
+[[track]]
+album = "otomads"
+author = "gt2k01"
+title = "【2024东方新春宴合作单品²】元首的秘密武器"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV184421w77A/"

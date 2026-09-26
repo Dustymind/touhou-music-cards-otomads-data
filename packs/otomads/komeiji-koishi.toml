@@ -9,11 +9,47 @@ key = "komeiji-koishi"
 
 # 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
 # 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
-# [[track]]
-# album = "otomads"
-# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
-# title = "曲名"
-# extra = "角色曲"
-# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
+[[track]]
+album = "otomads"
+authors = ["bili_67169714501", "静泡_J1NGPAO"]                                  # 或 authors = ["甲", "乙"]（只能写一个）
+title = "【里御三家】哈德曼的妖怪少女【东方新春宴音MAD单品²】"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1qoZkB4Ecu/"     # 可选：抓取/裁剪用
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
+
+[[track]]
+album = "otomads"
+authors = ["法WAV", "LittleBitHarsh"]
+title = "【2020年东方华灯宴音MAD合作单品】哈德曼的妖怪老女"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1P7411H7J7/"
+
+[[track]]
+album = "otomads"
+author = "はゆまが"
+title = "【東方魔酢汚】Masuo的妖怪少女"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Th411c7eE/"
+
+[[track]]
+album = "otomads"
+author = "ゆっけ"
+title = "マスオマンの破壊少女"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1rN4y1j7Js/"
+
+[[track]]
+album = "otomads"
+author = "passthem"
+title = "音mad | 梨子妈：哈德曼的妖怪少女"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1ZP411i7S1/"
+
+[[track]]
+album = "otomads"
+author = "榆木华"
+title = "【音MAD】哈德曼的妖怪少女(人气爆发) | 精简的第二作"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1k4411Q7dd/"
+start_time = "00:00:04.500"

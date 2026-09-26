@@ -9,11 +9,25 @@ key = "hinanawi-tenshi"
 
 # 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
 # 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
-# [[track]]
-# album = "otomads"
-# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
-# title = "曲名"
-# extra = "角色曲"
-# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
+[[track]]
+album = "otomads"
+author = "鞍山侯国玉电乐团"
+title = "【东方电气棍】緋想天♿"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1dK411U7X1/"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
+
+[[track]]
+album = "otomads"
+author = "ハルトモ"
+title = "化楽天変　～ Wonderful Health"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV11U4y1N7kW/"
+
+[[track]]
+album = "otomads"
+author = "龙青瑶RyuuSeiyou"
+title = "【多素材音mad】有顶天变 ~ Wonderful Heaven"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1MKzVYREkf/"
