@@ -15,7 +15,7 @@ author = "弦卷こころOfficial"                                  # 或 author
 title = "♿废狱腰烂曲"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV17r421F7H4/"     # 可选：抓取/裁剪用
-cover = { original = "https://i2.hdslb.com/bfs/archive/6b650f3e5bdbf2f7ff5816da933e1ba465cf1938.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/6b650f3e5bdbf2f7ff5816da933e1ba465cf1938.jpg@1920w_1080h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/6b650f3e5bdbf2f7ff5816da933e1ba465cf1938.jpg@1440w_1080h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/6b650f3e5bdbf2f7ff5816da933e1ba465cf1938.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,7 +25,7 @@ author = "GensokyoFIPA"
 title = "【MC效果音MAD】下界摇篮曲"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1AP4y1C7qP/"
-cover = { original = "https://i0.hdslb.com/bfs/archive/1442c4ed102f1ae6afb4b8f35aa4cba075368948.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/1442c4ed102f1ae6afb4b8f35aa4cba075368948.jpg@1632w_918h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/1442c4ed102f1ae6afb4b8f35aa4cba075368948.jpg@1360w_1020h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/1442c4ed102f1ae6afb4b8f35aa4cba075368948.jpg"
 
 [[track]]
 album = "otomads"
@@ -33,7 +33,7 @@ author = "味增汤"
 title = "废园摇篮曲"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1jW411u7RP/"
-cover = { original = "https://i2.hdslb.com/bfs/archive/62499282e5cf7fa6f8b8b06f5794c4932dd801e8.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/62499282e5cf7fa6f8b8b06f5794c4932dd801e8.jpg@768w_432h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/62499282e5cf7fa6f8b8b06f5794c4932dd801e8.jpg@640w_480h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/62499282e5cf7fa6f8b8b06f5794c4932dd801e8.jpg"
 
 [[track]]
 album = "otomads"
@@ -41,7 +41,7 @@ author = "钬__"
 title = "！？废狱狱废？！"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1xRodBGETy/"
-cover = { original = "https://i2.hdslb.com/bfs/archive/5ad61160e0e30b7db53122c9ea6555088b527138.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/5ad61160e0e30b7db53122c9ea6555088b527138.jpg@1920w_1080h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/5ad61160e0e30b7db53122c9ea6555088b527138.jpg@1440w_1080h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/5ad61160e0e30b7db53122c9ea6555088b527138.jpg"
 
 [[track]]
 album = "otomads"
@@ -49,7 +49,7 @@ author = "鬼剑士草贝戋神"
 title = "【东方馅挂炒饭】废狱摇篮曲"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1VK411A7yK/"
-cover = { original = "https://i0.hdslb.com/bfs/archive/1249e43967af43982d6a6d28c0fcdd67cf6d463f.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/1249e43967af43982d6a6d28c0fcdd67cf6d463f.jpg@1728w_972h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/1249e43967af43982d6a6d28c0fcdd67cf6d463f.jpg@1440w_1080h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/1249e43967af43982d6a6d28c0fcdd67cf6d463f.jpg"
 
 [[track]]
 album = "otomads"
@@ -57,7 +57,7 @@ author = "铝合金键盘"
 title = "【万岁祭单品】废狱摇篮曲"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1dt411i74u/"
-cover = { original = "https://i0.hdslb.com/bfs/archive/47f0b6d5b67e3b8ba2b77d28b8f8dc1d0804766a.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/47f0b6d5b67e3b8ba2b77d28b8f8dc1d0804766a.jpg@1188w_668h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/47f0b6d5b67e3b8ba2b77d28b8f8dc1d0804766a.jpg@989w_742h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/47f0b6d5b67e3b8ba2b77d28b8f8dc1d0804766a.jpg"
 
 [[track]]
 album = "otomads"
@@ -65,7 +65,7 @@ author = "弦卷こころOfficial"
 title = "电棍：尸体旅行~Be of good cheer!"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1uYjqz5EK2/"
-cover = { original = "https://i0.hdslb.com/bfs/archive/c74eb43246a7a00c695a273d05cf2013299914f1.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/c74eb43246a7a00c695a273d05cf2013299914f1.jpg@1920w_1080h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/c74eb43246a7a00c695a273d05cf2013299914f1.jpg@1440w_1080h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/c74eb43246a7a00c695a273d05cf2013299914f1.jpg"
 
 [[track]]
 album = "otomads"
@@ -73,4 +73,4 @@ author = "上海龙教练"
 title = "【单品投稿】MGRの時代 比寒武更久的梦音mad合作 九州拾遗东方例会音mad"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1FAoCB8EcS/"
-cover = { original = "https://i2.hdslb.com/bfs/archive/c1d6cc0a883f2339d29d200eefc0971926462586.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/c1d6cc0a883f2339d29d200eefc0971926462586.jpg@1920w_1080h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/c1d6cc0a883f2339d29d200eefc0971926462586.jpg@1440w_1080h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/c1d6cc0a883f2339d29d200eefc0971926462586.jpg"

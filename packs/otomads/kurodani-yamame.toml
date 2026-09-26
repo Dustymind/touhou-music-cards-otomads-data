@@ -15,7 +15,7 @@ author = ""     # 原作者已不可考
 title = "【东方头破七分】被封印的头妖怪　～Lost Parn"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1rx41127mo/"     # 可选：抓取/裁剪用
-cover = { original = "https://i1.hdslb.com/bfs/archive/c746715d6ecf77ca7df6a681e8151634d6845bfb.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/c746715d6ecf77ca7df6a681e8151634d6845bfb.jpg@504w_283h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/c746715d6ecf77ca7df6a681e8151634d6845bfb.jpg@501w_376h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/c746715d6ecf77ca7df6a681e8151634d6845bfb.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,4 +25,4 @@ author = "固形物"
 title = "被封印的Masuo ～ Masuo Place"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1TV4y1k7Zt/"
-cover = { original = "https://i1.hdslb.com/bfs/archive/d435ec2a6bc07b20370f55fccdc33de4efd56bb2.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/d435ec2a6bc07b20370f55fccdc33de4efd56bb2.jpg@1036w_582h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/d435ec2a6bc07b20370f55fccdc33de4efd56bb2.jpg@862w_647h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/d435ec2a6bc07b20370f55fccdc33de4efd56bb2.jpg"

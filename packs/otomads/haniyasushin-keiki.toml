@@ -13,4 +13,4 @@ author = "香菇."                                  # 或 authors = ["甲", "乙
 title = "【合作单品】寄世界于先祖像"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1E4Vp6cEhR/"     # 可选：抓取/裁剪用
-cover = { original = "https://i0.hdslb.com/bfs/archive/1f887bab662cf5f1db96314a2dfee2b6714a8ff1.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/1f887bab662cf5f1db96314a2dfee2b6714a8ff1.jpg@1920w_1080h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/1f887bab662cf5f1db96314a2dfee2b6714a8ff1.jpg@1440w_1080h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/1f887bab662cf5f1db96314a2dfee2b6714a8ff1.jpg"

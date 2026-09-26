@@ -15,7 +15,7 @@ author = "bEI_sOMG"                                  # 或 authors = ["甲", "�
 title = "【东方电气棍】Fall of Otto ~ 秋意渐浓之棍"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1yFMJzYEkZ/"     # 可选：抓取/裁剪用
-cover = "https://i2.hdslb.com/bfs/archive/e1c084f2698cae936b1c99020c60663eb5c24901.jpg@703w_1000h_1c.webp"
+cover = "https://i2.hdslb.com/bfs/archive/e1c084f2698cae936b1c99020c60663eb5c24901.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,4 +25,4 @@ author = "芙兰厨陈YuYue"
 title = "秋意渐浓之瀑~"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1Cf421q7oh/"
-cover = "https://i1.hdslb.com/bfs/archive/90c2c323f0166aeff6b4319bf684f534e2feee9c.jpg@703w_1000h_1c.webp"
+cover = "https://i1.hdslb.com/bfs/archive/90c2c323f0166aeff6b4319bf684f534e2feee9c.jpg"

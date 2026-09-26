@@ -15,6 +15,6 @@ author = "锖色塔"                                  # 或 authors = ["甲", "�
 title = "何已着陆"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV15XER6cE4W/"     # 可选：抓取/裁剪用
-cover = { original = "https://i1.hdslb.com/bfs/archive/d5576c29e627954de99d1af3ee41aebef683b2cb.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/d5576c29e627954de99d1af3ee41aebef683b2cb.jpg@2552w_1435h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/d5576c29e627954de99d1af3ee41aebef683b2cb.jpg@1914w_1436h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/d5576c29e627954de99d1af3ee41aebef683b2cb.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

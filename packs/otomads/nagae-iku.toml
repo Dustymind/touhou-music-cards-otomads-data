@@ -15,6 +15,6 @@ author = "guest"                                  # 或 authors = ["甲", "乙"]
 title = "黒いマスオに紅く ～ Killed Fish"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1yD4y1j7u4/"     # 可选：抓取/裁剪用
-cover = { original = "https://i1.hdslb.com/bfs/archive/829026f7f1c0fa8c620cf8818bf2334117835392.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/829026f7f1c0fa8c620cf8818bf2334117835392.jpg@648w_364h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/829026f7f1c0fa8c620cf8818bf2334117835392.jpg@540w_405h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/829026f7f1c0fa8c620cf8818bf2334117835392.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

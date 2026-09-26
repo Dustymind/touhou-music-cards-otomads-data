@@ -15,6 +15,6 @@ author = "阿我饿一屋雨"                                  # 或 authors = [
 title = "【东方棚瓜劈】永远的生瓜蛋子"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1a54y177dn/"     # 可选：抓取/裁剪用
-cover = { original = "https://i0.hdslb.com/bfs/archive/8ade5e418ecf639df4ad576bb1ebb8c636d5ffd6.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/8ade5e418ecf639df4ad576bb1ebb8c636d5ffd6.jpg@1728w_972h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/8ade5e418ecf639df4ad576bb1ebb8c636d5ffd6.jpg@1440w_1080h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/8ade5e418ecf639df4ad576bb1ebb8c636d5ffd6.jpg"
 start_time = "00:00:02.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

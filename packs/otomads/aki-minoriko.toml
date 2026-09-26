@@ -15,6 +15,6 @@ author = "bili_67169714501"                                  # 或 authors = ["�
 title = "【东方鬼畜音mad】会受囧仙叱责的啦"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1J4x4ehELr/"     # 可选：抓取/裁剪用
-cover = "https://i2.hdslb.com/bfs/archive/974f7ebe98c30480e420cfa135994eaee9f23ee4.jpg@703w_1000h_1c.webp"
+cover = "https://i2.hdslb.com/bfs/archive/974f7ebe98c30480e420cfa135994eaee9f23ee4.jpg"
 start_time = "00:00:11.790"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

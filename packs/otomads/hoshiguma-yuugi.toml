@@ -15,7 +15,7 @@ author = "驹草JX"                                  # 或 authors = ["甲", "�
 title = "【东方弟临店】漫游旧塘埔街道【东方英豪传】"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1wg4y1U7mN/"     # 可选：抓取/裁剪用
-cover = { original = "https://i0.hdslb.com/bfs/archive/c303f23a7b05884ddaf14b9bae151d348dc11352.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/c303f23a7b05884ddaf14b9bae151d348dc11352.jpg@1024w_576h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/c303f23a7b05884ddaf14b9bae151d348dc11352.jpg@768w_576h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/c303f23a7b05884ddaf14b9bae151d348dc11352.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,4 +25,4 @@ author = "鞍山侯国玉电乐团"
 title = "【东方电气棍】大鞍山的古神酒宴"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1tw411n7NP/"
-cover = { original = "https://i0.hdslb.com/bfs/archive/3b09cd97b05b50831d64d3c9e1fe06d5322abf88.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/3b09cd97b05b50831d64d3c9e1fe06d5322abf88.jpg@1299w_730h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/3b09cd97b05b50831d64d3c9e1fe06d5322abf88.jpg@1082w_812h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/3b09cd97b05b50831d64d3c9e1fe06d5322abf88.jpg"

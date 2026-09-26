@@ -15,7 +15,7 @@ author = "andyW09"                                  # 或 authors = ["甲", "乙
 title = "【地铁音MAD】【广州地铁】少女角～Innumerable Five"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1xB2zYVEW3/"     # 可选：抓取/裁剪用
-cover = { original = "https://i1.hdslb.com/bfs/archive/940cceaa3215d27a63f8e426de22b99942d7b786.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/940cceaa3215d27a63f8e426de22b99942d7b786.jpg@2333w_1312h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/940cceaa3215d27a63f8e426de22b99942d7b786.jpg@1946w_1460h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/940cceaa3215d27a63f8e426de22b99942d7b786.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,7 +25,7 @@ author = "高興帝"
 title = "【東方頭破七分】少女まさみ"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1ax411c7ip/"
-cover = { original = "https://i2.hdslb.com/bfs/archive/7d4c3f2dc5d3eb2e57f9085ee84f5ab443bd4ae3.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/7d4c3f2dc5d3eb2e57f9085ee84f5ab443bd4ae3.jpg@120w_67h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/7d4c3f2dc5d3eb2e57f9085ee84f5ab443bd4ae3.jpg@120w_90h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/7d4c3f2dc5d3eb2e57f9085ee84f5ab443bd4ae3.jpg"
 
 [[track]]
 album = "otomads"
@@ -33,7 +33,7 @@ authors = ["法海酱WAV", "aotermen", "古明地薄暮", "磨人の大妖精"]
 title = "【东方头破七分合作】老女本 3rd eyes"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Vx411W7C4/"
-cover = { original = "https://i1.hdslb.com/bfs/archive/a7d48a83f93aa58bea246f132c7b98dc1df14562.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/a7d48a83f93aa58bea246f132c7b98dc1df14562.jpg@917w_515h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/a7d48a83f93aa58bea246f132c7b98dc1df14562.jpg@764w_573h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/a7d48a83f93aa58bea246f132c7b98dc1df14562.jpg"
 
 [[track]]
 album = "otomads"
@@ -41,4 +41,4 @@ author = "トイレが好きです"
 title = "少女宫本　～ Gays on Me!"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV18b3BzTE3S/"
-cover = { original = "https://i1.hdslb.com/bfs/archive/362851eebae7b386f49d678c86868ade23a4563c.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/362851eebae7b386f49d678c86868ade23a4563c.jpg@1280w_720h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/362851eebae7b386f49d678c86868ade23a4563c.jpg@960w_720h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/362851eebae7b386f49d678c86868ade23a4563c.jpg"

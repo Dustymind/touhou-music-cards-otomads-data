@@ -15,6 +15,6 @@ author = "汚砂"                                  # 或 authors = ["甲", "乙"
 title = "山酢污的遭遇"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1nL411B7n9/"     # 可选：抓取/裁剪用
-cover = { original = "https://i1.hdslb.com/bfs/archive/dfeecb3d02ef39bd336be595f768f017955c6b92.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/dfeecb3d02ef39bd336be595f768f017955c6b92.jpg@1036w_582h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/dfeecb3d02ef39bd336be595f768f017955c6b92.jpg@862w_647h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/dfeecb3d02ef39bd336be595f768f017955c6b92.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

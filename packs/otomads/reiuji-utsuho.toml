@@ -15,7 +15,7 @@ author = "超几何冰精"                                  # 或 authors = ["�
 title = "灵知的原子信仰"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1A5mMYpE8B/"     # 可选：抓取/裁剪用
-cover = { original = "https://i1.hdslb.com/bfs/archive/971a2284ca9ee8f756729057c4c248a33fdb03fb.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/971a2284ca9ee8f756729057c4c248a33fdb03fb.jpg@1905w_1071h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/971a2284ca9ee8f756729057c4c248a33fdb03fb.jpg@1429w_1072h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/971a2284ca9ee8f756729057c4c248a33fdb03fb.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,7 +25,7 @@ author = "芙兰厨陈YuYue"
 title = "全是阿空的灵知の太阳信仰☢"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1d63jzJEHu/"
-cover = { original = "https://i0.hdslb.com/bfs/archive/b22bb694335b8c19e5498f86e51076a287a1a110.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/b22bb694335b8c19e5498f86e51076a287a1a110.jpg@2560w_1440h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/b22bb694335b8c19e5498f86e51076a287a1a110.jpg@1920w_1440h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/b22bb694335b8c19e5498f86e51076a287a1a110.jpg"
 
 [[track]]
 album = "otomads"
@@ -33,7 +33,7 @@ author = "轩缘无痕"
 title = "【东方鬼畜音mad】囧仙儿的太阳信仰"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV13t411Y7ev/"
-cover = { original = "https://i0.hdslb.com/bfs/archive/3e9787448988b4880c36ea16fa2b598fe3188817.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/3e9787448988b4880c36ea16fa2b598fe3188817.jpg@1728w_972h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/3e9787448988b4880c36ea16fa2b598fe3188817.jpg@1440w_1080h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/3e9787448988b4880c36ea16fa2b598fe3188817.jpg"
 
 [[track]]
 album = "otomads"
@@ -41,7 +41,7 @@ author = "Anonymität"
 title = "【东方热血汉】热血的太阳修造 ～ Nuclear Shusion"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Bs411x7jt/"
-cover = { original = "https://i0.hdslb.com/bfs/archive/f2de2c9b4c3b2d29cb3e32115d55a91058a96b82.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/f2de2c9b4c3b2d29cb3e32115d55a91058a96b82.jpg@768w_432h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/f2de2c9b4c3b2d29cb3e32115d55a91058a96b82.jpg@638w_479h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/f2de2c9b4c3b2d29cb3e32115d55a91058a96b82.jpg"
 start_time = "00:00:06.562"
 
 [[track]]
@@ -50,4 +50,4 @@ author = "gt2k01"
 title = "【2024东方新春宴合作单品²】元首的秘密武器"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV184421w77A/"
-cover = { original = "https://i1.hdslb.com/bfs/archive/d6ee2439edc53ecfeda14f528be8063ecb3b7867.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/d6ee2439edc53ecfeda14f528be8063ecb3b7867.jpg@1920w_1080h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/d6ee2439edc53ecfeda14f528be8063ecb3b7867.jpg@1440w_1080h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/d6ee2439edc53ecfeda14f528be8063ecb3b7867.jpg"

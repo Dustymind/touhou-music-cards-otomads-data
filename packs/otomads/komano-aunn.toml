@@ -15,7 +15,7 @@ author = "ijxhshs"                                  # 或 authors = ["甲", "乙
 title = "【2025东方新春宴音MAD合作单品】一对的薮包"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV13KNWeREFP/"     # 可选：抓取/裁剪用
-cover = { original = "https://i0.hdslb.com/bfs/archive/e6a63c5256fac416790a85c3f673367cb9e4665b.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/e6a63c5256fac416790a85c3f673367cb9e4665b.jpg@1440w_810h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/e6a63c5256fac416790a85c3f673367cb9e4665b.jpg@1440w_1080h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/e6a63c5256fac416790a85c3f673367cb9e4665b.jpg"
 start_time = "00:00:10.000"                        # 可选：裁剪区间（只给一侧也合法）
 
 [[track]]
@@ -24,4 +24,4 @@ author = "ユウシ"                                  # 或 authors = ["甲", "�
 title = "一对的神兽合作"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1CT411M7qY/"     # 可选：抓取/裁剪用
-cover = { original = "https://i2.hdslb.com/bfs/archive/59d6b68163757361badb6cbe0611ecd70bfb168a.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/59d6b68163757361badb6cbe0611ecd70bfb168a.jpg@712w_400h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/59d6b68163757361badb6cbe0611ecd70bfb168a.jpg@593w_445h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/59d6b68163757361badb6cbe0611ecd70bfb168a.jpg"

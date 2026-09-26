@@ -15,6 +15,6 @@ author = "东风谷早苗纯电动公交"                                  # 或
 title = "【东方矿工艺】史蒂夫的阴暗面"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV152HjzkEpU/"     # 可选：抓取/裁剪用
-cover = "https://i2.hdslb.com/bfs/archive/618f300eec4a3b26cd62dcf0df07bb0d02dfccfa.jpg@703w_1000h_1c.webp"
+cover = "https://i2.hdslb.com/bfs/archive/618f300eec4a3b26cd62dcf0df07bb0d02dfccfa.jpg"
 start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

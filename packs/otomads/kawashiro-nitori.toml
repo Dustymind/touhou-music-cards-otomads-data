@@ -15,7 +15,7 @@ author = "川先僧"                                  # 或 authors = ["甲", "�
 title = "汤姆眷恋的幻想郷"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1nJ411P7rz/"     # 可选：抓取/裁剪用
-cover = "https://i0.hdslb.com/bfs/archive/54ee491dfe5c40d609f020a022be7c1963cb3b32.png@703w_1000h_1c.webp"
+cover = "https://i0.hdslb.com/bfs/archive/54ee491dfe5c40d609f020a022be7c1963cb3b32.png"
 start_time = "00:00:11.690"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,4 +25,4 @@ author = "龙青瑶RyuuSeiyou"
 title = "【东方馅挂炒饭】芥川door♂之介的兄贵 ~ Candid♂Slave"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1bJBLYfEyJ/"
-cover = "https://i2.hdslb.com/bfs/archive/3e04d167cbb278fd3311eb4a9d2362aa2b1f9820.jpg@703w_1000h_1c.webp"
+cover = "https://i2.hdslb.com/bfs/archive/3e04d167cbb278fd3311eb4a9d2362aa2b1f9820.jpg"

@@ -15,6 +15,6 @@ author = "豪俊提琴"                                  # 或 authors = ["甲",
 title = "【东方鬼形兽】セラフィックチキン 鸡你太美"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1n4411s7PB/"     # 可选：抓取/裁剪用
-cover = { original = "https://i2.hdslb.com/bfs/archive/1a4f1335f91ecfcb68650c8144d8e37252ef59af.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/1a4f1335f91ecfcb68650c8144d8e37252ef59af.jpg@1000w_562h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/1a4f1335f91ecfcb68650c8144d8e37252ef59af.jpg@833w_625h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/1a4f1335f91ecfcb68650c8144d8e37252ef59af.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

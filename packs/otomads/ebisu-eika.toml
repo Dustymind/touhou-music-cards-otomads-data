@@ -14,7 +14,7 @@ author = "卡诺热机之梦"                                  # 或 authors = [
 title = "【原曲不使用】只有少女知晓的哀叹"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1n9WEzaEoi/"     # 可选：抓取/裁剪用
-cover = { original = "https://i0.hdslb.com/bfs/archive/b8c6aeb5ce055134890312da197dc6b5a53c63e3.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/b8c6aeb5ce055134890312da197dc6b5a53c63e3.jpg@1920w_1080h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/b8c6aeb5ce055134890312da197dc6b5a53c63e3.jpg@1440w_1080h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/b8c6aeb5ce055134890312da197dc6b5a53c63e3.jpg"
 
 [[track]]
 album = "otomads"
@@ -22,4 +22,4 @@ author = "手稲"                                  # 或 authors = ["甲", "乙"
 title = "东方效果音的Jelly Stone"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1ii4y1o7tn/"     # 可选：抓取/裁剪用
-cover = { original = "https://i2.hdslb.com/bfs/archive/83f7c96d44adb542cf3a57bdb3b72adaa5643df7.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/83f7c96d44adb542cf3a57bdb3b72adaa5643df7.jpg@1152w_648h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/83f7c96d44adb542cf3a57bdb3b72adaa5643df7.jpg@960w_720h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/83f7c96d44adb542cf3a57bdb3b72adaa5643df7.jpg"

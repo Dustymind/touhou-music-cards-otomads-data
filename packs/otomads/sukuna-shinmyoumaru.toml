@@ -15,6 +15,6 @@ author = "雨墨祈祷"                                  # 或 authors = ["甲",
 title = "【东方头破七分】辉光之针的小人族（2022拜年祭单品预告）"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV18g411j74D/"     # 可选：抓取/裁剪用
-cover = { original = "https://i2.hdslb.com/bfs/archive/b4390d6af2f470afa550baca038af19d1b690cbd.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/b4390d6af2f470afa550baca038af19d1b690cbd.jpg@1152w_648h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/b4390d6af2f470afa550baca038af19d1b690cbd.jpg@960w_720h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/b4390d6af2f470afa550baca038af19d1b690cbd.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

@@ -15,6 +15,6 @@ author = "轩缘无痕"                                  # 或 authors = ["甲",
 title = "【东方鬼形兽】石之曲奇与水中囧"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1h4411v7SX/"     # 可选：抓取/裁剪用
-cover = { original = "https://i0.hdslb.com/bfs/archive/f3614549139676b323276ee746d9db8982d7893b.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/f3614549139676b323276ee746d9db8982d7893b.jpg@1728w_972h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/f3614549139676b323276ee746d9db8982d7893b.jpg@1440w_1080h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/f3614549139676b323276ee746d9db8982d7893b.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

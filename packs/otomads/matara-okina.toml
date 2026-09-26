@@ -15,6 +15,6 @@ author = "铝合金键盘"                                  # 或 authors = ["�
 title = "【合作单品】被差别民的真正姿态 ~ Hidden Star in Fifth Season."
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1YT411o7XG/"     # 可选：抓取/裁剪用
-cover = { original = "https://i1.hdslb.com/bfs/archive/9946299817fd4fc37efdaeb9f6c951bec5380277.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/9946299817fd4fc37efdaeb9f6c951bec5380277.jpg@1352w_760h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/9946299817fd4fc37efdaeb9f6c951bec5380277.jpg@1126w_845h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/9946299817fd4fc37efdaeb9f6c951bec5380277.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

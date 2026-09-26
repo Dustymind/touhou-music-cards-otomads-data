@@ -15,7 +15,7 @@ author = "multimode_Liu"                                  # 或 authors = ["甲"
 title = "【北邮东方音MAD合作单品²】Pure Furies ~ 心之所在"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1P917BgEZt/"     # 可选：抓取/裁剪用
-cover = { original = "https://i2.hdslb.com/bfs/archive/07f76db3d494bf79b3bcd3e99d4d0fc1f9df1de4.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/07f76db3d494bf79b3bcd3e99d4d0fc1f9df1de4.jpg@1920w_1080h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/07f76db3d494bf79b3bcd3e99d4d0fc1f9df1de4.jpg@1440w_1080h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/07f76db3d494bf79b3bcd3e99d4d0fc1f9df1de4.jpg"
 start_time = "00:00:06.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,7 +25,7 @@ author = "フランソウ"                                  # 或 authors = ["�
 title = "【合作告知Ⅱ】东方雨天水～Rain Everyday"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV12i421X7pt/"     # 可选：抓取/裁剪用
-cover = { original = "https://i1.hdslb.com/bfs/archive/81ac61999c1839fac110297b7427f5e1dcd2b824.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/81ac61999c1839fac110297b7427f5e1dcd2b824.jpg@1920w_1080h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/81ac61999c1839fac110297b7427f5e1dcd2b824.jpg@1440w_1080h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/81ac61999c1839fac110297b7427f5e1dcd2b824.jpg"
 start_time = "00:00:04.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -35,4 +35,4 @@ author = "黑区awa"                                  # 或 authors = ["甲", "�
 title = "[原图不使用]纯粹的孤儿～妈之所在"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1nEaKz7E7K/"     # 可选：抓取/裁剪用
-cover = { original = "https://i1.hdslb.com/bfs/archive/9b7a5838e8959cce3f6eb74245a9bf41e9447682.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/9b7a5838e8959cce3f6eb74245a9bf41e9447682.jpg@1009w_568h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/9b7a5838e8959cce3f6eb74245a9bf41e9447682.jpg@757w_568h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/9b7a5838e8959cce3f6eb74245a9bf41e9447682.jpg"

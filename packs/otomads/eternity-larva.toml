@@ -15,7 +15,7 @@ author = "蓝色火焰AoiHonoo"                                  # 或 authors =
 title = "真夏的舞萌梦"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1KTha62EJH/"     # 可选：抓取/裁剪用
-cover = { original = "https://i2.hdslb.com/bfs/archive/485eae1c801d97e5f59f7134bed88bf2ed542f90.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/485eae1c801d97e5f59f7134bed88bf2ed542f90.jpg@1920w_1080h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/485eae1c801d97e5f59f7134bed88bf2ed542f90.jpg@1440w_1080h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/485eae1c801d97e5f59f7134bed88bf2ed542f90.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -26,4 +26,4 @@ author = "芙兰厨陈YuYue"                                  # 或 authors = ["
 title = "【8月8日爱塔日接力&音Mad】仲夏的妖精梦"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1EFYxe1Emt/"     # 可选：抓取/裁剪用
-cover = { original = "https://i0.hdslb.com/bfs/archive/81e8741d4c56ce74418adde1fb43b2ce1db18792.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/81e8741d4c56ce74418adde1fb43b2ce1db18792.jpg@1098w_617h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/81e8741d4c56ce74418adde1fb43b2ce1db18792.jpg@912w_684h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/81e8741d4c56ce74418adde1fb43b2ce1db18792.jpg"

@@ -15,7 +15,7 @@ author = "鞍山侯国玉电乐团"
 title = "【东方电气棍】緋想天♿"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1dK411U7X1/"
-cover = { original = "https://i1.hdslb.com/bfs/archive/42c6a90188843730fcdc40fc583ba42d7930e551.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/42c6a90188843730fcdc40fc583ba42d7930e551.jpg@1172w_659h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/42c6a90188843730fcdc40fc583ba42d7930e551.jpg@977w_733h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/42c6a90188843730fcdc40fc583ba42d7930e551.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,7 +25,7 @@ author = "ハルトモ"
 title = "化楽天変　～ Wonderful Health"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV11U4y1N7kW/"
-cover = { original = "https://i0.hdslb.com/bfs/archive/c48c3fc65c0d71154b256b63f12013b62fea90c1.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/c48c3fc65c0d71154b256b63f12013b62fea90c1.jpg@518w_291h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/c48c3fc65c0d71154b256b63f12013b62fea90c1.jpg@430w_323h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/c48c3fc65c0d71154b256b63f12013b62fea90c1.jpg"
 
 [[track]]
 album = "otomads"
@@ -33,4 +33,4 @@ author = "龙青瑶RyuuSeiyou"
 title = "【多素材音mad】有顶天变 ~ Wonderful Heaven"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1MKzVYREkf/"
-cover = { original = "https://i1.hdslb.com/bfs/archive/ee8e7bbc81f9813183f520b5f67f45c5f3379881.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/ee8e7bbc81f9813183f520b5f67f45c5f3379881.jpg@2039w_1146h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/ee8e7bbc81f9813183f520b5f67f45c5f3379881.jpg@1929w_1447h_1c.webp" }
+cover = "https://i1.hdslb.com/bfs/archive/ee8e7bbc81f9813183f520b5f67f45c5f3379881.jpg"

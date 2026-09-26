@@ -15,7 +15,7 @@ author = "卡诺热机之梦"                                  # 或 authors = [
 title = "今宵是绝望的利己主义黄豆"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1n1qHBQEwB/"     # 可选：抓取/裁剪用
-cover = { original = "https://i0.hdslb.com/bfs/archive/27769486405fad3e6e41cf41005bcca3d07f17c9.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/27769486405fad3e6e41cf41005bcca3d07f17c9.jpg@568w_319h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/27769486405fad3e6e41cf41005bcca3d07f17c9.jpg@426w_320h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/27769486405fad3e6e41cf41005bcca3d07f17c9.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,5 +25,5 @@ author = "川先僧"                                  # 或 authors = ["甲", "�
 title = "今宵是飘逸的利己主义喵"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV16J411j7Nd/"     # 可选：抓取/裁剪用
-cover = { original = "https://i2.hdslb.com/bfs/archive/867eadebf859acd8107916e9a0e9354f3a630f56.png", "16x9" = "https://i2.hdslb.com/bfs/archive/867eadebf859acd8107916e9a0e9354f3a630f56.png@1339w_753h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/867eadebf859acd8107916e9a0e9354f3a630f56.png@1114w_836h_1c.webp" }
+cover = "https://i2.hdslb.com/bfs/archive/867eadebf859acd8107916e9a0e9354f3a630f56.png"
 start_time = "00:00:12.000"                        # 可选：裁剪区间（只给一侧也合法）

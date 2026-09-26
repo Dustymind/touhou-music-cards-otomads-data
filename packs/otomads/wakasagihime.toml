@@ -15,6 +15,6 @@ author = "芙兰厨陈YuYue"                                  # 或 authors = ["
 title = "【原曲不使用】秘境的人鱼"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Rm4y1K7Xc/"     # 可选：抓取/裁剪用
-cover = { original = "https://i0.hdslb.com/bfs/archive/bd731035616a0a643f8071784b9b0894fe054c87.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/bd731035616a0a643f8071784b9b0894fe054c87.jpg@1095w_615h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/bd731035616a0a643f8071784b9b0894fe054c87.jpg@912w_684h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/bd731035616a0a643f8071784b9b0894fe054c87.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

@@ -15,7 +15,7 @@ author = "马里K"                                  # 或 authors = ["甲", "乙
 title = "【德国BOY】KBCrusher fortune"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1Px411N7Xh/"     # 可选：抓取/裁剪用
-cover = "https://i1.hdslb.com/bfs/archive/f4a8370c98ade9e5b8127c46f041a14fe30e0219.jpg@703w_1000h_1c.webp"
+cover = "https://i1.hdslb.com/bfs/archive/f4a8370c98ade9e5b8127c46f041a14fe30e0219.jpg"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -25,7 +25,7 @@ author = "_Qubc"
 title = "电棍：Calamity Fortune♿♿"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1uP4y1P7W4/"
-cover = "https://i2.hdslb.com/bfs/archive/34b9dd1a7eb09e3b6f66ce4f0d80f83d682128c6.jpg@703w_1000h_1c.webp"
+cover = "https://i2.hdslb.com/bfs/archive/34b9dd1a7eb09e3b6f66ce4f0d80f83d682128c6.jpg"
 
 [[track]]
 album = "otomads"
@@ -33,7 +33,7 @@ authors = ["-摇摇铃仙-", "腌西瓜瓜瓜", "y的自然对数"]
 title = "[合作单品] 信仰是为了萨尼铁塔"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Uco9B6E5A/"
-cover = "https://i0.hdslb.com/bfs/archive/e1867d60b3f1b1b4699f756e4303e9226230812c.jpg@703w_1000h_1c.webp"
+cover = "https://i0.hdslb.com/bfs/archive/e1867d60b3f1b1b4699f756e4303e9226230812c.jpg"
 start_time = "00:00:03.919"
 
 [[track]]
@@ -42,7 +42,7 @@ author = "轩缘无痕"
 title = "信仰是为了过膝之袜"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1FS4y1y7Hj/"
-cover = "https://i1.hdslb.com/bfs/archive/e1273ce3e1c1fb942048641b5646cb5ed1bec4fd.jpg@703w_1000h_1c.webp"
+cover = "https://i1.hdslb.com/bfs/archive/e1273ce3e1c1fb942048641b5646cb5ed1bec4fd.jpg"
 
 [[track]]
 album = "otomads"
