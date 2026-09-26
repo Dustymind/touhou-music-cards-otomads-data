@@ -9,11 +9,20 @@ key = "moriya-suwako"
 
 # 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
 # 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
-# [[track]]
-# album = "otomads"
-# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
-# title = "曲名"
-# extra = "角色曲"
-# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
+[[track]]
+album = "otomads"
+author = "佛山公交_Official_伪"                                  # 或 authors = ["甲", "乙"]（只能写一个）
+title = "【铁道音mad合作单曲】TRAINMAD's 6 - Native Faith"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1wU4y157e9/"     # 可选：抓取/裁剪用
+cover = "https://i1.hdslb.com/bfs/archive/e36a0a7b4205f33a5f36838c4955d454afbfb1bb.jpg@703w_1000h_1c.webp"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
+
+[[track]]
+album = "otomads"
+author = "Gusty露露"
+title = "【音MAD】土著信仰 ~ Native Faith"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1uT4y137hP/"
+cover = "https://i0.hdslb.com/bfs/archive/9cb49642518fb4248995797f4cbae886250000f5.jpg@703w_1000h_1c.webp"

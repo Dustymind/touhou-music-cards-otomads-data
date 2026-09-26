@@ -9,11 +9,12 @@ key = "aki-minoriko"
 
 # 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
 # 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
-# [[track]]
-# album = "otomads"
-# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
-# title = "曲名"
-# extra = "角色曲"
-# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
-# start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
+[[track]]
+album = "otomads"
+author = "bili_67169714501"                                  # 或 authors = ["甲", "乙"]（只能写一个）
+title = "【东方鬼畜音mad】会受囧仙叱责的啦"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1J4x4ehELr/"     # 可选：抓取/裁剪用
+cover = "https://i2.hdslb.com/bfs/archive/974f7ebe98c30480e420cfa135994eaee9f23ee4.jpg@703w_1000h_1c.webp"
+start_time = "00:00:11.790"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

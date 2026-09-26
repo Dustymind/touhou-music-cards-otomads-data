@@ -9,11 +9,12 @@ key = "kagiyama-hina"
 
 # 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
 # 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
-# [[track]]
-# album = "otomads"
-# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
-# title = "曲名"
-# extra = "角色曲"
-# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
-# start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
+[[track]]
+album = "otomads"
+author = "东风谷早苗纯电动公交"                                  # 或 authors = ["甲", "乙"]（只能写一个）
+title = "【东方矿工艺】史蒂夫的阴暗面"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV152HjzkEpU/"     # 可选：抓取/裁剪用
+cover = "https://i2.hdslb.com/bfs/archive/618f300eec4a3b26cd62dcf0df07bb0d02dfccfa.jpg@703w_1000h_1c.webp"
+start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

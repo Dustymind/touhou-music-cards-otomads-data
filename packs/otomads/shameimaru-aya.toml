@@ -67,3 +67,21 @@ extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1eP7k6pEb8/"
 start_time = "00:01:05.000"
 cover = "https://i2.hdslb.com/bfs/archive/ae149a73b659deb34b0bf9db7dc57b96712eb12e.jpg@703w_1000h_1c.webp"
+
+[[track]]
+album = "otomads"
+author = "静識Seishiki"
+title = "【原曲不使用】妖怪之山 ~ Mysterious Mountain"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1srtYewEx5/"
+cover = "https://i0.hdslb.com/bfs/archive/360732754c35403dda7ca5751d0e06318a2766a7.jpg@703w_1000h_1c.webp"
+start_time = "00:00:09.840"
+
+[[track]]
+album = "otomads"
+authors = ["铝合金键盘", "霜幻不容筱"]
+title = "【2022东方华灯宴音MAD单品²】炎吹师之山 ~ Passionate Mountain"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1f5411d73B/"
+cover = "https://i1.hdslb.com/bfs/archive/5e641315c0e1140e3c6e072c65db71b20ea1643a.jpg@703w_1000h_1c.webp"
+start_time = "00:00:02.697"

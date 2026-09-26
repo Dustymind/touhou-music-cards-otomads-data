@@ -10,3 +10,27 @@ title = "【东方馅挂炒饭】神圣庄严的古日♂暮里 ~ Suwa Wrestled 
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV123VV6JEWq/"          # ingest_otomads.py
 cover = "https://i2.hdslb.com/bfs/archive/830ea4c5480eb3aa9b92308d29902f9a75b67a66.jpg@703w_1000h_1c.webp"
+
+[[track]]
+album = "otomads"
+author = "束風谷早苗"
+title = "【东方电气棍】神圣庄严的棍战场～Otto Foughten Field"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1utkdYnEQz/"
+cover = "https://i1.hdslb.com/bfs/archive/27535a077c38992ba2974516e17712212d12bfdb.jpg@703w_1000h_1c.webp"
+
+[[track]]
+album = "otomads"
+author = "レオル"
+title = "神圣庄严的键盘使～ Crasher Foughten Field"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1es411Z7uL/"
+cover = "https://i0.hdslb.com/bfs/archive/713374e6df0369f86e0f859194da5fd37440a8a9.jpg@703w_1000h_1c.webp"
+
+[[track]]
+album = "otomads"
+author = "Rinsaku"
+title = "Masuo的古战场"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1R34y167HW/"
+cover = "https://i0.hdslb.com/bfs/archive/7eb9f1bbe45d3d96ceb3e2d6986c39fe9c56cec5.jpg@703w_1000h_1c.webp"

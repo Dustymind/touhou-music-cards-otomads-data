@@ -9,11 +9,20 @@ key = "aki-shizuha"
 
 # 下面是一份**占位**示例：填上真值再取消注释（`album` 固定；`extra` 见 角色曲 / 道中曲 / 更多道中曲 / 秘封曲）。
 # 没有 source 的曲目只能手工把音频放进曲库（不写 source 时抓取会报「缺 source」）。
-# [[track]]
-# album = "otomads"
-# author = "作者名"                                  # 或 authors = ["甲", "乙"]（只能写一个）
-# title = "曲名"
-# extra = "角色曲"
-# source = "https://www.bilibili.com/video/BV……"     # 可选：抓取/裁剪用
+[[track]]
+album = "otomads"
+author = "_萳苝_"                                  # 或 authors = ["甲", "乙"]（只能写一个）
+title = "【东方傻风神录】是个眷爱众生的神.. ~ Rinenmaotic Fa哦哦哦哦ll"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV1EeEj6fE44/"     # 可选：抓取/裁剪用
+cover = "https://i2.hdslb.com/bfs/archive/151493d5942dd0aab6cd0f7d526e448419e26ee2.jpg@703w_1000h_1c.webp"
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
+
+[[track]]
+album = "otomads"
+author = "阴暗处的水晶"
+title = "【东方头破七分】洗脑众生之神 ～ Fraudulent Gakkai"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV1FpP1e8EXN/"
+cover = "https://i0.hdslb.com/bfs/archive/9cbe378f74b6e002a7ae364b4801d393f794d7e6.jpg@703w_1000h_1c.webp"
