@@ -854,6 +854,7 @@ def test_audio_filename_falls_back_to_joined_authors():
 
 @pytest.mark.parametrize(("line", "message"), [
     ('author = "甲"\nauthors = ["甲", "乙"]', "只能写一个"),
+    ('author = ["甲", "乙"]', "author 必须是"),
     ('authors = "甲"', "authors 必须"),
     ('authors = []', "authors 必须"),
     ('authors = ["甲", "  "]', "不能有空"),

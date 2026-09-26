@@ -375,6 +375,12 @@ def _read_authors(entry: dict, track: dict, where: str) -> None:
     """
     single = entry.get("author")
     many = entry.get("authors")
+    if single is not None and not isinstance(single, str):
+        # 数组写到 `author` 上是**最容易犯的**一种（README 那句"两种写法等价"只说值等价，
+        # 没说键能互换）。不拦的话它会一路走到 `author_of()` 才炸成 AttributeError
+        # —— 那是在 `fetch_audio` 的线程池里、跑到一半、报错还看不出是哪条曲目（实测）。
+        raise SystemExit(f"{where}：author 必须是**整串**（`author = \"甲 & 乙\"`）——"
+                         f"多作者要写成 `authors = [\"甲\", \"乙\"]`（数组），收到 {single!r}")
     if single is not None and many is not None:
         raise SystemExit(f"{where}：author 与 authors 只能写一个（author 是整串、authors 是数组）")
     if many is not None:
