@@ -66,6 +66,23 @@ def test_trim_seconds_semantics():
                                "stop_time": "00:01:10.000"}) == (40.0, 30.0)
 
 
+def test_track_bitrate_semantics():
+    """`bitrate` 是可选的成品 CBR 码率（kbps）：不写 ⇒ `None`（老口径，不重编码）。"""
+    assert packs.track_bitrate({}) is None
+    assert packs.track_bitrate({"bitrate": 32}) == 32          # 下界
+    assert packs.track_bitrate({"bitrate": 128}) == 128
+    assert packs.track_bitrate({"bitrate": 320}) == 320        # 上界
+
+
+@pytest.mark.parametrize("value", [
+    0, 31, 321, 128000,             # 越界（128000 一眼是把 kbps 写成了 bps）
+    128.5, "128", True, False, [],  # 类型不对（bool 也不能当 int 混过去）
+])
+def test_track_bitrate_rejects_bad_values(value):
+    with pytest.raises(ValueError):
+        packs.track_bitrate({"bitrate": value})
+
+
 @pytest.mark.parametrize("pair", [
     ("00:01:10.000", "00:00:40.000"),    # 倒挂
     ("00:00:40.000", "00:00:40.000"),    # 相等
@@ -472,7 +489,7 @@ def test_render_version_invalidates_previous_trims_but_not_link_only_tracks(tmp_
     outputs: dict = {}
     args = dry_args(dry_run=False)
     monkeypatch.setattr(fetch_audio, "render",
-                        lambda raw, out, wanted, tmp: (out.parent.mkdir(parents=True, exist_ok=True),
+                        lambda raw, out, wanted, tmp, bitrate=None: (out.parent.mkdir(parents=True, exist_ok=True),
                                                        out.write_bytes(b"ID3" + b"\x00" * 8)))
 
     run_track(trimmed, library=tmp_path, state=state, outputs=outputs, args=args, changed=set())
@@ -981,7 +998,7 @@ PACK_KEYS_VECTOR = {
     "pack": {"id", "label_en", "label_zh", "kind", "order"},
     "album": {"key", "name", "kind", "pack", "order", "show_album_name"},
     "track": {"album", "author", "authors", "title", "extra", "source", "start_time", "stop_time",
-              "cover"},
+              "bitrate", "cover"},
     "character": {"key", "card"},
 }
 

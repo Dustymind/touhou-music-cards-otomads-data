@@ -274,7 +274,7 @@ def ensure_raw(source: str, raw_path: pathlib.Path, *, force: bool, stale: bool)
 
 
 def render(raw: pathlib.Path, out: pathlib.Path, wanted: tuple[float, float | None] | None,
-           tmp_dir: pathlib.Path) -> None:
+           tmp_dir: pathlib.Path, bitrate: int | None = None) -> None:
     """产出成品：不裁剪 → 直接硬链接；裁剪 → **解码后精确切再重编码** 到临时文件再**原子改名**。
 
     原子改名是硬链接方案的前提：就地写会把共享 inode 的另一首一起改掉 ✗。
@@ -298,24 +298,33 @@ def render(raw: pathlib.Path, out: pathlib.Path, wanted: tuple[float, float | No
 
     **不重采样**：源是 44.1 / 48 kHz，都是 mp3 原生支持的采样率 —— 再插一道 SRC 只是白添失真
     （ffmpeg 在编码器不支持某个采样率时会自动插重采样，这里用不上）。
+
+    **可选降码率**（曲包里的 `bitrate = <kbps>`，见 `packformat.track_bitrate`）：整首按 CBR 重编码，
+    用来把长曲压到 **CDN 的单文件上限**（Cloudflare Workers 静态资产 25 MiB）以下 ——
+    不写这个键就还是老口径（不裁 = 硬链接原件，裁 = `TRIM_ENCODER` 的 V0）。
     """
-    if wanted is None:
+    if wanted is None and bitrate is None:
         link_or_copy(raw, out)
         return
-    start, duration = wanted
-    back = min(TRIM_WARMUP, start)           # 起点本来就在 0.5 秒内 ⇒ 回退到文件头即可
+    encoder = (["-c:a", "libmp3lame", "-b:a", f"{bitrate}k"] if bitrate is not None
+               else TRIM_ENCODER)
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp_dir.mkdir(parents=True, exist_ok=True)
     tmp = tmp_dir / f"{out.stem}.tmp.mp3"
     command = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-               "-nostdin",                  # 见下：别让 ffmpeg 去碰用户的终端
-               "-ss", f"{start - back:.3f}", "-i", str(raw)]
-    if back:
-        # 输出侧的 `-ss`：丢掉预热段。它落在 `-i` **之后**，所以不解码器冷启动，只丢已解出来的样本。
-        command += ["-ss", f"{back:.3f}"]
-    if duration is not None:                 # None = 一直裁到文件结尾
-        command += ["-t", f"{duration:.3f}"]
-    command += [*TRIM_ENCODER, str(tmp)]
+               "-nostdin"]                   # 见下：别让 ffmpeg 去碰用户的终端
+    if wanted is None:
+        command += ["-i", str(raw)]          # 只降码率：整首，不定位
+    else:
+        start, duration = wanted
+        back = min(TRIM_WARMUP, start)       # 起点本来就在 0.5 秒内 ⇒ 回退到文件头即可
+        command += ["-ss", f"{start - back:.3f}", "-i", str(raw)]
+        if back:
+            # 输出侧的 `-ss`：丢掉预热段。它落在 `-i` **之后**，所以不解码器冷启动，只丢已解出来的样本。
+            command += ["-ss", f"{back:.3f}"]
+        if duration is not None:             # None = 一直裁到文件结尾
+            command += ["-t", f"{duration:.3f}"]
+    command += [*encoder, str(tmp)]
     # `stdin=DEVNULL`：ffmpeg 只要看到 stdin 是终端就会接管它（`-nostdin` 只管"要不要读"，
     # 不管"stdin 是不是 tty"），跑完可能让终端不回显 ✗。并发时更危险（多个 ffmpeg 同时抢）。
     subprocess.run(command, check=True, capture_output=True, text=True, stdin=subprocess.DEVNULL)
@@ -487,6 +496,10 @@ def process_track(track: dict, *, library: pathlib.Path, state: dict,
         wanted = packs.trim_seconds(track)
     except ValueError as error:
         return {"status": "failed", "title": title, "detail": f"裁剪区间非法：{error}"}, {}
+    try:
+        bitrate = packs.track_bitrate(track)
+    except ValueError as error:
+        return {"status": "failed", "title": title, "detail": f"码率非法：{error}"}, {}
 
     if not source:
         if out_path.exists():
@@ -495,8 +508,10 @@ def process_track(track: dict, *, library: pathlib.Path, state: dict,
                 "detail": "没有 source，曲库里也没有这个文件（补 source 或手工放入曲库）"}, {}
 
     signature = {"source": source, "start": track.get("start_time", ""), "stop": track.get("stop_time", ""),
-                 # 裁剪的成品带 **渲染口径**；不裁剪的成品是硬链接，口径与它无关（见 LINK_RENDER）
-                 "render": RENDER_VERSION if wanted else LINK_RENDER,
+                 # 降码率这一首也要重编码 ⇒ 与裁剪同属"编码产物"（见 `render` 与 LINK_RENDER）
+                 "bitrate": "" if bitrate is None else str(bitrate),
+                 # 裁剪/降码率的成品带 **渲染口径**；不裁剪的成品是硬链接，口径与它无关（见 LINK_RENDER）
+                 "render": RENDER_VERSION if (wanted or bitrate is not None) else LINK_RENDER,
                  # 原件的**抓取口径**（多 P 默认取哪一 P 就是它管的，见 FETCH_VERSION）
                  "fetch": FETCH_VERSION}
     raw_path = library / RAW_DIR / f"{packs.source_key(source)}.mp3"
@@ -511,6 +526,7 @@ def process_track(track: dict, *, library: pathlib.Path, state: dict,
              and entry.get("source") == signature["source"]
              and entry.get("start", "") == signature["start"]
              and entry.get("stop", "") == signature["stop"]
+             and entry.get("bitrate", "") == signature["bitrate"]
              and entry.get("render", "") == signature["render"]
              and entry.get("fetch", "") == signature["fetch"]
              and entry.get("outHash") == hash_file(out_path))
@@ -536,9 +552,9 @@ def process_track(track: dict, *, library: pathlib.Path, state: dict,
         # （同一 source 的第二条曲目本来就没有自己的状态，不能因此重下 ✗）
         ensure_raw(source, raw_path, force=args.force, stale=stale_raw)
 
-        twin_key = (source, signature["start"], signature["stop"])
+        twin_key = (source, signature["start"], signature["stop"], signature["bitrate"])
         if args.force:
-            render(raw_path, out_path, wanted, library / TMP_DIR)
+            render(raw_path, out_path, wanted, library / TMP_DIR, bitrate)
             action = "trimmed" if wanted else "fetched"
         else:
             # **认领与产出必须在同一把锁里**：登记表里的路径是给别的线程拿去硬链接的，
@@ -552,7 +568,7 @@ def process_track(track: dict, *, library: pathlib.Path, state: dict,
                     link_or_copy(twin, out_path)          # 同一来源同一区间 → 硬链接
                     action = "linked"
                 else:
-                    render(raw_path, out_path, wanted, library / TMP_DIR)
+                    render(raw_path, out_path, wanted, library / TMP_DIR, bitrate)
                     outputs[twin_key] = out_path
                     claimed[twin_key] = out_path
                     action = "trimmed" if wanted else "fetched"

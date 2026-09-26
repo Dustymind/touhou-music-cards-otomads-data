@@ -45,6 +45,7 @@
     source = "https://www.bilibili.com/video/BV1kw411q7S8"   # 可选：抓取用（见 docs/packs-audio-v1.md）
     start_time = "00:00:40.000"                              # 可选：裁剪开始
     stop_time = "00:01:10.000"                               # 可选：裁剪结束
+    bitrate = 128                                            # 可选：成品 CBR 码率 kbps（长曲压体积用）
     cover = { original = "https://i0.hdslb.com/bfs/archive/88ad053c….jpg",       # 可选：封面
               "16x9" = "https://i0.hdslb.com/bfs/archive/88ad053c….jpg@1920w_1080h_1c.webp",
               "4x3" = "https://i0.hdslb.com/bfs/archive/88ad053c….jpg@1600w_1200h_1c.webp" }
@@ -75,8 +76,10 @@
 ``[[track]]`` 里**不再写 ``character``**（角色由文件的 ``key`` 决定），清单里也**不许**写
 ``[[track]]``（曲目一律进角色文件），两条都**直接报错**而不是猜。
 
-三个音频键（``source`` / ``start_time`` / ``stop_time``）**只在抓取与裁剪期被读**，
+四个音频键（``source`` / ``start_time`` / ``stop_time`` / ``bitrate``）**只在抓取与裁剪期被读**，
 运行时不进 ``characters.json``、前端也看不到它们（契约见 ``docs/packs-audio-v1.md``）。
+``bitrate`` 是**成品 CBR 码率**（kbps，可选，32–320）：CDN（Cloudflare Workers 静态资产）单文件上限
+25 MiB，个别长曲靠它压下去；不写就还是"不裁 = 硬链接原件、裁 = V0 重编码"。
 """
 from __future__ import annotations
 
@@ -96,7 +99,7 @@ ALBUM_KEYS = {"key", "name", "kind", "pack", "order", "show_album_name"}
 #: 角色文件里 `[[track]]` 的键 —— **没有** `character`：角色由文件的 `key` 决定。
 #: `cover` 是**可选**的"这一条曲目的封面"（D153 修订：从顶层数组搬进来的，见模块 docstring）
 TRACK_KEYS = {"album", "author", "authors", "title", "extra", "source", "start_time", "stop_time",
-              "cover"}
+              "bitrate", "cover"}
 #: 角色文件的顶层键（`track` 之外）：只剩 `key` 与**可选**的卡面覆盖 `card`
 #: （写法同 `data/characters/*.toml`）。顶层的 `cover` 数组是**废弃形状**，见 `_character_tracks`
 CHARACTER_KEYS = {"key", "card"}
@@ -465,8 +468,31 @@ def _read_authors(entry: dict, track: dict, where: str) -> None:
         track["author"] = single
 
 
+#: `bitrate` 允许的范围（kbps）：下限是"还能听"，上限是 mp3 的 320 —— 写这个键的目的是**压体积**，
+#: 越界几乎一定是写错了单位（比如把 128000 当成 128k）。
+BITRATE_RANGE = (32, 320)
+
+
+def track_bitrate(track: dict) -> int | None:
+    """`bitrate`：可选的**成品 CBR 码率**（kbps，契约 `docs/packs-audio-v1.md` §1）。
+
+    为什么有这个键：CDN（Cloudflare Workers 静态资产）**单文件上限 25 MiB**，
+    个别长曲（例如 22.6 分钟、原件 36.9 MB）不降码率就放不下 —— 超一个文件 `wrangler deploy`
+    就整体失败。不写 ⇒ ``None``：不裁就硬链接原件、裁剪才按 V0 重编码（老口径，音质最好）。
+    """
+    value = track.get("bitrate")
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"bitrate 必须是整数 kbps（收到 {value!r}）")
+    low, high = BITRATE_RANGE
+    if not low <= value <= high:
+        raise ValueError(f"bitrate 必须在 {low}–{high} kbps 之间（收到 {value}）")
+    return value
+
+
 def _read_audio_keys(entry: dict, track: dict, where: str) -> None:
-    """`source` / `start_time` / `stop_time`：解析 + 就地校验（构建期就能发现写错）。"""
+    """`source` / `start_time` / `stop_time` / `bitrate`：解析 + 就地校验（构建期就能发现写错）。"""
     source = (entry.get("source") or "").strip()
     if source:
         if not source.lower().startswith(("http://", "https://")):
@@ -483,6 +509,11 @@ def _read_audio_keys(entry: dict, track: dict, where: str) -> None:
         except ValueError as error:
             raise SystemExit(f"{where}：{field} {error}") from None
         track[field] = value
+    if entry.get("bitrate") is not None:
+        try:
+            track["bitrate"] = track_bitrate(entry)
+        except ValueError as error:
+            raise SystemExit(f"{where}：{error}") from None
     try:
         trim_seconds(track)          # 只给一侧也合法；两侧都给时校验先后
     except ValueError as error:

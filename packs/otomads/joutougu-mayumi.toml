@@ -13,4 +13,5 @@ author = "ふゆこけ"                                  # 或 authors = ["甲",
 title = "セックスの杖刀人"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1D1421Z7Cb/"     # 可选：抓取/裁剪用
+bitrate = 128                                       # 可选：成品 CBR 码率（kbps）—— 整首 22.6 分钟、原件 36.9 MB 超过 CDN 单文件 25 MiB 上限
 cover = { original = "https://i0.hdslb.com/bfs/archive/d03eebb9305cfeff50cda57b9883eb10cae1503c.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/d03eebb9305cfeff50cda57b9883eb10cae1503c.jpg@1048w_589h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/d03eebb9305cfeff50cda57b9883eb10cae1503c.jpg@873w_655h_1c.webp" }
