@@ -9,6 +9,7 @@ author = "拔剑Sketon"
 title = "【东方馅挂炒饭】上海红茶馆"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Tt411K7yc/"          # mp3 标签
+cover = "https://i0.hdslb.com/bfs/archive/914b846d3747f9068d449bf81a7a3b49242d5b2e.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,6 +17,7 @@ author = "Chyan_184"
 title = "【东方电气棍】鞍山红茶馆 ~ Chinese Tea"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1uijx6aEJM/"          # mp3 标签
+cover = "https://i1.hdslb.com/bfs/archive/2fd9930054ad1c49e35b64d34f422e1671bc6cb7.jpg@703w_1000h_1c.webp"
 start_time = "00:00:02.339"
 
 [[track]]
@@ -24,3 +26,4 @@ author = "Rokkan"
 title = "明治十七年の上郡アリス"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1GG4y1r7oJ/"          # mp3 标签
+cover = "https://i0.hdslb.com/bfs/archive/8deef103a1ae25d1fdc473ff28ecf6135297e301.jpg@703w_1000h_1c.webp"

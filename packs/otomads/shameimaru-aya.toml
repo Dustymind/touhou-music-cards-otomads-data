@@ -9,6 +9,7 @@ author = "云生结海lou"
 title = "【东方电气棍】大旋風神哈利路少女"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1tKVizwEpC/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/ee562240ec3110187eea4a5b59fe0cde3d97b7aa.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,6 +17,7 @@ author = "Rinsaku"
 title = "風神魔酢汚"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Ye411G7gR/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/343a74cb2a9f3f5662614f3abf366dad0ee697ce.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -23,6 +25,7 @@ author = "フランソウ"
 title = "【东方食雪汉】**少女"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1BLex6oExB/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/02832eeb8ae01df24bd9edaf1bd19acf65811d2f.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -30,6 +33,7 @@ author = "みぇち"
 title = "Masuo的笔记　～ Mysteriousuo Note"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1ds4y1J7wK/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/2c55606520ca4c0dbe59207c9d100ac15dd5b485.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -37,6 +41,7 @@ author = "_萳苝_"
 title = "【东方雪花帖】傻风之循环 ~ Wind Tangpu"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1oe4y1C7PR/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/9d6c6c112d14d5e62e04d72e2956eeba2aaba785.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -44,6 +49,7 @@ authors = ["鱼调YuDiao", "天空海Skyocean", "DKZ53"]
 title = "【2024东方新春宴音MAD合作单品】山东之国的不眠夜"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1VH4y1a71E/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/e213c8a4097d4a3b19515384c7f0bc2ef67ff8cc.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -51,6 +57,7 @@ author = "手稲"
 title = "对了，一起去回忆京都吧。"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1YM4y1w7Sd/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/3ba22c98f5a7978f775a731c09b79985e256c1a7.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -58,3 +65,4 @@ author = "y的自然对数"
 title = "对了 向北邮出发吧"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1eP7k6pEb8/"
+cover = "https://i2.hdslb.com/bfs/archive/ae149a73b659deb34b0bf9db7dc57b96712eb12e.jpg@703w_1000h_1c.webp"

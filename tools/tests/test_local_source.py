@@ -24,7 +24,11 @@ def library(tmp_path):
 
 
 @pytest.fixture()
-def server(library):
+def server(library, tmp_path, monkeypatch):
+    # 助手每次请求都会读**本仓库**的 `packs/`（D145 的曲目表）。这些用例只验清单形状 / `Range` /
+    # 缓存头，与曲目表无关 ⇒ 把 `DATA` 指到一个**没有 packs/** 的临时根：既不依赖真数据，
+    # 也不受它当前是什么形状影响（`test_served_manifest_carries_the_pack_snapshot` 自己会指回去）。
+    monkeypatch.setattr(local_source.packformat.repo, "DATA", tmp_path / "no-packs")
     handler = lambda *a, **kw: local_source.LocalMusicHandler(  # noqa: E731
         *a, directory=str(library), **kw)
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
@@ -155,6 +159,8 @@ def test_served_manifest_carries_the_pack_snapshot(server, library, tmp_path, mo
 
     **曲目表按曲包 TOML、地址按磁盘文件** —— 同一份数据的两种视图：磁盘上是 `作者 - 标题.mp3`，
     TOML 里作者与标题是分开的两个字段（D95/D96 的口径不能改；应用按归一化曲名把两边配上）。
+    `card` / `covers` 这两张可选覆写表也跟着走（应用侧按角色 key 取图）：`cover` 在 TOML 里
+    写在**每条** `[[track]]` 里（D153），到这里已经拼成"与 `music` 同序"的数组 —— **线上形状没变**。
     """
     packs_dir = tmp_path / "packs"
     (packs_dir / "otomads").mkdir(parents=True)
@@ -162,10 +168,12 @@ def test_served_manifest_carries_the_pack_snapshot(server, library, tmp_path, mo
         '[pack]\nid = "otomads"\n\n[[album]]\nkey = "otomads"\nname = "otomads"\n'
         'kind = "other"\npack = "otomads"\norder = 100\nshow_album_name = false\n',
         encoding="utf-8")
+    cover = "https://i0.hdslb.com/bfs/archive/88ad053c21de0ce0eab53e56561c2c6dadc79e36.jpg@703w_1000h_1c.webp"
     (packs_dir / "otomads" / "cirno.toml").write_text(
-        'key = "cirno"\ncard = ["チルノ-mad.png"]\n\n[[track]]\nalbum = "otomads"\n'
-        'author = "thwy"\ntitle = "岁月"\nextra = "角色曲"\n', encoding="utf-8")
+        f'key = "cirno"\ncard = ["チルノ-mad.png"]\n\n[[track]]\nalbum = "otomads"\n'
+        f'author = "thwy"\ntitle = "岁月"\nextra = "角色曲"\ncover = "{cover}"\n', encoding="utf-8")
     monkeypatch.setattr(local_source.packformat.repo, "DATA", tmp_path)
+    monkeypatch.setattr(local_source.packformat, "_SNAPSHOT_CACHE", {})   # 别让别的用例的缓存顶上
 
     with urllib.request.urlopen(f"{server}/manifest.json") as resp:
         payload = json.loads(resp.read().decode("utf-8"))
@@ -174,7 +182,8 @@ def test_served_manifest_carries_the_pack_snapshot(server, library, tmp_path, mo
     assert payload["albums"] == [{"key": "otomads", "name": "otomads", "kind": "other",
                                   "pack": "otomads", "order": 100, "showAlbumName": False}]
     assert payload["characters"] == [
-        {"key": "cirno", "music": [["otomads", "岁月", "角色曲", "thwy"]], "card": ["チルノ-mad.png"]}]
+        {"key": "cirno", "music": [["otomads", "岁月", "角色曲", "thwy"]],
+         "card": ["チルノ-mad.png"], "covers": [cover]}]
 
 
 def test_served_manifest_without_packs_falls_back_to_the_old_shape(server, library, tmp_path,

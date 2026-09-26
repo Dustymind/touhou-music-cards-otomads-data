@@ -9,6 +9,7 @@ author = "DJGun"
 title = "电棍：源流懐♿"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1u34y1z757/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/d56c18b58e3eb1316d4e2da8d5926f96c416c3da.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,6 +17,7 @@ author = "龙青瑶RyuuSeiyou"
 title = "【东方】厨♂房归航"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV11SwheoENn/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/e0b7e9a5601f0e148fcff2ea862896b1ab817acf.jpg@703w_1000h_1c.webp"
 start_time = "00:00:17.000"
 
 [[track]]
@@ -24,6 +26,7 @@ author = "Deepmau5"
 title = "【东方馅挂炒饭】彼岸♂归航"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1h2421T7PF/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/cb117320d1d421343930f4bc3c663ac1b1cae23b.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -31,3 +34,4 @@ author = "轩缘无痕"
 title = "【元首】彼岸归元~Magical Führer Tour 2019"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV18b411q7qZ/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/b0d29d21379c09e213a9574542c19fcba223af1d.jpg@703w_1000h_1c.webp"

@@ -42,7 +42,7 @@ def coverage_of(pack_id: str, gains: dict) -> dict:
     """曲包 → 曲目 stem 列表 → 与响度表的对应关系。曲包目录不在（单独跑助手）就返回空。"""
     if not packformat.available():
         return {}
-    _packs, _albums, tracks, _cards = packformat.load_packs()
+    _packs, _albums, tracks, _cards, _covers = packformat.load_packs()
     mine = [track for track in tracks if track["pack"] == pack_id]
     return loudness.coverage_report(mine, gains, packformat.audio_stem)
 

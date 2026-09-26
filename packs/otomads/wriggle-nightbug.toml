@@ -9,6 +9,7 @@ author = "鞍山侯国玉电乐团"
 title = "【东方电气棍】怎么这么蠢的虫月 ~ Mooned Insect"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Eb421a7wu/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/8bfa6246cc4554f99f6f949b9527e6ac9ca53219.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,4 +17,5 @@ author = "芙兰厨陈YuYue"
 title = "蠢々秋月"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV11ubkzEEcg/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/64fa49547ee8fdf31d550e9b7a95cf22f7d54000.jpg@703w_1000h_1c.webp"
 start_time = "00:00:01.188"

@@ -45,6 +45,17 @@
     source = "https://www.bilibili.com/video/BV1kw411q7S8"   # 可选：抓取用（见 docs/packs-audio-v1.md）
     start_time = "00:00:40.000"                              # 可选：裁剪开始
     stop_time = "00:01:10.000"                               # 可选：裁剪结束
+    cover = "https://i0.hdslb.com/bfs/archive/88ad053c….jpg@703w_1000h_1c.webp"   # 可选：封面直链
+
+``cover`` 由 ``python -m otomads.fetch_covers`` 生成/补缺（同一个包里的 `fetch_covers` 模块）：
+**一条曲目一张** B 站封面直链，当卡面素材的**默认来源**，写在**它自己那条** ``[[track]]`` 里。
+**D153 修订**之前的形状是"角色文件顶层一个 ``cover = [...]`` 数组、靠位置与 ``[[track]]`` 对应"，
+那个形状现在**直接报错**（加一首曲目就会整体错位、而且不报错）：跑一次 ``fetch_covers`` 会按顺序
+自动迁移（不联网、不动已有内容）。人工改某一条就是"源内覆写"，工具默认不会再动它
+（要整包重抓用 ``fetch_covers --force``）。
+
+**一个角色要么每条 ``[[track]]`` 都写 cover、要么一条都不写**（硬规矩）：半有半无在运行时的
+``covers`` 数组里就是空洞 ⇒ 与 ``music`` 静默错位。只有"每条都有"的角色才进 ``covers``。
 
 ``[[track]]`` 里**不再写 ``character``**（角色由文件的 ``key`` 决定），清单里也**不许**写
 ``[[track]]``（曲目一律进角色文件），两条都**直接报错**而不是猜。
@@ -67,9 +78,12 @@ from . import paths as repo
 #: 拼错的 `starttime` 会被静默丢掉，表现为"数据里写了却不生效"（见 docs/packs-audio-v1.md §1）。
 PACK_KEYS = {"id", "label_en", "label_zh", "kind", "order"}
 ALBUM_KEYS = {"key", "name", "kind", "pack", "order", "show_album_name"}
-#: 角色文件里 `[[track]]` 的键 —— **没有** `character`：角色由文件的 `key` 决定
-TRACK_KEYS = {"album", "author", "authors", "title", "extra", "source", "start_time", "stop_time"}
-#: 角色文件的顶层键（`track` 之外）：`card` 是**可选**的卡面覆盖（写法同 `data/characters/*.toml`）
+#: 角色文件里 `[[track]]` 的键 —— **没有** `character`：角色由文件的 `key` 决定。
+#: `cover` 是**可选**的"这一条曲目的封面直链"（D153 修订：从顶层数组搬进来的，见模块 docstring）
+TRACK_KEYS = {"album", "author", "authors", "title", "extra", "source", "start_time", "stop_time",
+              "cover"}
+#: 角色文件的顶层键（`track` 之外）：只剩 `key` 与**可选**的卡面覆盖 `card`
+#: （写法同 `data/characters/*.toml`）。顶层的 `cover` 数组是**废弃形状**，见 `_character_tracks`
 CHARACTER_KEYS = {"key", "card"}
 
 
@@ -162,27 +176,40 @@ def available() -> bool:
     return any(root.is_dir() and any(root.glob("*.toml")) for root in repo.pack_roots())
 
 
-def load_packs() -> tuple[list[dict], list[dict], list[dict], dict[str, list[str]]]:
-    """读全部曲包根目录 → ``(packs, albums, tracks, cards)``。
+def load_packs(*, validate_covers: bool = True
+               ) -> tuple[list[dict], list[dict], list[dict], dict[str, list[str]], dict[str, list[str]]]:
+    """读全部曲包根目录 → ``(packs, albums, tracks, cards, covers)``。
 
-    ``cards`` 是"音MAD 侧自己的卡面覆盖"：``{角色 key: [卡面文件名, …]}``（只有写了 `card` 的角色才在里面）。
+    ``cards`` 是"音MAD 侧自己的卡面覆盖"：``{角色 key: [卡面文件名, …]}``（只有写了 `card` 的角色才在里面）；
+    ``covers`` 是"逐条曲目的 B 站封面直链"：``{角色 key: [https 直链, …]}``，**顺序 = 该角色的曲目顺序**
+    （来自每条 ``[[track]]`` 自己的 ``cover``；只有**每条都写了**的角色才在里面）。两张表都是**可选**的
+    覆写：没写的角色不进表，消费方按"缺省沿用共享身份的卡面 / 没有封面"处理。
+
+    ``validate_covers=False``：**跳过 `cover` 的形状校验**（非空字符串 + https 开头）与
+    **「全有或全无」校验**，也不往 ``covers`` 里记东西（其余校验一条不少），顶层 `cover` 数组
+    （旧形状）也放行。只有 `otomads.fetch_covers` 用这个开关 —— 它就是来补/搬这份数据的，
+    而"某条曲目还没封面 / 手写坏了 / 整个文件还是旧形状"恰恰是它要处理的状态：严格读法会让用户卡在
+    "报错让你重跑 fetch_covers、它自己又因为同一条报错起不来"的死循环里。
+
     根目录见 :func:`otomads.paths.pack_roots`（本仓库的 `packs/`）。
     """
     packs: list[dict] = []
     albums: list[dict] = []
     tracks: list[dict] = []
     cards: dict[str, list[str]] = {}
+    covers: dict[str, list[str]] = {}
     for directory in repo.pack_roots():
         if not directory.is_dir():
             print(f"[packs] 跳过不存在的曲包根目录 {repo.shown(directory)}", file=sys.stderr)
             continue
-        _load_root(directory, packs, albums, tracks, cards)
+        _load_root(directory, packs, albums, tracks, cards, covers, validate_covers)
     packs.sort(key=lambda item: item["order"])
-    return packs, albums, tracks, cards
+    return packs, albums, tracks, cards, covers
 
 
 def _load_root(directory: pathlib.Path, packs: list[dict], albums: list[dict],
-               tracks: list[dict], cards: dict[str, list[str]]) -> None:
+               tracks: list[dict], cards: dict[str, list[str]],
+               covers: dict[str, list[str]], validate_covers: bool) -> None:
     """读一个曲包根目录：``<id>.toml`` 清单 + ``<id>/`` 角色文件。"""
     for path in sorted(directory.glob("*.toml")):
         with open(path, "rb") as fh:
@@ -215,18 +242,22 @@ def _load_root(directory: pathlib.Path, packs: list[dict], albums: list[dict],
             rel = repo.shown(directory)
             raise SystemExit(f"{path.name}: 曲目要写进 {rel}/{pack_id}/<角色 key>.toml（一角色一份），"
                              f"清单只放 [pack] 与 [[album]]")
-        tracks.extend(_character_tracks(directory / pack_id, path.name, cards))
+        tracks.extend(_character_tracks(directory / pack_id, path.name, cards, covers, validate_covers))
 
 
 def _character_tracks(pack_dir: pathlib.Path, manifest: str,
-                      cards: dict[str, list[str]]) -> list[dict]:
+                      cards: dict[str, list[str]], covers: dict[str, list[str]],
+                      validate_covers: bool = True) -> list[dict]:
     """读 ``<根>/<曲包 id>/*.toml`` → 曲目列表（文件按名排序，文件内保持原顺序）。
 
     角色由文件的 ``key`` 决定，**文件名必须与它一致**：曲包里的 key 写错曾一次性丢掉 3 条曲目
     （2026-09 那次 `reisen-udongein` 少写 `-inaba`），所以这里错了直接报；报错文案带包内相对路径，
     否则 35 个 `cirno.toml` 分不清是哪个包。
 
-    ``cards`` 是出参：文件里写了 ``card`` 就记一笔（音MAD 侧自己的卡面，写法见曲包根目录的 ``README.ai.MD``）。
+    ``cards`` / ``covers`` 是出参：文件里写了 ``card`` 就记一笔（音MAD 侧自己的卡面）；
+    ``cover`` 写在**每条** ``[[track]]`` 里（写法见曲包根目录的 ``README.ai.MD``），
+    **一个角色要么每条都写、要么一条都不写** —— 只有"每条都有"的角色才进 ``covers``
+    （值为按曲目顺序的直链列表）。
     """
     if not pack_dir.is_dir():
         return []
@@ -237,7 +268,19 @@ def _character_tracks(pack_dir: pathlib.Path, manifest: str,
             data = tomllib.load(fh)
         if "pack" in data or "album" in data:
             raise SystemExit(f"{where}: [pack] / [[album]] 只能写在清单 {manifest} 里")
-        _reject_unknown(where, {k: v for k, v in data.items() if k != "track"}, CHARACTER_KEYS)
+        # 旧形状（D153 之前的顶层 `cover` 数组）：**必须在 `_reject_unknown` 之前**拦下 ——
+        # `cover` 已经不在 CHARACTER_KEYS 里，放过去就只剩"不认识的键 ['cover']"这种没法照做的提示。
+        # 宽容读法（只有 `fetch_covers` 用）放行：那个工具就是来搬它的，而 `--dry-run` 不落盘 ⇒
+        # 磁盘上那份还是旧形状，读不进来就给不出计划。
+        if "cover" in data and validate_covers:
+            raise SystemExit(
+                f"{where}: 顶层的 `cover` 数组已废弃（D153 修订）—— 现在写在每条 `[[track]]` 里；"
+                f"跑 `uv run --project tools python -m otomads.fetch_covers` 会按顺序自动迁移"
+                f"（不联网、不动已有内容）")
+        # `cover` 交给上面那一条专门处理：严格读法已经报过它了，宽容读法要放它过去
+        # （工具就是来搬它的）—— 绝不能让"不认识的键 ['cover']"再插一嘴，那提示没法照做。
+        _reject_unknown(where, {k: v for k, v in data.items() if k not in ("track", "cover")},
+                        CHARACTER_KEYS)
         key = data.get("key")
         if not isinstance(key, str) or not key:
             raise SystemExit(f"{where}: 缺少 key（= 角色 key）")
@@ -248,7 +291,9 @@ def _character_tracks(pack_dir: pathlib.Path, manifest: str,
             if not isinstance(face, list) or not face or not all(isinstance(f, str) and f for f in face):
                 raise SystemExit(f"{where}: card 必须是至少一项的字符串数组（写成 data/characters/*.toml 那样）")
             cards[key] = list(face)
-        for entry in data.get("track", []):
+        entries = data.get("track", [])
+        urls: list[str | None] = []
+        for entry in entries:
             _reject_unknown(f"{where} 的 [[track]]", entry, TRACK_KEYS)
             track = {
                 "character": key,
@@ -259,8 +304,49 @@ def _character_tracks(pack_dir: pathlib.Path, manifest: str,
             }
             _read_authors(entry, track, f"{where} / {entry.get('title')}")
             _read_audio_keys(entry, track, f"{where} / {track['title']}")
+            urls.append(_read_track_cover(entry, f"{where} / {entry.get('title')}")
+                        if validate_covers else None)
             out.append(track)
+        if validate_covers and any(url is not None for url in urls):
+            missing = next((entry.get("title") for entry, url in zip(entries, urls) if url is None), None)
+            if missing is not None:
+                # 「全有或全无」：半有半无在运行时的 `covers` 数组里就是**空洞** ⇒ 与 `music` 静默错位
+                # （应用按同一个下标取图，"少的那一条"之后每张图都串到下一首歌上）。
+                raise SystemExit(
+                    f"{where}：cover 是**全有或全无**的（一个角色要么每条 [[track]] 都写、要么一条都不写）——"
+                    f"「{missing}」这一条没写，而别的写了。跑 "
+                    f"`uv run --project tools python -m otomads.fetch_covers` 会把它补齐（也可以手工写一条）")
+            covers[key] = [url for url in urls if url is not None]
     return out
+
+
+#: `cover` 的 URL 前缀（只认绝对 https：站点本身是 https，`http://` 的图会被浏览器当**混合内容**拦掉）
+COVER_PREFIX = "https://"
+
+
+def _read_track_cover(entry: dict, where: str) -> str | None:
+    """**一条曲目**的 `cover`（可选）→ 直链；没写返回 `None`。
+
+    两条硬规矩（写错就报，不猜）：
+
+    1. **非空字符串**：数组 / 空串都是"写了一半"的样子 —— 形状已经换代（一条曲目一张，写在自己那条
+       ``[[track]]`` 里），写成数组只会让人以为还能一条对多张；
+    2. **绝对 https** URL：B 站接口给的 `pic` 常是 `http://`，而站点是 https ⇒ 混内容会被浏览器拦掉。
+
+    报错文案带**文件与曲名**（`{where} / {title}` 的写法与 `_read_authors` 一致）：
+    一个角色文件里有几十条 `[[track]]`，不说曲名等于没说。
+    """
+    value = entry.get("cover")
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise SystemExit(f"{where}：cover 必须是非空字符串（一条绝对 https 图片直链），"
+                         f"收到 {value!r} —— 一条曲目一张，写在自己这条 [[track]] 里")
+    url = value.strip()
+    if not url.startswith(COVER_PREFIX):
+        raise SystemExit(f"{where}：cover 必须是 {COVER_PREFIX} 开头的绝对 URL，收到 {url!r}"
+                         f"（B 站给的 http:// 要换成 https://，否则页面是混合内容、图会被浏览器拦掉）")
+    return url
 
 
 #: 多作者在**成品文件名**里的连接符。磁盘名 `作者 - 标题.mp3` 是 manifest 匹配键、响度表键
@@ -343,7 +429,8 @@ def music_entry(track: dict) -> list:
 
 
 def pack_snapshot(albums: list[dict], tracks: list[dict],
-                  cards: dict[str, list[str]] | None = None) -> dict[str, list[dict]]:
+                  cards: dict[str, list[str]] | None = None,
+                  covers: dict[str, list[str]] | None = None) -> dict[str, list[dict]]:
     """曲包真源 → 源清单里的「包数据」段（``{"albums": […], "characters": […]}``，主仓库 D145）。
 
     这是 C 路线的数据侧一半：源在自己的 ``manifest.json`` 里多带一段"这个包有哪些曲目"，
@@ -355,18 +442,27 @@ def pack_snapshot(albums: list[dict], tracks: list[dict],
     角色条目可以**可选**地自带 ``name`` / ``order`` / ``searchNames``（应用侧已经接收这三个字段）。
 
     输入就是 :func:`load_packs` 已经会返回的那几样：``albums`` 是包自带专辑，``tracks`` 是全部曲目，
-    ``cards`` 是 ``{角色 key: [卡面文件名]}``。纯函数：不读盘、不改入参。
+    ``cards`` 是 ``{角色 key: [卡面文件名]}``，``covers`` 是 ``{角色 key: [封面直链]}``。
+    两张表都是"**有才覆盖**"：没写的角色条目里就不出现那个键（口径与 `card` 一致，D137）。
+    纯函数：不读盘、不改入参。
     """
     music: dict[str, list[list]] = {}
     for track in tracks:
         music.setdefault(track["character"], []).append(music_entry(track))
     faces = cards or {}
+    cover_table = covers or {}
     characters: list[dict] = []
     for key, entries in music.items():
         record: dict = {"key": key, "music": entries}
         face = faces.get(key)
         if face:
             record["card"] = list(face)     # 音MAD 侧自己的卡面覆盖（有才覆盖，D137）
+        cover = cover_table.get(key)
+        if cover:
+            # 逐条曲目的封面直链（顺序 = 该角色的曲目顺序 = 上面 music 的顺序；有才覆盖）。
+            # TOML 源侧写在每条 [[track]] 里（D153），到这里才拼成"与 music 同序"的数组
+            # —— **线上形状没变**：消费方一直就是按下标取的。
+            record["covers"] = list(cover)
         characters.append(record)
     return {"albums": [dict(album) for album in albums], "characters": characters}
 
@@ -391,8 +487,8 @@ def repo_snapshot() -> dict[str, list[dict]] | None:
     key = (len(files), max((path.stat().st_mtime_ns for path in files), default=0))
     hit = _SNAPSHOT_CACHE.get(key)
     if hit is None:
-        _packs, albums, tracks, cards = load_packs()
-        hit = pack_snapshot(albums, tracks, cards)
+        _packs, albums, tracks, cards, covers = load_packs()
+        hit = pack_snapshot(albums, tracks, cards, covers)
         _SNAPSHOT_CACHE.clear()
         _SNAPSHOT_CACHE[key] = hit
     return copy.deepcopy(hit)

@@ -9,6 +9,7 @@ author = "川先僧"
 title = "【东方Project】广有射怪猫管我鸟事"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1By4y1C7ga/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/e66e98fe21824fcf251a6d1f4e45a4a8c1c1f871.jpg@703w_1000h_1c.webp"
 start_time = "00:00:02.000"
 
 [[track]]
@@ -17,3 +18,4 @@ author = "钬__"
 title = "【2025连缘羽梦祭单品】连缘妖妖梦~Ancient Temple"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1FUFYeJE8e/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/849cc7b7dde98b285d419141fd1ebabcaa51d975.jpg@703w_1000h_1c.webp"

@@ -9,6 +9,7 @@ author = "鞍山侯国玉电乐团"
 title = "电棍裁判 ~ 玩弄唢呐的选手"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Co4y1574c/"          # mp3 标签
+cover = "https://i0.hdslb.com/bfs/archive/7dc1a18e9267f1eae850d7bb957131d9f88ca152.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,3 +17,4 @@ author = "鞍山侯国玉电乐团"
 title = "【东方电气棍】鞍山的唢呐师"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Rs4y1779Z/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/f52ba6fcb9ebc5b692c8a6ab2459c96437f3a1d5.jpg@703w_1000h_1c.webp"

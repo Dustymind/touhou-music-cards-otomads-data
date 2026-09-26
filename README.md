@@ -93,6 +93,13 @@ uv run --project tools python -m otomads.stage_media pack --out otomads-media.ta
 ## 角色数据编辑指南
 
 > 注：自定义卡面尚未形成规范（我也没想好怎么设计音 MAD 卡面啊）
+>
+> 每首曲目的 B 站封面直链写在**它自己那条 `[[track]]` 里的 `cover`**（一条曲目一张），
+> 由 `uv run --project tools python -m otomads.fetch_covers` 生成/补缺；**手改那一条就是覆写**，
+> 工具默认只补还没有的（要整包重抓用 `--force`，会盖掉手改）。
+>
+> 一个角色要么每条 `[[track]]` 都写、要么一条都不写；D153 之前那个顶层的 `cover = [...]`
+> 数组已经废弃，跑一次 `fetch_covers` 会自动把它按顺序迁移进各条曲目。
 
 位置：`packs/otomads/[character-name].toml`
 
@@ -191,6 +198,12 @@ source = "https://www.bilibili.com/video/BV……"
 # (https://www.reaper.fm/download.php)
 start_time = "00:00:00.000"
 stop_time = "00:00:30.000"
+
+# （可选参数，如需留空可删除）
+# 这一条曲目的 B 站封面直链（**一条曲目一张**，卡面素材的默认来源）。
+# 由 `python -m otomads.fetch_covers` 生成/补缺；**手改这一行就是覆写**，工具默认不再动它。
+# 一个角色要么每条 [[track]] 都写、要么一条都不写（半有半无会直接报错）。
+cover = "https://i0.hdslb.com/bfs/archive/………….jpg@703w_1000h_1c.webp"
 ```
 
 </details>

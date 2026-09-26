@@ -9,6 +9,7 @@ author = "きゅーみぅ"
 title = "东方原曲大致最开始的音的おてんば恋娘"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1kb411U789/"          # mp3 标签
+cover = "https://i0.hdslb.com/bfs/archive/88ad053c21de0ce0eab53e56561c2c6dadc79e36.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,3 +17,4 @@ author = "鞍山侯国玉电乐团"
 title = "无何有之棍 ~ Deep Silver"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1kw411q7S8/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/f71aba785e28389c5452fff6593f55bfc03e8adf.png@703w_1000h_1c.webp"

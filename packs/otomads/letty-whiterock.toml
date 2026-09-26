@@ -9,6 +9,7 @@ author = "循環"
 title = "Crystallize Masuo"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1m8411Z7Tm/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/5108931259bdecdf6366b9271e7e1f1b96fcf598.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,3 +17,4 @@ author = "鞍山侯国玉电乐团"
 title = "Crystallize Otto ／ 结晶化的白银"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Ks4y1N74Y/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/2cf751adfc0b87caabd168dd79c3160faab591c7.png@703w_1000h_1c.webp"

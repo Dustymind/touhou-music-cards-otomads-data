@@ -515,6 +515,9 @@ def review_archive(path: pathlib.Path, *, compare_with_repo: bool = True) -> tup
     * 地址表里有、曲目表里没有（曲库里多放了一个没写进曲包的 mp3 —— 按 D145 的口径曲目表以曲包为准）；
     * **归档与本仓库 `packs/` 不一致**（D147）：归档少 = 改完 packs 忘了重打包；归档多 = 归档比仓库旧。
       两个方向都只是"这次铺的不是仓库现在这份"，不是坏部署 —— 但值得在 CI 日志里吼一声。
+    * **本仓库 `packs/` 读不动**（硬失败被抓住，见下面那段注释）：跳过对照，把原文放进警告。
+      典型场景是 packs 还在 D153 之前的顶层 `cover` 数组形状 —— 那是"本地该跑一次
+      `fetch_covers`"，不是"这份归档坏了"。
     """
     problems: list[str] = []
     warnings: list[str] = []
@@ -567,7 +570,19 @@ def review_archive(path: pathlib.Path, *, compare_with_repo: bool = True) -> tup
                         f"合法）：{'、'.join(extra_rows[:3])}" + ("…" if len(extra_rows) > 3 else ""))
 
     if compare_with_repo:
-        warnings.extend(compare_snapshots(archive_snapshot(manifest), packformat.repo_snapshot()))
+        try:
+            local = packformat.repo_snapshot()
+        except SystemExit as error:
+            # 本仓库 `packs/` **读不动**（`load_packs` 的硬失败：顶层 `cover` 数组那个废弃形状、
+            # 未知键、文件名与 key 不一致……）⇒ 只警告，不炸。
+            # 这条对照本来就是**只警告**的（D147）：它拦的是"这份归档是不是坏的部署"，而
+            # "本仓库现在这份检出读不读得动"不是归档的属性。真炸的代价还极不对称 ——
+            # CF 的构建入口 `build_cdn_site.py` 也走这个函数，一份**好归档**会因为本地检出状态
+            # 而整条构建失败、一个文件都不铺。报错原文照抄进警告，日志里一眼看得出该跑什么。
+            local = None
+            warnings.append(f"本仓库 packs/ 读不动，跳过与它的对照：{error}")
+        if local is not None:
+            warnings.extend(compare_snapshots(archive_snapshot(manifest), local))
     return problems, warnings
 
 

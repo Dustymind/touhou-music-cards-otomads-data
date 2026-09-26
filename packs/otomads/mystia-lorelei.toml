@@ -9,4 +9,5 @@ author = "芙兰厨陈YuYue"
 title = "【原汤化原食】已经只能听见歌声了"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV18rPReMEEo/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/a71cf0c35e9180bf15ccd80fd0204dd07316a308.jpg@703w_1000h_1c.webp"
 start_time = "00:00:01.388"

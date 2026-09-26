@@ -9,6 +9,7 @@ author = "木大的雷某"
 title = "露米娅的██视频流出"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1AfRdYVEkz/"          # mp3 标签
+cover = "https://i1.hdslb.com/bfs/archive/968cc68c22d6b9736b2271db6286f0616abf12b6.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,3 +17,4 @@ author = "芙兰厨陈YuYue"
 title = "妖魔夜行！"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1pS411P7nv/"          # mp3 标签
+cover = "https://i0.hdslb.com/bfs/archive/39df2f7386bfb792b6018c66628beb025ea17ef5.jpg@703w_1000h_1c.webp"

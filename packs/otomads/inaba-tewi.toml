@@ -9,6 +9,7 @@ author = "冰の妖睛"
 title = "【东方德夜抄】♿侯国玉的菜盒子　～ Kagome-Kagome♿"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1yHQDYHETF/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/dd60045aeb07ac4d49d598f33e06306e6b47e318.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,6 +17,7 @@ author = "青空彼方"
 title = "【东方馅挂炒饭】宇佐大人的白旗"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1hs411e78v/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/a8748749746a61b72a72419ba28cb99cd85ba4bd.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -23,3 +25,4 @@ author = "森林"
 title = "Masuo大人的白旗"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1BT4y1Q7bL/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/b8b7426a7c0331e6c1527e27cf9b54bd13985a75.jpg@703w_1000h_1c.webp"

@@ -9,6 +9,7 @@ author = "比占庭"
 title = "【东方电气棍】今昔幻想乡"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1uM4m1U7hA/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/f335c2d60f2cd9c64ebee0e17aa853da143d515f.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,3 +17,4 @@ author = "みぇち"
 title = "今昔gay想郷　～ Masuo Land"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1wW4y1r7vB/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/b31795aa3269cfe6d01d7b19f65cceb72a07edcc.jpg@703w_1000h_1c.webp"

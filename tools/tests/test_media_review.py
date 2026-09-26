@@ -163,6 +163,27 @@ def test_compare_snapshots_is_silent_when_there_is_no_repo_snapshot(archive):
     assert sm.compare_snapshots(sm.archive_snapshot(sm.manifest_of(archive)), None) == []
 
 
+def test_review_warns_instead_of_dying_when_the_repo_packs_cannot_be_read(archive, data_repo):
+    """**回归守卫**：本仓库 `packs/` 读不动（硬失败）⇒ 只警告，**不能**把这条构建打挂。
+
+    `build_cdn_site.py`（CF 的构建入口）也走 `review_archive`：`packs/` 里一个硬失败
+    （最典型的是 D153 之前那个顶层 `cover` 数组形状 —— 该跑一次 `fetch_covers` 去迁移）
+    会让一份**好归档**整条构建失败、一个文件都不铺。这条对照本来就是"只警告"的（D147）。
+    """
+    (data_repo / "packs" / "otomads" / "cirno.toml").write_text(
+        'key = "cirno"\n\n# 每首曲目一张 B 站封面直链\n# 由 `python -m otomads.fetch_covers` 生成\n'
+        'cover = [\n  "https://i0.hdslb.com/a.jpg@703w_1000h_1c.webp",\n]\n\n'
+        '[[track]]\nalbum = "otomads"\nauthor = "thwy"\ntitle = "岁月"\nextra = "角色曲"\n',
+        encoding="utf-8")
+
+    problems, warnings = sm.review_archive(archive)
+
+    assert problems == []                                  # 归档本身是好的
+    assert any("packs/ 读不动" in warning for warning in warnings)
+    assert any("fetch_covers" in warning for warning in warnings)   # 报错原文照抄，能照着修
+    assert sm.main(["review", "--archive", str(archive)]) == 0
+
+
 # ------------------------------------------------------------------ 曲名归一化（与前端同口径）
 
 def test_normalize_title_follows_the_disk_name_convention():

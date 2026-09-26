@@ -9,3 +9,4 @@ author = "鞍山侯国玉电乐团"
 title = "Otto-Fantasia"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1bP41147U9/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/8a14fc84d3483b367bb9177c6fbc9b9024e40a60.jpg@703w_1000h_1c.webp"

@@ -9,6 +9,7 @@ authors = ["丹花伊吹", "艾了个拉", "四季映姬78", "thwy", "Binkales"]
 title = "【2023新春宴音MAD单品】远野马娘前线"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1JM411q7HY/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/c5e141d9e522dddf103c9e1683a0b72def22a849.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,6 +17,7 @@ author = "鞍山侯国玉电乐团"
 title = "【东方电气棍】掉业棕（Withered Estick）"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Rh4y1p7Zb/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/3505983e339ea1cb310edd00f4401e7ef246e556.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -23,3 +25,4 @@ author = "鞍山侯国玉电乐团"
 title = "【东方电气棍】击败跋扈"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV19c411A7PA/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/0591fd9f2299e544ca76f7726ea007f2982ae7f1.jpg@703w_1000h_1c.webp"

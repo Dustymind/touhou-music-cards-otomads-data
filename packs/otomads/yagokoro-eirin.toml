@@ -9,6 +9,7 @@ author = "锤子先辈"
 title = "【2022摩多罗国玉祭单品】电棍1969"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1AD4y1s72f/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/1a3cd145eef251708f139b2f495f5321a7dbebf6.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,6 +17,7 @@ author = "myrevolution"
 title = "yeah4oyage1029"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1mhyWBsEc6/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/76ae4ef2fa526a857e86fa50f3c51e0f038be065.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -23,6 +25,7 @@ author = "川先僧"
 title = "【東方永夜抄】千年幻想郷 ～ History of Thomas"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Ck4y1m7qk/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/a0ac42aad014de4f5e9e1f20d4dab1716d335516.png@703w_1000h_1c.webp"
 start_time = "00:00:03.557"
 
 [[track]]
@@ -31,3 +34,4 @@ author = "マトウダイ"
 title = "千年マスオ郷　～ History of the Masuo"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Yy4y197wQ/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/583d2699cbce4323ebe5ff99038c55cb7f56c805.jpg@703w_1000h_1c.webp"

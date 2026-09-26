@@ -9,6 +9,7 @@ authors = ["Satani_ZC", "天空海Skyocean", "ItsZTChun", "Rendering-Liu", "专�
 title = "【铁道音MAD】放在降弓用刑处轴温很快就会升高 ~ 狂气的CR（2021东方乘车录单品）"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1kq4y1b7sb/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/1abe2fc66522b29296c9808b60235bc2d2880d11.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,6 +17,7 @@ author = "芙兰厨陈YuYue"
 title = "【疾走向】今晚七点有狂气之瞳表演"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1vWBeBEEZa/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/d8224a73019c02bdbbe2303e7245bcdb6db9e0a5.jpg@703w_1000h_1c.webp"
 start_time = "00:00:01.060"
 
 [[track]]
@@ -24,3 +26,4 @@ author = "海老ルーミア"
 title = "【东方夏银梦】邀请后辈马上袭击～狂气的野兽先辈"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV13W4y1i7mP/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/bf983b02c78d33aa298956a1009c8673f3e36e1e.png@703w_1000h_1c.webp"

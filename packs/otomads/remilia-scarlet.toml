@@ -9,6 +9,7 @@ author = "芙兰厨陈YuYue"
 title = "【音MAD】献给逝去公主的七重奏！"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1xF4m1M7Hi/"          # mp3 标签
+cover = "https://i2.hdslb.com/bfs/archive/41c056ee813fbdc92839c9cb17c97b6ab678c4b4.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,6 +17,7 @@ author = "鞍山侯国玉电乐团"
 title = "【东方电气棍】献给已逝棍妣的八重奏"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1iavXesELa/"          # mp3 标签
+cover = "https://i1.hdslb.com/bfs/archive/e9f6dff5c0785f36d48d1131e4f1de26f0f30f79.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -23,4 +25,5 @@ author = "川先僧"
 title = "【东方红魔馆】献给已逝猫咪的七重奏"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV167411G7UG/"          # mp3 标签
+cover = "https://i0.hdslb.com/bfs/archive/638d43a2d1a29b0bfff3197e7f597d9f8023585e.png@703w_1000h_1c.webp"
 start_time = "00:00:02.000"

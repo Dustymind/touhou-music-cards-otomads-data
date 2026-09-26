@@ -172,6 +172,11 @@ name = "八坂神奈子"
 order = 40
 
 [[character]]
+key = "kishin-sagume"
+name = "稀神サグメ"
+order = 74
+
+[[character]]
 key = "ibuki-suika"
 name = "伊吹萃香"
 order = 105

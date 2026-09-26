@@ -11,6 +11,7 @@
 | 改什么 | 怎么做 | 要曲库吗 |
 |---|---|---|
 | 曲目表：歌名 / 作者 / 附加信息 / 卡面引用 / 删曲目 | 改 `packs/otomads/<角色 key>.toml` → `git push` | 不要 |
+| 封面直链：改 `packs/otomads/<角色 key>.toml` 里**每条 `[[track]]` 的 `cover`** | 手改那一条（**手改即覆写**）→ `git push`；补缺 / 整包重抓用 `python -m otomads.fetch_covers` | 不要 |
 | 响度表 | 改 `loudness/otomads.json`（或本机重算）→ `git push` | 不要 |
 | 站点侧：`wrangler.jsonc` / `media-worker.mjs` / `tools/**` / 工作流 | 改 → `git push` | 不要 |
 | **新音频 / 重新裁剪** | 抓 → 量响度 → 打包 → **先传归档、再 push**（五步见下） | 要 |
@@ -70,7 +71,9 @@ uv run --project tools python -m otomads.fetch_audio                    # ③ �
 
 ② 只追加、不改已有内容，同 `(专辑, 曲名)` 跳过；角色还没有文件就新建一份。
 **手写也完全可以**：在 `packs/otomads/<角色 key>.toml` 里加 `[[track]]`。
-加完按上一节 ③④⑤ 发布（有新音频就必须走本地打包）。
+加完跑一次 `uv run --project tools python -m otomads.fetch_covers` 补封面（**逐条补缺**：
+已有 `cover` 的一条都不动，新加的那条自动补上；旧形状的顶层数组也会在这一步自动迁移），
+再按上一节 ③④⑤ 发布（有新音频就必须走本地打包）。
 
 ## 本地跑
 
@@ -80,7 +83,7 @@ uv run --project tools python -m otomads.fetch_audio                    # ③ �
 uv sync --project tools            # 建 tools/.venv（依赖只有 yt-dlp）
 cp local-source.toml.example local-source.toml
 uv run --project tools python -m otomads.local_source    # → http://127.0.0.1:8011/manifest.json
-uv run --project tools pytest                            # 141 条
+uv run --project tools pytest                            # 197 条
 ```
 
 - 曲库结构 `<root>/<专辑>/<曲目>.mp3`（默认 `<root>` = 本仓库 `.music/`，与 `local-source.toml` 一起 gitignore）。
@@ -96,6 +99,13 @@ uv run --project tools pytest                            # 141 条
 - 作者两种写法等价：`author = "甲 & 乙"` 或 `authors = ["甲", "乙"]`（只能写一个；改成数组不用重抓音频）。
 - 音频键（可选）：`source`（**一条 = 一首**；多 P 视频默认取 p1，要别的 P 就写 `?p=N`）/ `start_time` / `stop_time`。
 - 卡面：角色文件里的 `card = [...]` 覆盖音MAD 侧卡面；**图不入库**。
+- 封面：`cover` 是**一条曲目一张**的 B 站封面直链（卡面素材的默认来源），写在**它自己那条
+  `[[track]]` 里**（`source` 的下一行）。由 `python -m otomads.fetch_covers` 生成/补缺；
+  **手改某一条就是覆写**，工具默认只补没有的那几条（要整包重抓用 `--force`，**会盖掉手改**）。
+  硬规矩：**一个角色要么每条 `[[track]]` 都写、要么一条都不写** —— 半有半无直接报错
+  （运行时的 `covers` 数组会出现空洞、与曲目静默错位）；一条都没写的角色回落到原版卡面。
+  D153 之前那个"角色文件顶层的 `cover = [...]` 数组"已经废弃：现在还写在顶层的文件**读不进来**
+  （报错会指路），跑一次 `fetch_covers` 就会**按顺序自动迁移**（不联网、不动已有内容）。
 - `sources/otomads.toml` 的 `table_url` 只能是**绝对 URL** 或**不带前导 `/`** 的相对路径
   （带前导 `/` 在子目录部署时会打到根上 → 404）。`kind = "local"` 是故意留的：`?localmusic=` 与设置页只覆盖它。
 - 素材都不进 git ⇒ 归档必须**逐字节可复现**（同一份曲库打两次相同），否则客户端白重下。
@@ -129,7 +139,7 @@ gh secret set CLOUDFLARE_API_TOKEN -R Dustymind/touhou-music-cards-otomads-data
 - 响度表也跟着源走：manifest 用 `"loudness": "loudness/otomads.json"` 声明（路径相对 manifest），消费方优先用它。
 - 归档当**不可信输入**处理：解包会拒绝绝对路径、`..`、符号/硬链接；铺之前先 `review` 自检
   （清单键、每行文件都在、与 `packs/` 对照），不过就不铺、线上保持原样。
-- 两条工作流：`tests`（push/PR 只跑测试：141 条 pytest + 7 条 `node --test`）与 `publish`（push 主链路：测试 → 重打 → 部署；手动入口带 `dry_run`）。
+- 两条工作流：`tests`（push/PR 只跑测试：197 条 pytest + 7 条 `node --test`）与 `publish`（push 主链路：测试 → 重打 → 部署；手动入口带 `dry_run`）。
 - 站点侧代码必须在仓库里（`wrangler.jsonc` + `media-worker.mjs`）：静态资源那条路**不认 `Range`**，
   所以 `/media/*` 交给小脚本接管，按 `Range` 切 206 并**自己带 CORS**。
 - 线上那份在 `otomads-cdn.tsukinomiyako-mangesui.top`（CORS `*`、支持 Range）。换宿主 = 重铺一份 + 改 `table_url`。

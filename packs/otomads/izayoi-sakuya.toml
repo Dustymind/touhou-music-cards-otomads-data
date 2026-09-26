@@ -9,6 +9,7 @@ authors = ["打酱油的小火柴", "长叶松烯"]
 title = "月时盆"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Mk4y1673i/"          # mp3 标签
+cover = "https://i1.hdslb.com/bfs/archive/24d08a99a8f30f939a7f9145a8b0f95c6a219fd9.jpg@703w_1000h_1c.webp"
 start_time = "00:00:11.000"
 
 [[track]]
@@ -17,6 +18,7 @@ author = "ねむちゃんぐ"
 title = "【音MAD】バグ ナイワケ ナイツ"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1WU4y1N7Bc/"          # mp3 标签
+cover = "https://i2.hdslb.com/bfs/archive/f993a713af52ab5c2195b65cc027085036c4d65d.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -24,6 +26,7 @@ author = "SYLVASTER"
 title = "【东方都映冢】Flowering Night【音MAD】"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1PM4y1V7Wu/"          # mp3 标签
+cover = "https://i0.hdslb.com/bfs/archive/5bcb2178b5bb17a61c217a95f3f86d9247f18264.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -31,6 +34,7 @@ author = "NOVA音MAD社"
 title = "【音MAD】2020骑士之夜合作"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Da411c7rm/"          # mp3 标签
+cover = "https://i1.hdslb.com/bfs/archive/501dca0fe4820a294d7f0093f56a5d2dd32255e3.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -38,3 +42,4 @@ author = "van艺复泄"
 title = "【东方馅挂炒饭】night♂of knight"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1eetSznEPN/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/a2fde183f793aef2e4e724257d5222757a233544.jpg@703w_1000h_1c.webp"

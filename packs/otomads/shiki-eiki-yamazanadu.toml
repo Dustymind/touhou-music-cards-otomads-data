@@ -9,6 +9,7 @@ author = "麦恩_exe"
 title = "【原曲不使用】第六十年的东方审判"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1fRcJzgE5Q/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/7f03fb22ac485ff6d4bf5181e6e456642473cb66.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -16,6 +17,7 @@ author = "云生结海lou"
 title = "【东方电气棍】第六十年的职业选手 ～ Pro Player of Sixty Years"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1ymjTzHEiG/"          # ingest_otomads.py
+cover = "https://i2.hdslb.com/bfs/archive/ac170e6835d51d10b09189b380b6b1a70dbd2b5b.jpg@703w_1000h_1c.webp"
 
 [[track]]
 album = "otomads"
@@ -23,3 +25,4 @@ author = "鬼剑士草贝戋神"
 title = "【东方充电男】第六十年的疯子裁判"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV17E411J7e1/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/2d14ea7fcce39119afa620426e6dbca5e75a2cf9.jpg@703w_1000h_1c.webp"

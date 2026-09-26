@@ -113,7 +113,7 @@ start_time = "00:00:10.000"
 stop_time = "00:00:20.000"
 """)
     monkeypatch.setattr(packs.repo, "DATA", tmp_path)
-    _packs, _albums, tracks, _cards = packs.load_packs()
+    _packs, _albums, tracks, _cards, _covers = packs.load_packs()
     assert tracks[0]["character"] == "cirno"                 # 角色由文件的 key 决定
     assert tracks[0]["source"] == "https://example.com/a"
     assert tracks[0]["start_time"] == "00:00:10.000"
@@ -137,7 +137,7 @@ def test_load_packs_rejects_bad_keys(tmp_path, monkeypatch, line, message):
 def test_load_packs_allows_stop_only(tmp_path, monkeypatch):
     write_pack(tmp_path, '[[track]]\nalbum = "demo"\ntitle = "标题"\nstop_time = "00:00:10.000"\n')
     monkeypatch.setattr(packs.repo, "DATA", tmp_path)
-    _packs, _albums, tracks, _cards = packs.load_packs()
+    _packs, _albums, tracks, _cards, _covers = packs.load_packs()
     assert packs.trim_seconds(tracks[0]) == (0.0, 10.0)      # 只给 stop ⇒ 从开头裁到 10s
 
 
@@ -150,7 +150,7 @@ def test_load_packs_reads_character_cards(tmp_path, monkeypatch):
         'key = "cirno"\ncard = ["チルノ-mad.png", "チルノ-mad2.png"]\n\n'
         '[[track]]\nalbum = "demo"\ntitle = "标题"\n', encoding="utf-8")
     monkeypatch.setattr(packs.repo, "DATA", tmp_path)
-    _packs, _albums, tracks, cards = packs.load_packs()
+    _packs, _albums, tracks, cards, _covers = packs.load_packs()
     assert cards == {"cirno": ["チルノ-mad.png", "チルノ-mad2.png"]}
     assert tracks[0]["character"] == "cirno"
     # 没写 card 的角色不进这张表（缺省沿用共享身份的卡面）
@@ -227,6 +227,43 @@ def test_pack_snapshot_groups_by_character_and_keeps_cards():
     assert snapshot["characters"][1] == {"key": "marisa", "music": [["demo", "二", "道中曲", "乙"]]}
     # 入参不被就地改（纯函数）
     assert tracks[0]["character"] == "cirno" and "card" not in snapshot["characters"][1]
+
+
+def test_pack_snapshot_keeps_covers_in_track_order():
+    """**逐条**曲目的 `cover` → 快照里的 `covers` 数组（顺序 = 该角色的曲目顺序，与 `music` 一一对应）。
+
+    形状与 `card` 同一口径（D137）——应用侧拿它当卡面素材的**默认来源**，所以键名是复数 `covers`，
+    而**不是**把 URL 塞进 `music` 的某一位（那会让"曲目条目"的形状与主仓库对不上）。
+    TOML 源侧 D153 之后写在每条 `[[track]]` 里、`load_packs` 拼成数组；**这里（线上形状）没变**。
+    """
+    tracks = [
+        make_track(title="一", extra="角色曲"),
+        make_track(character="marisa", title="二", extra="道中曲", author="乙"),
+        make_track(title="三", extra="秘封曲", author="丙"),
+    ]
+    covers = {"cirno": ["https://i0.hdslb.com/bfs/archive/a.jpg@703w_1000h_1c.webp",
+                        "https://i1.hdslb.com/bfs/archive/b.jpg@703w_1000h_1c.webp"]}
+    snapshot = packs.pack_snapshot(ALBUMS, tracks, {"cirno": ["チルノ-mad.png"]}, covers)
+    assert snapshot["characters"][0]["covers"] == covers["cirno"]          # 顺序 = 曲目顺序
+    assert snapshot["characters"][0]["card"] == ["チルノ-mad.png"]         # 两者互不影响
+    assert "covers" not in snapshot["characters"][1]                       # 没写的角色不带这个键
+    # 不传 covers / 传 None：形状与老调用方**逐字相同**（不加键）
+    assert "covers" not in packs.pack_snapshot(ALBUMS, tracks, {"cirno": ["チルノ-mad.png"]})["characters"][0]
+    assert "covers" not in packs.pack_snapshot(ALBUMS, tracks, None, None)["characters"][0]
+    assert covers["cirno"][0] in json.dumps(snapshot, ensure_ascii=False)   # 真进得去 JSON（直链没有怪字符）
+
+
+def test_pack_snapshot_has_no_covers_for_a_character_without_any():
+    """**整角色一条都没写** ⇒ 快照里根本不出现 `covers`（回落到原版卡面），而不是空数组。
+
+    空数组会让消费方以为"有封面表可用"（`covers[i]` 全是 undefined）；"有才覆盖"这条口径
+    （与 `card` 一致）才是对的。
+    """
+    tracks = [make_track(title="一"), make_track(title="二", author="乙")]
+    snapshot = packs.pack_snapshot(ALBUMS, tracks, None, {})
+    assert snapshot["characters"] == [{
+        "key": "cirno", "music": [["demo", "一", "角色曲"], ["demo", "二", "角色曲", "乙"]]}]
+    assert "covers" not in json.dumps(snapshot)       # 连字符串里都没有这个键
 
 
 def test_pack_snapshot_sees_a_track_added_to_the_pack(tmp_path, monkeypatch):
@@ -801,7 +838,7 @@ authors = ["甲", "乙"]
 title = "标题"
 """)
     monkeypatch.setattr(packs.repo, "DATA", tmp_path)
-    *_rest, tracks, _cards = packs.load_packs()
+    *_rest, tracks, _cards, _covers = packs.load_packs()
     assert tracks[0]["authors"] == ["甲", "乙"]
     assert tracks[0]["author"] == "甲 & 乙"
     assert packs.audio_filename(tracks[0]) == "甲 & 乙 - 标题.mp3"
@@ -832,7 +869,7 @@ def test_load_packs_keeps_a_compound_author_string_intact(tmp_path, monkeypatch)
     """老写法 `author = "乙 & 甲"`：整串保留、**不拆**（人名里也可能有 `&`），也不产生 authors。"""
     write_pack(tmp_path, '[[track]]\nalbum = "demo"\nauthor = "乙 & 甲"\ntitle = "标题"\n')
     monkeypatch.setattr(packs.repo, "DATA", tmp_path)
-    *_rest, tracks, _cards = packs.load_packs()
+    *_rest, tracks, _cards, _covers = packs.load_packs()
     assert tracks[0]["author"] == "乙 & 甲"
     assert "authors" not in tracks[0]
 
@@ -881,7 +918,7 @@ def test_measure_loudness_prints_coverage_warning(tmp_path, monkeypatch, capsys)
     monkeypatch.setattr(measure_loudness.packformat, "loudness_path", lambda pack: output)
     monkeypatch.setattr(measure_loudness.packformat, "available", lambda: True)
     monkeypatch.setattr(measure_loudness.packformat, "load_packs", lambda: (
-        [], [], [make_track(author="甲", title="一"), make_track(author="乙", title="二")], {}))
+        [], [], [make_track(author="甲", title="一"), make_track(author="乙", title="二")], {}, {}))
     monkeypatch.setattr(sys, "argv", ["measure_loudness", str(tmp_path), "--pack", "demo"])
     assert measure_loudness.main() == 0
 
@@ -942,7 +979,8 @@ PACK_TRIM_VECTOR = [
 PACK_KEYS_VECTOR = {
     "pack": {"id", "label_en", "label_zh", "kind", "order"},
     "album": {"key", "name", "kind", "pack", "order", "show_album_name"},
-    "track": {"album", "author", "authors", "title", "extra", "source", "start_time", "stop_time"},
+    "track": {"album", "author", "authors", "title", "extra", "source", "start_time", "stop_time",
+              "cover"},
     "character": {"key", "card"},
 }
 

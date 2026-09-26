@@ -5,6 +5,9 @@ local-source.toml
 # `stage_media pack` 的产物（~322 MB）：主仓库那份 .gitignore 早就有，这里补上
 otomads-media.tar.gz
 
+# `fetch_covers` 的封面缓存（JSON Lines，一行一条；机器相关，可续跑，不进仓库）
+.covers-cache.jsonl
+
 # Python / uv
 .venv/
 __pycache__/

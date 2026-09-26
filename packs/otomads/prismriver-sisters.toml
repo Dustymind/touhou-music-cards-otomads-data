@@ -9,6 +9,7 @@ author = "芙兰厨陈YuYue"
 title = "【音Mad】疾走全明星あんさんぶる！"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV14H4y1p7wF/"          # ingest_otomads.py
+cover = "https://i0.hdslb.com/bfs/archive/bb17504f2a3489724bb4157bfd14e67681151616.jpg@703w_1000h_1c.webp"
 start_time = "00:00:05.000"
 
 [[track]]
@@ -17,4 +18,5 @@ author = "川先僧"
 title = "【东方Project】猫灵乐团~幻影合奏"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Wp4y1Y7uy/"          # ingest_otomads.py
+cover = "https://i1.hdslb.com/bfs/archive/63b6c1f0f4ddb4a4c9ea1073c1fc093373ffef5a.jpg@703w_1000h_1c.webp"
 start_time = "00:00:05.000"
