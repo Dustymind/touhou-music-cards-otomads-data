@@ -15,5 +15,6 @@ author = "ゑゐしゃあ"                                  # 或 authors = ["�
 title = "【東方蛮法天】紅狂曲☆真・二十年来的涟漪"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Ye411G7mu/"     # 可选：抓取/裁剪用
+cover = { original = "https://i1.hdslb.com/bfs/archive/3826b4af826e1609bdd97efee96e2b93fb655fba.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/3826b4af826e1609bdd97efee96e2b93fb655fba.jpg@1728w_972h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/3826b4af826e1609bdd97efee96e2b93fb655fba.jpg@1440w_1080h_1c.webp" }
 start_time = "00:08:03.000"                        # 可选：裁剪区间（只给一侧也合法）
 stop_time = "00:08:28.000"

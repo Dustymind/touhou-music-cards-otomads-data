@@ -14,5 +14,6 @@ author = "ころころ"                                  # 或 authors = ["甲",
 title = "Tortas Dragon田中~幸运与不幸追尾了黑色高级车名"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1wD4y1h7BQ/"     # 可选：抓取/裁剪用
+cover = { original = "https://i0.hdslb.com/bfs/archive/892ccf8a9cf86ea6fff75b9e9991581336d52632.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/892ccf8a9cf86ea6fff75b9e9991581336d52632.jpg@1036w_582h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/892ccf8a9cf86ea6fff75b9e9991581336d52632.jpg@862w_647h_1c.webp" }
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

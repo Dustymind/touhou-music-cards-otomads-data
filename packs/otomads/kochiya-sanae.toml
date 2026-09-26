@@ -50,6 +50,7 @@ author = "鞍山侯国玉电乐团"
 title = "Otto Remote"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV17x4y1x77n/"
+cover = "https://i1.hdslb.com/bfs/archive/98944759e206c1ba753e58e8845a807451e1ef1e.jpg"
 
 [[track]]
 album = "otomads"
@@ -57,6 +58,7 @@ author = "xHGNz_"
 title = "Otto Remote"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1kh8V6WEDf/"
+cover = "https://i0.hdslb.com/bfs/archive/f06bd5d91e5c1882bbc7b6a63e5ca394ac470d10.jpg"
 
 [[track]]
 album = "otomads"
@@ -64,6 +66,7 @@ author = "账号已注销:uid_195705121"
 title = "Last Remote"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV17i4y1R7wn/"
+cover = "https://i1.hdslb.com/bfs/archive/4322be88b201d72e2c09fb13d188c4c86e0accb6.jpg"
 
 [[track]]
 album = "otomads"
@@ -71,6 +74,7 @@ author = "龙青瑶RyuuSeiyou"
 title = "【东方家具神乐】Last Remote"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1j7QSYKEML/"
+cover = "https://i1.hdslb.com/bfs/archive/963530f8091838ec19a653b4d2322d6103bd7e94.jpg"
 start_time = "00:00:06.500"
 
 [[track]]
@@ -79,6 +83,7 @@ author = "束風谷早苗"
 title = "【原曲不使用】⚡️Last remote⚡️"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1WZ421N7MZ/"
+cover = "https://i2.hdslb.com/bfs/archive/67267276a5b1c5abee27e5c91d1852de00718026.jpg"
 
 [[track]]
 album = "otomads"
@@ -86,6 +91,7 @@ author = "芙兰厨陈YuYue"
 title = "我的素材之疾走Last Remote"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1kwxteiEba/"
+cover = "https://i2.hdslb.com/bfs/archive/773fd6d62940ff909c7e0d61a9b03697945eea30.jpg"
 
 [[track]]
 album = "otomads"
@@ -93,6 +99,7 @@ author = "遗忘之音"
 title = "Didu Remote"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1E4K5eVEhD/"
+cover = "https://i1.hdslb.com/bfs/archive/273bbb0b032d34c6d0cfb8e3ed697284fb3193af.jpg"
 
 [[track]]
 album = "otomads"
@@ -100,6 +107,7 @@ authors = ["伊鸽Er", "莫名的蓝移", "妖梦owo", "月上行者"]
 title = "【2023东方新春宴单品²】曙光"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1pG4y1Q7Kz/"
+cover = "https://i2.hdslb.com/bfs/archive/4cf46594db349fb9c1574418494a8a2c04caf098.jpg"
 
 
 
@@ -114,4 +122,5 @@ author = "multimode_Liu a.k.a. Dustymind"
 title = "【183】Last Remote"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1zUaozZEZg/"
+cover = "https://i1.hdslb.com/bfs/archive/c0baa1727079b12eeff541fe294022b45ce6dfcb.jpg"
 start_time = "00:00:09.000"

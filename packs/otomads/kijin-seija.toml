@@ -15,5 +15,6 @@ author = "弦卷こころOfficial"                                  # 或 author
 title = "【原曲不使用】Reverse Ideology♿"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1xp421X7MM/"     # 可选：抓取/裁剪用
+cover = { original = "https://i2.hdslb.com/bfs/archive/35a9a15339ae4e9e4869e1fea55501cbba591f75.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/35a9a15339ae4e9e4869e1fea55501cbba591f75.jpg@554w_311h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/35a9a15339ae4e9e4869e1fea55501cbba591f75.jpg@416w_312h_1c.webp" }
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

@@ -15,6 +15,7 @@ author = "multimode_Liu"                                  # 或 authors = ["甲"
 title = "【东方清源录音MAD单品²】疯狂的背景舞者"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1xfLE6zEsg/"     # 可选：抓取/裁剪用
+cover = { original = "https://i2.hdslb.com/bfs/archive/aa5b2ba47361794d1deddc9e7232e0b602675ec8.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/aa5b2ba47361794d1deddc9e7232e0b602675ec8.jpg@1920w_1080h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/aa5b2ba47361794d1deddc9e7232e0b602675ec8.jpg@1440w_1080h_1c.webp" }
 
 [[track]]
 album = "otomads"
@@ -22,3 +23,4 @@ author = "账号已注销"                                  # 或 authors = ["�
 title = "【东方斗破八分】Crazy Gaigai Dancers"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1rvZwBJEGZ/"     # 可选：抓取/裁剪用
+cover = { original = "https://i2.hdslb.com/bfs/archive/699905a4a371d6ac83634be4e83eef6f2ced0242.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/699905a4a371d6ac83634be4e83eef6f2ced0242.jpg@1918w_1078h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/699905a4a371d6ac83634be4e83eef6f2ced0242.jpg@1438w_1079h_1c.webp" }

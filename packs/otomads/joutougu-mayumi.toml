@@ -13,3 +13,4 @@ author = "ふゆこけ"                                  # 或 authors = ["甲",
 title = "セックスの杖刀人"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1D1421Z7Cb/"     # 可选：抓取/裁剪用
+cover = { original = "https://i0.hdslb.com/bfs/archive/d03eebb9305cfeff50cda57b9883eb10cae1503c.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/d03eebb9305cfeff50cda57b9883eb10cae1503c.jpg@1048w_589h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/d03eebb9305cfeff50cda57b9883eb10cae1503c.jpg@873w_655h_1c.webp" }

@@ -15,6 +15,7 @@ author = "驹草JX"                                  # 或 authors = ["甲", "�
 title = "【东方弟临店】昏暗的冰室"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1Q3BmYsEBS/"     # 可选：抓取/裁剪用
+cover = { original = "https://i0.hdslb.com/bfs/archive/edf09be26805a007f5096b67fcf47c432b36f866.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/edf09be26805a007f5096b67fcf47c432b36f866.jpg@1920w_1080h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/edf09be26805a007f5096b67fcf47c432b36f866.jpg@1440w_1080h_1c.webp" }
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -24,6 +25,7 @@ author = "福州许昊龙炫乐团"
 title = "【东方棍灵殿】昏暗的哈利路大旋风穴"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1x8CmBnEqk/"
+cover = { original = "https://i0.hdslb.com/bfs/archive/1a9be59b14dd725965934a32b250217af1b6ac1e.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/1a9be59b14dd725965934a32b250217af1b6ac1e.jpg@1920w_1080h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/1a9be59b14dd725965934a32b250217af1b6ac1e.jpg@1440w_1080h_1c.webp" }
 
 [[track]]
 album = "otomads"
@@ -31,6 +33,7 @@ author = "AZS的蜜柑"
 title = "【东方电气棍】昏暗的小穴♿"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1FfMcz3EEp/"
+cover = { original = "https://i2.hdslb.com/bfs/archive/b665aa8d9ab675be93c448406500641cf4e096da.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/b665aa8d9ab675be93c448406500641cf4e096da.jpg@1920w_1080h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/b665aa8d9ab675be93c448406500641cf4e096da.jpg@1440w_1080h_1c.webp" }
 
 [[track]]
 album = "otomads"
@@ -38,4 +41,5 @@ author = "静識Seishiki"
 title = "【原曲不使用】昏暗的风穴"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV15YG8zxEj1/"
+cover = { original = "https://i2.hdslb.com/bfs/archive/427713f2cb83c2efed1620ccdf83f89fbca5d9df.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/427713f2cb83c2efed1620ccdf83f89fbca5d9df.jpg@1045w_588h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/427713f2cb83c2efed1620ccdf83f89fbca5d9df.jpg@784w_588h_1c.webp" }
 start_time = "00:00:06.500"

@@ -15,5 +15,6 @@ author = "乾パンマン"                                  # 或 authors = ["�
 title = "【东方充电男】魔王の笠地蔵"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1dW411v717/"     # 可选：抓取/裁剪用
+cover = { original = "https://i2.hdslb.com/bfs/archive/230e7cdd35990e6bf231efd98d8d55d3f85760fb.png", "16x9" = "https://i2.hdslb.com/bfs/archive/230e7cdd35990e6bf231efd98d8d55d3f85760fb.png@561w_315h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/230e7cdd35990e6bf231efd98d8d55d3f85760fb.png@466w_350h_1c.webp" }
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

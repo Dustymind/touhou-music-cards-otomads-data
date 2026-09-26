@@ -15,6 +15,7 @@ authors = ["bili_67169714501", "静泡_J1NGPAO"]                                
 title = "【里御三家】哈德曼的妖怪少女【东方新春宴音MAD单品²】"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1qoZkB4Ecu/"     # 可选：抓取/裁剪用
+cover = { original = "https://i2.hdslb.com/bfs/archive/686b02a45c573f2dfc9450b6a97f9fe4f156b4c7.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/686b02a45c573f2dfc9450b6a97f9fe4f156b4c7.jpg@1920w_1080h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/686b02a45c573f2dfc9450b6a97f9fe4f156b4c7.jpg@1440w_1080h_1c.webp" }
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -24,6 +25,7 @@ authors = ["法WAV", "LittleBitHarsh"]
 title = "【2020年东方华灯宴音MAD合作单品】哈德曼的妖怪老女"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1P7411H7J7/"
+cover = { original = "https://i0.hdslb.com/bfs/archive/7dfc27f8417b331be37ebea2c8bd72ec3b94c93f.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/7dfc27f8417b331be37ebea2c8bd72ec3b94c93f.jpg@1728w_972h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/7dfc27f8417b331be37ebea2c8bd72ec3b94c93f.jpg@1440w_1080h_1c.webp" }
 
 [[track]]
 album = "otomads"
@@ -31,6 +33,7 @@ author = "はゆまが"
 title = "【東方魔酢汚】Masuo的妖怪少女"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Th411c7eE/"
+cover = { original = "https://i0.hdslb.com/bfs/archive/dbd7a678ccfed8287389e4509726f1739c6ad422.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/dbd7a678ccfed8287389e4509726f1739c6ad422.jpg@1728w_972h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/dbd7a678ccfed8287389e4509726f1739c6ad422.jpg@1440w_1080h_1c.webp" }
 
 [[track]]
 album = "otomads"
@@ -38,6 +41,7 @@ author = "ゆっけ"
 title = "マスオマンの破壊少女"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1rN4y1j7Js/"
+cover = { original = "https://i0.hdslb.com/bfs/archive/7891695273157721477aebc70372c82bea70556a.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/7891695273157721477aebc70372c82bea70556a.jpg@383w_215h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/7891695273157721477aebc70372c82bea70556a.jpg@318w_239h_1c.webp" }
 
 [[track]]
 album = "otomads"
@@ -45,6 +49,7 @@ author = "passthem"
 title = "音mad | 梨子妈：哈德曼的妖怪少女"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1ZP411i7S1/"
+cover = { original = "https://i0.hdslb.com/bfs/archive/76cf9e8a941c5204b172050405b559b47bc1c3d6.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/76cf9e8a941c5204b172050405b559b47bc1c3d6.jpg@1728w_972h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/76cf9e8a941c5204b172050405b559b47bc1c3d6.jpg@1440w_1080h_1c.webp" }
 
 [[track]]
 album = "otomads"
@@ -52,4 +57,5 @@ author = "榆木华"
 title = "【音MAD】哈德曼的妖怪少女(人气爆发) | 精简的第二作"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1k4411Q7dd/"
+cover = { original = "https://i1.hdslb.com/bfs/archive/51c9dda8c614e336f6add0e5228084746d3c16fe.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/51c9dda8c614e336f6add0e5228084746d3c16fe.jpg@1728w_972h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/51c9dda8c614e336f6add0e5228084746d3c16fe.jpg@1440w_1080h_1c.webp" }
 start_time = "00:00:04.500"

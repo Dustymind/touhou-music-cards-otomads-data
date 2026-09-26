@@ -15,5 +15,6 @@ author = "フランソウ"                                  # 或 authors = ["�
 title = "【东方蛮法天】杜拉罕…夜中的柳树下不去吗？"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1Zp42127cL/"     # 可选：抓取/裁剪用
+cover = { original = "https://i1.hdslb.com/bfs/archive/8768764f2954fdd7c8ef406b4bcb0d7706b6ff9d.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/8768764f2954fdd7c8ef406b4bcb0d7706b6ff9d.jpg@1280w_720h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/8768764f2954fdd7c8ef406b4bcb0d7706b6ff9d.jpg@960w_720h_1c.webp" }
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

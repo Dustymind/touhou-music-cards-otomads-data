@@ -15,6 +15,7 @@ author = "曰狗真人"                                  # 或 authors = ["甲",
 title = "[东方专员辖区]神俄のピエロ"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1qY411y7HA/"     # 可选：抓取/裁剪用
+cover = { original = "https://i1.hdslb.com/bfs/archive/32240f445dd73db0bae57910faf09b64c39185e4.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/32240f445dd73db0bae57910faf09b64c39185e4.jpg@1728w_972h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/32240f445dd73db0bae57910faf09b64c39185e4.jpg@1440w_1080h_1c.webp" }
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -24,3 +25,4 @@ author = "mos"                                  # 或 authors = ["甲", "乙"]�
 title = "星条旗的Masuo"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1iWw6eiESk/"     # 可选：抓取/裁剪用
+cover = { original = "https://i2.hdslb.com/bfs/archive/3e9306a613226d23add98039d0f87f96855901a0.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/3e9306a613226d23add98039d0f87f96855901a0.jpg@1280w_720h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/3e9306a613226d23add98039d0f87f96855901a0.jpg@960w_720h_1c.webp" }

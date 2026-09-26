@@ -15,4 +15,5 @@ author = "轩缘无痕"                                  # 或 authors = ["甲",
 title = "【东方鬼形兽】圣德太子的饼干 ~ Lazy Tom☆"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1W4411D79A/"     # 可选：抓取/裁剪用
+cover = { original = "https://i2.hdslb.com/bfs/archive/7dfa3c5d4892c6e05e7ff66f4804704dfe3d1749.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/7dfa3c5d4892c6e05e7ff66f4804704dfe3d1749.jpg@1728w_972h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/7dfa3c5d4892c6e05e7ff66f4804704dfe3d1749.jpg@1440w_1080h_1c.webp" }
 start_time = "00:01:30.000"                        # 可选：裁剪区间（只给一侧也合法）

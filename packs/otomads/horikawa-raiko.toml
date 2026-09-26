@@ -15,5 +15,6 @@ author = "LHDW_"                                  # 或 authors = ["甲", "乙"]
 title = "【2023东方新春宴单品²】辉针城天津分城《Pristine Happiness》"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1yy4y1d7Ft/"     # 可选：抓取/裁剪用
+cover = { original = "https://i0.hdslb.com/bfs/archive/78500aa49434ff587643a4887c43128a961a1a89.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/78500aa49434ff587643a4887c43128a961a1a89.jpg@1728w_972h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/78500aa49434ff587643a4887c43128a961a1a89.jpg@1440w_1080h_1c.webp" }
 start_time = "00:00:02.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"

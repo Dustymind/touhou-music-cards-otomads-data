@@ -15,5 +15,6 @@ author = "杀死大老爷的侍童"                                  # 或 autho
 title = "🐧九月的灵感菇🐧"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1HQG2z7E4G/"     # 可选：抓取/裁剪用
+cover = { original = "https://i0.hdslb.com/bfs/archive/a265ac2b49c8db2f71ed11bd93d0eef3ef3bdf95.jpg", "16x9" = "https://i0.hdslb.com/bfs/archive/a265ac2b49c8db2f71ed11bd93d0eef3ef3bdf95.jpg@1795w_1010h_1c.webp", "4x3" = "https://i0.hdslb.com/bfs/archive/a265ac2b49c8db2f71ed11bd93d0eef3ef3bdf95.jpg@1346w_1010h_1c.webp" }
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
