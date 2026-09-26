@@ -162,14 +162,49 @@ name = "四季映姫・ヤマザナドゥ"
 order = 32
 
 [[character]]
+key = "aki-shizuha"
+name = "秋静葉"
+order = 33
+
+[[character]]
+key = "aki-minoriko"
+name = "秋穣子"
+order = 34
+
+[[character]]
+key = "kagiyama-hina"
+name = "鍵山雛"
+order = 35
+
+[[character]]
+key = "kawashiro-nitori"
+name = "河城にとり"
+order = 36
+
+[[character]]
+key = "inubashiri-momiji"
+name = "犬走椛"
+order = 37
+
+[[character]]
 key = "shameimaru-aya"
 name = "射命丸文"
 order = 38
 
 [[character]]
+key = "kochiya-sanae"
+name = "東風谷早苗"
+order = 39
+
+[[character]]
 key = "yasaka-kanako"
 name = "八坂神奈子"
 order = 40
+
+[[character]]
+key = "moriya-suwako"
+name = "洩矢諏訪子"
+order = 41
 
 [[character]]
 key = "kishin-sagume"
