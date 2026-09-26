@@ -1,7 +1,7 @@
-# 东方谐频拾遗 ~ Forgotten Harmonic Frequencies in Cards and Otomads
+# 音 MAD 数据集 - 东方谐频拾遗 ~ Forgotten Harmonic Frequencies in Cards and Otomads
 
 ⚠⚠⚠AI 生成警告⚠⚠⚠  
-此项目处于极早期阶段，仅仅刚好能用，且代码过于混乱
+此项目处于极早期阶段，仅仅刚好能用，且本体代码过于混乱
 
 > 此仓库为音 MAD 数据集。  
 > 尚未完善，欢迎提交 PR / issues。
