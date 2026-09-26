@@ -7,7 +7,7 @@
 | `otomads.local_source` | 本地曲库助手：`/manifest.json` + `/media/...`（Range/CORS、端口回退、按请求头现拼地址；清单里还带**本包自己的曲目表** `albums`/`characters`，主仓库 D145） |
 | `otomads.packformat` | 曲包格式层：读 `packs/`、严格校验键名、音频路径/时间工具、`pack_snapshot()`（曲目表快照）、`loudness_path()` |
 | `otomads.ingest_pack` | 把录入行按角色追加进 `packs/<包>/<key>.toml`（幂等；校验 `characters.toml` 清单） |
-| `otomads.fetch_covers` | 抓**每条曲目**的 B 站封面直链 → 写进**那一条 `[[track]]` 里的 `cover`**（`--dry-run` / `--force` / `--jobs` / JSONL 缓存；文本级写回、默认**只补没有的**、旧形状的顶层 `cover` 数组自动迁移） |
+| `otomads.fetch_covers` | 抓**每条曲目**的 B 站封面 → 写进**那一条 `[[track]]` 里的 `cover`**（原图 + 16:9 / 4:3 的**源分辨率**裁切，下原图用标准库 `struct` 量尺寸；`--dry-run` / `--force` / `--jobs` / JSONL 缓存；文本级写回、默认**只补没有的**、旧形状的顶层 `cover` 数组自动迁移） |
 | `otomads.fetch_audio` | yt-dlp 抓取 + ffmpeg 裁剪；**并发**（`--jobs`，默认 4）；按源刷新 `loudness/<包>.json` |
 | `otomads.loudness` / `otomads.measure_loudness` | 逐曲响度均衡：度量核心 + CLI |
 | `otomads.parse_ingest_rows` | 录入原始行 → `tools/ingest_rows_<日期>.json` |
@@ -53,10 +53,13 @@ uv run python -m otomads.fetch_audio                         # ④ 抓取/裁剪
 ③ 只追加、不改写已有内容，同 `(专辑, 曲名)` 幂等跳过；角色 key 必须在 `characters.toml` 清单里。
 写完在本仓库提交推送；主仓库切到那个 **commit**（`git -C data/otomads checkout <commit>`）后再跑
 `pnpm data:build`（生成物与响度表都随主仓库提交）。tag 可选，只是里程碑标记。
-封面（**每条 `[[track]]` 里自己的 `cover`**，一条曲目一张）由 `otomads.fetch_covers` 生成/补缺：
+封面（**每条 `[[track]]` 里自己的 `cover`**，一条曲目一份）由 `otomads.fetch_covers` 生成/补缺：
 它**逐条**来 —— 已经有 `cover` 的一条都不动（手工覆写与工具补缺共存），旧形状的顶层
 `cover = [...]` 数组会先被**自动迁移**进各条曲目（不联网、幂等）；要按当前 `source` 整包重抓用
-`--force`（**会盖掉手改**）。
+`--force`（**会盖掉手改**）。封面值是一条直链（应用自己裁），或一张**三帧表**
+（`original` = 原图，`16x9` / `4x3` = **源分辨率**的居中裁切，尺寸由原图的像素算出来、永不放大）：
+工具下原图、只用标准库 `struct` 解头部量尺寸，量不到就回退成单链接字符串并把原因逐条报出来。
+**一个角色里只能有一种写法、同一套帧**（新补的那条跟着同角色已有的形状走）。
 
 ## 契约
 

@@ -94,12 +94,17 @@ uv run --project tools python -m otomads.stage_media pack --out otomads-media.ta
 
 > 注：自定义卡面尚未形成规范（我也没想好怎么设计音 MAD 卡面啊）
 >
-> 每首曲目的 B 站封面直链写在**它自己那条 `[[track]]` 里的 `cover`**（一条曲目一张），
+> 每首曲目的 B 站封面写在**它自己那条 `[[track]]` 里的 `cover`**（一条曲目一份），
 > 由 `uv run --project tools python -m otomads.fetch_covers` 生成/补缺；**手改那一条就是覆写**，
 > 工具默认只补还没有的（要整包重抓用 `--force`，会盖掉手改）。
 >
-> 一个角色要么每条 `[[track]]` 都写、要么一条都不写；D153 之前那个顶层的 `cover = [...]`
-> 数组已经废弃，跑一次 `fetch_covers` 会自动把它按顺序迁移进各条曲目。
+> 封面可以是一条直链（应用自己裁），也可以是一张**三帧表**：`original`（原图）
+> + `16x9` / `4x3`（**源分辨率**的居中裁切，永不放大）。工具量得到原图尺寸就写表，
+> 量不到就回退成单链接、并把原因逐条报出来。
+> **一个角色要么每条 `[[track]]` 都写、要么一条都不写**，而且**每条的帧集合必须一样**
+> （半有半无 / 字符串与表混用 / 帧写一半都会直接报错）；
+> D153 之前那个顶层的 `cover = [...]` 数组已经废弃，跑一次 `fetch_covers` 会自动把它按顺序
+> 迁移进各条曲目。
 
 位置：`packs/otomads/[character-name].toml`
 
@@ -200,10 +205,14 @@ start_time = "00:00:00.000"
 stop_time = "00:00:30.000"
 
 # （可选参数，如需留空可删除）
-# 这一条曲目的 B 站封面直链（**一条曲目一张**，卡面素材的默认来源）。
+# 这一条曲目的 B 站封面（**一条曲目一份**，卡面素材的默认来源）。
 # 由 `python -m otomads.fetch_covers` 生成/补缺；**手改这一行就是覆写**，工具默认不再动它。
-# 一个角色要么每条 [[track]] 都写、要么一条都不写（半有半无会直接报错）。
-cover = "https://i0.hdslb.com/bfs/archive/………….jpg@703w_1000h_1c.webp"
+# 一个角色要么每条 [[track]] 都写、要么一条都不写，而且每条的帧集合必须一样。
+# 想手写也行：下面这种单链接就是"应用自己裁"，也可以写成一行内联表：
+# cover = { original = "https://i0.hdslb.com/bfs/archive/………….jpg",
+#           "16x9" = "https://i0.hdslb.com/bfs/archive/………….jpg@1920w_1080h_1c.webp",
+#           "4x3" = "https://i0.hdslb.com/bfs/archive/………….jpg@1600w_1200h_1c.webp" }
+cover = "https://i0.hdslb.com/bfs/archive/………….jpg"
 ```
 
 </details>
