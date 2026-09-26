@@ -15,6 +15,7 @@ author = "鞍山侯国玉电乐团"                                  # 或 autho
 title = "【东方电气棍】阻绝电棍之桥"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV1iz4y1K7Sw/"     # 可选：抓取/裁剪用
+cover = { original = "https://i1.hdslb.com/bfs/archive/e6952f48f3c6c54f856d2c00a62dd17671071db8.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/e6952f48f3c6c54f856d2c00a62dd17671071db8.jpg@1728w_972h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/e6952f48f3c6c54f856d2c00a62dd17671071db8.jpg@1440w_1080h_1c.webp" }
 # start_time = "00:00:00.000"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
 
@@ -24,6 +25,7 @@ author = "マトウダイ"
 title = "阻绝Masuo之桥"
 extra = "道中曲"
 source = "https://www.bilibili.com/video/BV17r4y1U75y/"
+cover = { original = "https://i2.hdslb.com/bfs/archive/9d84fe779025aa719f466bb8dc696c050ef51e60.jpg", "16x9" = "https://i2.hdslb.com/bfs/archive/9d84fe779025aa719f466bb8dc696c050ef51e60.jpg@1045w_587h_1c.webp", "4x3" = "https://i2.hdslb.com/bfs/archive/9d84fe779025aa719f466bb8dc696c050ef51e60.jpg@870w_653h_1c.webp" }
 
 [[track]]
 album = "otomads"
@@ -31,10 +33,12 @@ author = "komeiji310"
 title = "【东方电气棍】急眼的嫉妒"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1xswreRErf/"
+cover = { original = "https://i1.hdslb.com/bfs/archive/18ce2fd5b2325c9a8facd9f512442528068106f6.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/18ce2fd5b2325c9a8facd9f512442528068106f6.jpg@1916w_1077h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/18ce2fd5b2325c9a8facd9f512442528068106f6.jpg@1440w_1080h_1c.webp" }
 
 [[track]]
 album = "otomads"
-authors = "EarthSky"
+author = "EarthSky"
 title = "【东方馅挂炒饭】绿眼的嫉妒【BGA还原】"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1P54y1B7mP/"
+cover = { original = "https://i1.hdslb.com/bfs/archive/fb442ca749f199609b984d140be6a0453f37fa13.jpg", "16x9" = "https://i1.hdslb.com/bfs/archive/fb442ca749f199609b984d140be6a0453f37fa13.jpg@1920w_1080h_1c.webp", "4x3" = "https://i1.hdslb.com/bfs/archive/fb442ca749f199609b984d140be6a0453f37fa13.jpg@1600w_1200h_1c.webp" }
