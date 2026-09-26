@@ -46,32 +46,24 @@
     start_time = "00:00:40.000"                              # 可选：裁剪开始
     stop_time = "00:01:10.000"                               # 可选：裁剪结束
     bitrate = 128                                            # 可选：成品 CBR 码率 kbps（长曲压体积用）
-    cover = { original = "https://i0.hdslb.com/bfs/archive/88ad053c….jpg",       # 可选：封面
-              "16x9" = "https://i0.hdslb.com/bfs/archive/88ad053c….jpg@1920w_1080h_1c.webp",
-              "4x3" = "https://i0.hdslb.com/bfs/archive/88ad053c….jpg@1600w_1200h_1c.webp" }
+    cover = "https://i0.hdslb.com/bfs/archive/88ad053c….jpg"  # 可选：封面（未加工原图，一条直链）
 
 ``cover`` 由 ``python -m otomads.fetch_covers`` 生成/补缺（同一个包里的 `fetch_covers` 模块）：
 **一条曲目一份**封面直链，当卡面素材的**默认来源**，写在**它自己那条** ``[[track]]`` 里。
-两种写法（**同一个角色里只能有一种、同一套帧**）：
-
-* **单链接字符串**（``cover = "https://…/x.jpg"``）：应用**运行时**自己裁；
-* **表**（内联表；键只能是 ``original`` / ``16x9`` / ``4x3``，**至少一个**，值都是非空 https）：
-  每一帧一条**源分辨率**的直链 —— ``original`` 是未加工的原图。
+值就是接口给的**未加工原图**（裸 ``data.pic``，只把 ``http://`` 换成 https）—— **一条非空 https 直链，
+不带任何图床后缀 / 尺寸参数**：卡面的裁切与缩放全由**前端**按用户选的那张卡面做，数据侧只回答
+"原图在哪"。早先那张**逐帧表**（``cover = { original = …, "16x9" = …, "4x3" = … }``，按原图像素算出
+两条源分辨率裁切）已经**作废**，现在写成表是**硬错误**。
 
 **D153 修订**之前的形状是"角色文件顶层一个 ``cover = [...]`` 数组、靠位置与 ``[[track]]`` 对应"，
 那个形状现在**直接报错**（加一首曲目就会整体错位、而且不报错）：跑一次 ``fetch_covers`` 会按顺序
 自动迁移（不联网、不动已有内容）。人工改某一条就是"源内覆写"，工具默认不会再动它
 （要整包重抓用 ``fetch_covers --force``）。
 
-**两条硬规矩**（都直接报错，不猜）：
-
-1. **一个角色要么每条 ``[[track]]`` 都写 cover、要么一条都不写**：半有半无在运行时的
-   ``covers`` 数组里就是空洞 ⇒ 与 ``music`` 静默错位；
-2. **同一个角色里每条的帧集合必须一样**（字符串 = **没有帧**）：表与字符串混用、或者两张表
-   的帧不一样，运行时的 ``coversByRatio`` 就会与 ``covers`` / ``music`` 静默错位
-   —— 这正是"按帧拆成三条数组"最容易踩的那个坑。
-
-只有"每条都有"的角色才进 ``covers``（值为按曲目顺序的原始值：字符串或帧表）。
+**一条硬规矩**（直接报错，不猜）：**一个角色要么每条 ``[[track]]`` 都写 cover、要么一条都不写**
+—— 半有半无在运行时的 ``covers`` 数组里就是空洞：应用按同一个下标取图，缺的那一条之后每张图都会
+**静默串到下一首歌上**，而且没有任何东西会报错。只有"每条都有"的角色才进 ``covers``
+（值为按曲目顺序的裸原图直链）。
 
 ``[[track]]`` 里**不再写 ``character``**（角色由文件的 ``key`` 决定），清单里也**不许**写
 ``[[track]]``（曲目一律进角色文件），两条都**直接报错**而不是猜。
@@ -97,17 +89,12 @@ from . import paths as repo
 PACK_KEYS = {"id", "label_en", "label_zh", "kind", "order"}
 ALBUM_KEYS = {"key", "name", "kind", "pack", "order", "show_album_name"}
 #: 角色文件里 `[[track]]` 的键 —— **没有** `character`：角色由文件的 `key` 决定。
-#: `cover` 是**可选**的"这一条曲目的封面"（D153 修订：从顶层数组搬进来的，见模块 docstring）
+#: `cover` 是**可选**的"这一条曲目的封面"（裸原图直链，D153 修订：从顶层数组搬进来的，见模块 docstring）
 TRACK_KEYS = {"album", "author", "authors", "title", "extra", "source", "start_time", "stop_time",
               "bitrate", "cover"}
 #: 角色文件的顶层键（`track` 之外）：只剩 `key` 与**可选**的卡面覆盖 `card`
 #: （写法同 `data/characters/*.toml`）。顶层的 `cover` 数组是**废弃形状**，见 `_character_tracks`
 CHARACTER_KEYS = {"key", "card"}
-
-#: `cover` 表里允许的帧，**顺序就是快照 ``coversByRatio`` 的键序**（输出确定性）：
-#: `original` = 未加工的原图（裸 `data.pic`）；另两帧是**源分辨率**的居中裁切直链
-#: （图床后缀 `@<W>w_<H>h_1c.webp`，尺寸由原图算出来、永不放大 —— 算术在 `fetch_covers.crop_size`）。
-COVER_FRAMES = ("original", "16x9", "4x3")
 
 
 #: 裁剪时间的格式：`HH:MM:SS.mmm`（时:分:秒.毫秒）
@@ -205,14 +192,14 @@ def load_packs(*, validate_covers: bool = True
     """读全部曲包根目录 → ``(packs, albums, tracks, cards, covers)``。
 
     ``cards`` 是"音MAD 侧自己的卡面覆盖"：``{角色 key: [卡面文件名, …]}``（只有写了 `card` 的角色才在里面）；
-    ``covers`` 是"逐条曲目的封面"：``{角色 key: [封面值, …]}``，**顺序 = 该角色的曲目顺序**
-    （来自每条 ``[[track]]`` 自己的 ``cover``；只有**每条都写了、而且帧集合一致**的角色才在里面）。
-    封面值是**字符串**（单链接，应用运行时裁）或**帧表**（``{"original"| "16x9" | "4x3": 直链}``，
-    源分辨率的三条直链，键序固定见 :data:`COVER_FRAMES`）。两张表都是**可选**的覆写：
+    ``covers`` 是"逐条曲目的封面"：``{角色 key: [封面直链, …]}``，**顺序 = 该角色的曲目顺序**
+    （来自每条 ``[[track]]`` 自己的 ``cover``；只有**每条都写了**的角色才在里面）。
+    封面值是**非空 https 字符串**（未加工的原图直链，不加任何图床后缀 / 尺寸参数 —— 裁切与缩放是
+    前端按卡面形状做的事，见模块 docstring）。两张表都是**可选**的覆写：
     没写的角色不进表，消费方按"缺省沿用共享身份的卡面 / 没有封面"处理。
 
-    ``validate_covers=False``：**跳过 `cover` 的形状校验**与**「全有或全无」+「帧集合一致」
-    两条校验**，也不往 ``covers`` 里记东西（其余校验一条不少），顶层 `cover` 数组
+    ``validate_covers=False``：**跳过 `cover` 的形状校验**与**「全有或全无」这条校验**，
+    也不往 ``covers`` 里记东西（其余校验一条不少），顶层 `cover` 数组
     （旧形状）也放行。只有 `otomads.fetch_covers` 用这个开关 —— 它就是来补/搬这份数据的，
     而"某条曲目还没封面 / 手写坏了 / 整个文件还是旧形状"恰恰是它要处理的状态：严格读法会让用户卡在
     "报错让你重跑 fetch_covers、它自己又因为同一条报错起不来"的死循环里。
@@ -282,8 +269,8 @@ def _character_tracks(pack_dir: pathlib.Path, manifest: str,
 
     ``cards`` / ``covers`` 是出参：文件里写了 ``card`` 就记一笔（音MAD 侧自己的卡面）；
     ``cover`` 写在**每条** ``[[track]]`` 里（写法见曲包根目录的 ``README.ai.MD``），
-    **一个角色要么每条都写、要么一条都不写**，而且**每条的帧集合必须一样**
-    （字符串 = 没有帧）—— 只有两条都满足的角色才进 ``covers``（值为按曲目顺序的原始值）。
+    **一个角色要么每条都写、要么一条都不写** —— 只有满足的角色才进 ``covers``
+    （值为按曲目顺序的裸原图直链）。
     """
     if not pack_dir.is_dir():
         return []
@@ -318,7 +305,7 @@ def _character_tracks(pack_dir: pathlib.Path, manifest: str,
                 raise SystemExit(f"{where}: card 必须是至少一项的字符串数组（写成 data/characters/*.toml 那样）")
             cards[key] = list(face)
         entries = data.get("track", [])
-        urls: list[str | dict | None] = []
+        urls: list[str | None] = []
         for entry in entries:
             _reject_unknown(f"{where} 的 [[track]]", entry, TRACK_KEYS)
             track = {
@@ -339,17 +326,12 @@ def _character_tracks(pack_dir: pathlib.Path, manifest: str,
     return out
 
 
-def _cover_frames(cover) -> tuple[str, ...]:
-    """封面值的**帧集合**：表 → 它有的那几帧（:data:`COVER_FRAMES` 序）；字符串 → ``()``（没有帧）。"""
-    return tuple(frame for frame in COVER_FRAMES if frame in cover) if isinstance(cover, dict) else ()
-
-
 def _check_cover_set(where: str, entries: list[dict], urls: list) -> None:
-    """「全有或全无」+「一个角色里帧集合必须一致」两条硬规矩（`_character_tracks` 的落点）。
+    """「全有或全无」这条硬规矩（`_character_tracks` 的落点）。
 
     半有半无在运行时的 ``covers`` 数组里就是**空洞**（应用按同一个下标取图，"少的那一条"之后
-    每张图都串到下一首歌上）；帧集合不一致则在 ``coversByRatio`` 里造出同样的空洞 —— 两者都
-    **不会报错**，所以只能在这里拦下（见模块 docstring 的两条硬规矩）。
+    每张图都串到下一首歌上）—— 而且**不会报错**，所以只能在这里拦下（见模块 docstring 的硬规矩）。
+    这条规矩与写法无关：它管的是 ``covers[i]`` 能不能与 ``music[i]`` 对齐。
     """
     missing = next((entry.get("title") for entry, url in zip(entries, urls) if url is None), None)
     if missing is not None:
@@ -357,30 +339,14 @@ def _check_cover_set(where: str, entries: list[dict], urls: list) -> None:
             f"{where}：cover 是**全有或全无**的（一个角色要么每条 [[track]] 都写、要么一条都不写）——"
             f"「{missing}」这一条没写，而别的写了。跑 "
             f"`uv run --project tools python -m otomads.fetch_covers` 会把它补齐（也可以手工写一条）")
-    expected = _cover_frames(urls[0])
-    for entry, url in zip(entries, urls):
-        got = _cover_frames(url)
-        if got == expected:
-            continue
-        shown = "、".join(expected) if expected else "字符串（没有帧）"
-        actual = "、".join(got) if got else "字符串（没有帧）"
-        hint = ("字符串与表**混用**了" if isinstance(url, str) != isinstance(urls[0], str)
-                else "帧集合不一样")
-        raise SystemExit(
-            f"{where}：cover 在一个角色里必须**同一种写法、同一套帧** ——「{entry.get('title')}」这一条"
-            f"{hint}（第一条是 {shown}，这一条是 {actual}）。帧只写一半，运行时的 `coversByRatio` "
-            f"就会与 `covers` / `music` 静默错位；要么每条都写成同样的帧，要么每条都写成单链接字符串"
-            f"（`uv run --project tools python -m otomads.fetch_covers --force` 会整只角色统一刷新）")
 
 
-#: `cover` 里那三帧的合法键（写错一个就必须报：静默忽略 = 少一帧、还看不出来）
-COVER_KEYS = set(COVER_FRAMES)
 #: `cover` 的 URL 前缀（只认绝对 https：站点本身是 https，`http://` 的图会被浏览器当**混合内容**拦掉）
 COVER_PREFIX = "https://"
 
 
 def _read_cover_url(value, where: str) -> str:
-    """`cover` 里的一条直链：**非空字符串 + 绝对 https**（两条都直接报，不猜）。
+    """`cover` 的一条直链：**非空字符串 + 绝对 https**（两条都直接报，不猜）。
 
     报错文案带**文件与曲名**（`{where} / {title}` 的写法与 `_read_authors` 一致）：
     一个角色文件里有几十条 `[[track]]`，不说曲名等于没说。
@@ -395,30 +361,24 @@ def _read_cover_url(value, where: str) -> str:
     return url
 
 
-def _read_track_cover(entry: dict, where: str) -> str | dict[str, str] | None:
-    """**一条曲目**的 `cover`（可选）→ 字符串（单链接）或帧表；没写返回 ``None``。
+def _read_track_cover(entry: dict, where: str) -> str | None:
+    """**一条曲目**的 `cover`（可选）→ 裸原图直链（字符串）；没写返回 ``None``。
 
-    两种写法（形状与快照的关系见模块 docstring）：
-
-    1. **字符串**：一条绝对 https 直链，应用**运行时**自己裁；
-    2. **表**（内联表）：键只能是 ``original`` / ``16x9`` / ``4x3``，**至少一个**，值都是绝对 https。
-       写错的帧名**直接报**（静默丢掉 = 运行时少一帧，还看不出来）；数组、数字这些"写了一半"的
-       形状也直接报 —— 这份格式是发布契约，宁可炸也不要一份半信半疑的数据。
-
-    返回的表**只含它真有的帧、顺序固定**（:data:`COVER_FRAMES`）⇒ 快照的键序是确定的。
+    只有一种写法：**一条绝对 https 直链**（接口给的未加工原图，不加任何图床后缀 / 尺寸参数）——
+    裁切与缩放是前端按卡面形状做的事（见模块 docstring）。**表**（``cover = { … }``）是已经作废的
+    旧形状，**直接报**并说清怎么修；数组、数字这些"写了一半"的形状同样直接报 —— 这份格式是发布契约，
+    宁可炸也不要一份半信半疑的数据。
     """
     value = entry.get("cover")
     if value is None:
         return None
     if isinstance(value, dict):
-        unknown = sorted(set(value) - COVER_KEYS)
-        if unknown:
-            raise SystemExit(f"{where}：cover 表里不认识的帧 {unknown}"
-                             f"（只能是 {sorted(COVER_KEYS)}）—— 写错的键会被静默丢掉，所以直接报")
-        if not value:
-            raise SystemExit(f"{where}：cover 表不能是空的（至少写一帧：{sorted(COVER_KEYS)}）")
-        return {frame: _read_cover_url(value[frame], where) for frame in COVER_FRAMES
-                if frame in value}
+        raise SystemExit(
+            f"{where}：cover 现在**只能是一条直链**（未加工的原图，不加任何图床后缀 / 尺寸参数）——"
+            f"逐帧表（original / 16x9 / 4x3）已经废弃：裁切与缩放由前端按卡面形状做。"
+            f"把这一条改回单链接，或跑 "
+            f"`uv run --project tools python -m otomads.fetch_covers --force` 整包刷成裸原图"
+            f"（收到 {value!r}）")
     return _read_cover_url(value, where)
 
 
@@ -535,34 +495,6 @@ def music_entry(track: dict) -> list:
     return entry
 
 
-def primary_cover(cover: str | dict[str, str]) -> str:
-    """一条曲目的封面 → **主链接**（运行时的 ``covers`` 那一条）：``original`` → ``16x9`` → ``4x3``。
-
-    优先原图：它分辨率最高，应用拿它按当前卡面形状**运行时**裁，永远有图可裁。
-    字符串封面（旧形状 / 量不到尺寸时的兜底）本身就是主链接。
-    """
-    if isinstance(cover, str):
-        return cover
-    for frame in COVER_FRAMES:
-        if cover.get(frame):
-            return cover[frame]
-    raise SystemExit(f"cover 表里一帧都没有：{cover!r}（校验层已经拦过，这里只是别静默产出空值）")
-
-
-def covers_by_ratio(covers: list) -> dict[str, list[str]] | None:
-    """逐条封面 → ``{"<帧>": [该帧每条曲目的直链, …]}``；**一个帧都没有** ⇒ ``None``。
-
-    只收**每条曲目都有**的帧（``all`` 而不是 ``any``）：少一条就是数组里的空洞，应用按同一个
-    下标取图时会静默串位 —— 校验层已经不许一个角色里帧集合不一致，这里再兜一层，
-    是为了让这个函数被手工拼的输入调用时也**只会少给键、不会给出错位的数组**。
-    """
-    frames = [frame for frame in COVER_FRAMES
-              if all(isinstance(cover, dict) and cover.get(frame) for cover in covers)]
-    if not frames:
-        return None
-    return {frame: [cover[frame] for cover in covers] for frame in frames}
-
-
 def pack_snapshot(albums: list[dict], tracks: list[dict],
                   cards: dict[str, list[str]] | None = None,
                   covers: dict[str, list] | None = None) -> dict[str, list[dict]]:
@@ -577,15 +509,12 @@ def pack_snapshot(albums: list[dict], tracks: list[dict],
     角色条目可以**可选**地自带 ``name`` / ``order`` / ``searchNames``（应用侧已经接收这三个字段）。
 
     输入就是 :func:`load_packs` 已经会返回的那几样：``albums`` 是包自带专辑，``tracks`` 是全部曲目，
-    ``cards`` 是 ``{角色 key: [卡面文件名]}``，``covers`` 是 ``{角色 key: [封面值]}``。
+    ``cards`` 是 ``{角色 key: [卡面文件名]}``，``covers`` 是 ``{角色 key: [封面直链]}``。
     两张表都是"**有才覆盖**"：没写的角色条目里就不出现那个键（口径与 `card` 一致，D137）。
 
-    封面交出去**两份**（同一个下标的两种用法）：
-
-    * ``covers``：每条曲目**一个主链接**（:func:`primary_cover`）—— 应用自己按当前卡面形状裁；
-    * ``coversByRatio``：按帧拆开的数组（:func:`covers_by_ratio`，键序 ``original`` / ``16x9`` / ``4x3``），
-      与 ``covers`` / ``music`` **同序**；**只收这个角色真有的帧**，全是字符串封面的角色
-      **不带这个键**（那样应用就照 ``covers`` 自己裁）。
+    封面交出去**一份**：``covers`` = 每条曲目**一个**直链（未加工的原图，顺序与 ``music`` 一一对应）
+    —— 裁切与缩放是**前端**拿到这张原图之后按用户选的卡面形状做的事，数据侧不再按帧拆数组
+    （早先的 ``coversByRatio`` 已经删除：它把"哪张图配哪首歌"变成三份要对齐的数组，白担一份错位风险）。
 
     纯函数：不读盘、不改入参。
     """
@@ -604,10 +533,7 @@ def pack_snapshot(albums: list[dict], tracks: list[dict],
         if cover:
             # 逐条曲目的封面（顺序 = 该角色的曲目顺序 = 上面 music 的顺序；有才覆盖）。
             # TOML 源侧写在每条 [[track]] 里（D153），到这里才拼成"与 music 同序"的数组。
-            record["covers"] = [primary_cover(item) for item in cover]
-            by_ratio = covers_by_ratio(list(cover))
-            if by_ratio:
-                record["coversByRatio"] = by_ratio
+            record["covers"] = list(cover)
         characters.append(record)
     return {"albums": [dict(album) for album in albums], "characters": characters}
 

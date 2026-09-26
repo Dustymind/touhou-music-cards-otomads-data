@@ -72,8 +72,8 @@ uv run --project tools python -m otomads.fetch_audio                    # ③ �
 ② 只追加、不改已有内容，同 `(专辑, 曲名)` 跳过；角色还没有文件就新建一份。
 **手写也完全可以**：在 `packs/otomads/<角色 key>.toml` 里加 `[[track]]`。
 加完跑一次 `uv run --project tools python -m otomads.fetch_covers` 补封面（**逐条补缺**：
-已有 `cover` 的一条都不动，新加的那条自动补上、并**跟着同角色已有的写法**走；旧形状的顶层数组
-也会在这一步自动迁移。要让整只角色统一成三帧表，跑一次 `--force`），
+已有 `cover` 的一条都不动，新加的那条自动补上；旧形状的顶层数组也会在这一步自动迁移。
+要让每条都换成"接口给的裸原图"，跑一次 `--force`），
 再按上一节 ③④⑤ 发布（有新音频就必须走本地打包）。
 
 ## 本地跑
@@ -84,7 +84,7 @@ uv run --project tools python -m otomads.fetch_audio                    # ③ �
 uv sync --project tools            # 建 tools/.venv（依赖只有 yt-dlp）
 cp local-source.toml.example local-source.toml
 uv run --project tools python -m otomads.local_source    # → http://127.0.0.1:8011/manifest.json
-uv run --project tools pytest                            # 261 条
+uv run --project tools pytest                            # 222 条
 ```
 
 - 曲库结构 `<root>/<专辑>/<曲目>.mp3`（默认 `<root>` = 本仓库 `.music/`，与 `local-source.toml` 一起 gitignore）。
@@ -107,20 +107,15 @@ uv run --project tools pytest                            # 261 条
 - 封面：`cover` 是**一条曲目一份**封面（卡面素材的默认来源），写在**它自己那条
   `[[track]]` 里**（`source` 的下一行）。由 `python -m otomads.fetch_covers` 生成/补缺；
   **手改某一条就是覆写**，工具默认只补没有的那几条（要整包重抓用 `--force`，**会盖掉手改**）。
-  两种写法：
+  值是**一条非空 https 直链**，而且就是接口给的**未加工原图**（裸 `data.pic`，只把 `http://`
+  换成 https）：**不加任何图床后缀 / 尺寸参数**（`@703w_1000h_1c.webp` 那种已经没有意义）——
+  卡面的裁切与缩放全由**前端**按用户选的那张卡面做，数据侧只回答"原图在哪"。
+  早先那张**逐帧表**（`cover = { original = …, "16x9" = …, "4x3" = … }`）已经**作废**：
+  现在还写成表的文件**读不进来**（报错会指路），跑一次 `fetch_covers --force` 就会整包换成裸原图。
 
-  * **单链接字符串**（`cover = "https://…/x.jpg"`）：一条直链，应用**运行时**自己裁
-    —— 量不到原图尺寸时的兜底形状，也是上一版工具留下的形状；
-  * **表**（内联表，一行；键只能是 `original` / `16x9` / `4x3`，至少一个）：
-    `original` = 未加工的**原图**，另两帧 = **源分辨率**的居中裁切（图床后缀
-    `@<W>w_<H>h_1c.webp`，尺寸由原图的实际像素算出来，**永不放大**）。
-
-  硬规矩两条：**一个角色要么每条 `[[track]]` 都写、要么一条都不写**（半有半无直接报错：
-  运行时的 `covers` 数组会出现空洞、与曲目静默错位），而且**每条的帧集合必须一样**
-  （字符串 = 没有帧；混用或帧写一半同样报错：`coversByRatio` 会与 `covers` / `music` 错位）。
-  工具因此**跟着同角色已有的形状写**新补的那条（已有的是字符串就也写字符串）——
-  要整只角色统一成三帧表，跑 `--force`（整包刷新，会盖掉手改）。
-  一条都没写的角色回落到原版卡面。
+  硬规矩一条：**一个角色要么每条 `[[track]]` 都写、要么一条都不写**（半有半无直接报错：
+  运行时的 `covers` 数组会出现空洞、`covers[i]` 与 `music[i]` 静默错位）。一条都没写的角色
+  回落到原版卡面。快照里只交 `covers`（每条一个直链，与 `music` 同序），**没有** `coversByRatio`。
   D153 之前那个"角色文件顶层的 `cover = [...]` 数组"已经废弃：现在还写在顶层的文件**读不进来**
   （报错会指路），跑一次 `fetch_covers` 就会**按顺序自动迁移**（不联网、不动已有内容）。
 - `sources/otomads.toml` 的 `table_url` 只能是**绝对 URL** 或**不带前导 `/`** 的相对路径
@@ -156,7 +151,7 @@ gh secret set CLOUDFLARE_API_TOKEN -R Dustymind/touhou-music-cards-otomads-data
 - 响度表也跟着源走：manifest 用 `"loudness": "loudness/otomads.json"` 声明（路径相对 manifest），消费方优先用它。
 - 归档当**不可信输入**处理：解包会拒绝绝对路径、`..`、符号/硬链接；铺之前先 `review` 自检
   （清单键、每行文件都在、与 `packs/` 对照），不过就不铺、线上保持原样。
-- 两条工作流：`tests`（push/PR 只跑测试：261 条 pytest + 7 条 `node --test`）与 `publish`（push 主链路：测试 → 重打 → 部署；手动入口带 `dry_run`）。
+- 两条工作流：`tests`（push/PR 只跑测试：222 条 pytest + 7 条 `node --test`）与 `publish`（push 主链路：测试 → 重打 → 部署；手动入口带 `dry_run`）。
 - 站点侧代码必须在仓库里（`wrangler.jsonc` + `media-worker.mjs`）：静态资源那条路**不认 `Range`**，
   所以 `/media/*` 交给小脚本接管，按 `Range` 切 206 并**自己带 CORS**。
 - 线上那份在 `otomads-cdn.tsukinomiyako-mangesui.top`（CORS `*`、支持 Range）。换宿主 = 重铺一份 + 改 `table_url`。

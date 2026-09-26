@@ -160,7 +160,8 @@ def test_served_manifest_carries_the_pack_snapshot(server, library, tmp_path, mo
     **曲目表按曲包 TOML、地址按磁盘文件** —— 同一份数据的两种视图：磁盘上是 `作者 - 标题.mp3`，
     TOML 里作者与标题是分开的两个字段（D95/D96 的口径不能改；应用按归一化曲名把两边配上）。
     `card` / `covers` 这两张可选覆写表也跟着走（应用侧按角色 key 取图）：`cover` 在 TOML 里
-    写在**每条** `[[track]]` 里（D153），到这里已经拼成"与 `music` 同序"的数组 —— **线上形状没变**。
+    写在**每条** `[[track]]` 里（D153），值是**裸原图直链**（不加任何图床后缀 / 尺寸参数），
+    到这里已经拼成"与 `music` 同序"的数组 —— **线上形状没变**。
     """
     packs_dir = tmp_path / "packs"
     (packs_dir / "otomads").mkdir(parents=True)
@@ -168,7 +169,7 @@ def test_served_manifest_carries_the_pack_snapshot(server, library, tmp_path, mo
         '[pack]\nid = "otomads"\n\n[[album]]\nkey = "otomads"\nname = "otomads"\n'
         'kind = "other"\npack = "otomads"\norder = 100\nshow_album_name = false\n',
         encoding="utf-8")
-    cover = "https://i0.hdslb.com/bfs/archive/88ad053c21de0ce0eab53e56561c2c6dadc79e36.jpg@703w_1000h_1c.webp"
+    cover = "https://i0.hdslb.com/bfs/archive/88ad053c21de0ce0eab53e56561c2c6dadc79e36.jpg"
     (packs_dir / "otomads" / "cirno.toml").write_text(
         f'key = "cirno"\ncard = ["チルノ-mad.png"]\n\n[[track]]\nalbum = "otomads"\n'
         f'author = "thwy"\ntitle = "岁月"\nextra = "角色曲"\ncover = "{cover}"\n', encoding="utf-8")
