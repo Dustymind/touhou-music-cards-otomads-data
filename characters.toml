@@ -207,11 +207,196 @@ name = "洩矢諏訪子"
 order = 41
 
 [[character]]
+key = "kisume"
+name = "キスメ"
+order = 42
+
+[[character]]
+key = "kurodani-yamame"
+name = "黒谷ヤマメ"
+order = 43
+
+[[character]]
+key = "mizuhashi-parsee"
+name = "水橋パルスィ"
+order = 44
+
+[[character]]
+key = "hoshiguma-yuugi"
+name = "星熊勇儀"
+order = 45
+
+[[character]]
+key = "komeiji-satori"
+name = "古明地さとり"
+order = 46
+
+[[character]]
+key = "kaenbyou-rin"
+name = "火焔猫燐"
+order = 47
+
+[[character]]
+key = "reiuji-utsuho"
+name = "霊烏路空"
+order = 48
+
+[[character]]
+key = "komeiji-koishi"
+name = "古明地こいし"
+order = 49
+
+[[character]]
+key = "wakasagihime"
+name = "わかさぎ姫"
+order = 64
+
+[[character]]
+key = "sekibanki"
+name = "赤蛮奇"
+order = 65
+
+[[character]]
+key = "imaizumi-kagerou"
+name = "今泉影狼"
+order = 66
+
+[[character]]
+key = "tsukumo-benben-yatsuhashi"
+name = "九十九弁々・八橋"
+order = 67
+
+[[character]]
+key = "kijin-seija"
+name = "鬼人正邪"
+order = 68
+
+[[character]]
+key = "sukuna-shinmyoumaru"
+name = "少名針妙丸"
+order = 69
+
+[[character]]
+key = "horikawa-raiko"
+name = "堀川雷鼓"
+order = 70
+
+[[character]]
+key = "seiran"
+name = "清蘭"
+order = 71
+
+[[character]]
+key = "ringo"
+name = "鈴瑚"
+order = 72
+
+[[character]]
+key = "doremy-sweet"
+name = "ドレミー・スイート"
+order = 73
+
+[[character]]
 key = "kishin-sagume"
 name = "稀神サグメ"
 order = 74
 
 [[character]]
+key = "kuraunpisu"
+name = "クラウンピース"
+order = 75
+
+[[character]]
+key = "junko"
+name = "純狐"
+order = 76
+
+[[character]]
+key = "hecatia-lapislazuli"
+name = "ヘカーティア・ラピスラズリ"
+order = 77
+
+[[character]]
+key = "eternity-larva"
+name = "エタニティラルバ"
+order = 78
+
+[[character]]
+key = "sakata-nemuno"
+name = "坂田ネムノ"
+order = 79
+
+[[character]]
+key = "komano-aunn"
+name = "高麗野あうん"
+order = 80
+
+[[character]]
+key = "yatadera-narumi"
+name = "矢田寺成美"
+order = 81
+
+[[character]]
+key = "teireida-mai-nishida-satono"
+name = "丁礼田舞・爾子田里乃"
+order = 82
+
+[[character]]
+key = "matara-okina"
+name = "摩多羅隠岐奈"
+order = 83
+
+[[character]]
+key = "ebisu-eika"
+name = "戎瓔花"
+order = 84
+
+[[character]]
+key = "ushizaki-urumi"
+name = "牛崎潤美"
+order = 85
+
+[[character]]
+key = "niwatari-kutaka"
+name = "庭渡久侘歌"
+order = 86
+
+[[character]]
+key = "kitcho-yachie"
+name = "吉弔八千慧"
+order = 87
+
+[[character]]
+key = "joutougu-mayumi"
+name = "杖刀偶磨弓"
+order = 88
+
+[[character]]
+key = "haniyasushin-keiki"
+name = "埴安神袿姫"
+order = 89
+
+[[character]]
+key = "kurokoma-saki"
+name = "驪駒早鬼"
+order = 90
+
+[[character]]
 key = "ibuki-suika"
 name = "伊吹萃香"
 order = 105
+
+[[character]]
+key = "nagae-iku"
+name = "永江衣玖"
+order = 106
+
+[[character]]
+key = "hinanawi-tenshi"
+name = "比那名居天子"
+order = 107
+
+[[character]]
+key = "yorigami-joon-shion"
+name = "依神女苑・紫苑"
+order = 111
