@@ -51,7 +51,8 @@ uv run python -m otomads.fetch_audio                         # ④ 抓取/裁剪
 ```
 
 ③ 只追加、不改写已有内容，同 `(专辑, 曲名)` 幂等跳过；角色 key 必须在 `characters.toml` 清单里。
-写完在本仓库提交、打 tag；主仓库切到新 tag 后再跑 `pnpm data:build`（生成物与响度表都随主仓库提交）。
+写完在本仓库提交推送；主仓库切到那个 **commit**（`git -C data/otomads checkout <commit>`）后再跑
+`pnpm data:build`（生成物与响度表都随主仓库提交）。tag 可选，只是里程碑标记。
 封面（**每条 `[[track]]` 里自己的 `cover`**，一条曲目一张）由 `otomads.fetch_covers` 生成/补缺：
 它**逐条**来 —— 已经有 `cover` 的一条都不动（手工覆写与工具补缺共存），旧形状的顶层
 `cover = [...]` 数组会先被**自动迁移**进各条曲目（不联网、幂等）；要按当前 `source` 整包重抓用
