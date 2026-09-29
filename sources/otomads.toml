@@ -33,7 +33,7 @@ label_en = "Local library"
 label_zh = "本地曲库"
 # 默认：CDN 上那份音MAD 素材（manifest 自带媒体地址与响度表声明）
 table_url = "https://otomads-cdn.tsukinomiyako-mangesui.top/manifest.json"
-loudness = "loudness/otomads.json"   # 本源自己的响度表（otomads.measure_loudness / fetch_audio 生成）
+loudness = "loudness/otomads.json"   # 本源自己的响度表（otomads.loudness / fetch_audio 生成）
 kind = "local"     # 保留 local：设置页「本地曲库地址」/`?localmusic=` 才能把它指回本机曲库
 order = 1          # 本模式只有它一个源
 enabled = true     # 必须默认开：音MAD 除了它没有别的来源（tmc.validate 守）

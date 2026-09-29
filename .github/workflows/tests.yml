@@ -4,7 +4,7 @@
 # （manifest 由它生成、`review` 是铺 CDN 之前的守卫），坏了要等到铺上去才发现 —— 所以补上。
 #
 # 环境很轻：工具是**纯标准库**（加一个只在抓取时才 import 的 yt-dlp）⇒ CI 里只需要 pytest，
-# 不装 uv、不装 yt-dlp、不碰 ffmpeg（那些是 `fetch_audio` / `measure_loudness` 才要的）。
+# 不装 uv、不装 yt-dlp、不碰 ffmpeg（那些是 `fetch_audio` / `loudness` 才要的）。
 name: tests
 
 on:

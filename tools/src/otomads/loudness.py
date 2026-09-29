@@ -5,10 +5,17 @@
 
 核心抽到这里是为了让**抓取/裁剪流程（``otomads.fetch_audio``）能直接调用**：
 裁过的曲目必须先失效缓存再重量，否则会沿用裁剪前的 dB ✗（契约见 ``docs/packs-audio-v1.md``）。
-命令行入口仍是 ``tools/measure_loudness.py``（薄封装，行为不变）。
+命令行入口就在本模块（``python -m otomads.loudness``，见文件末尾的 ``main``）。
+
+用法（在数据仓库根）::
+
+    uv run python -m otomads.loudness                          # 默认量 .music/otomads
+    uv run python -m otomads.loudness /mnt/music/otomads --jobs 4
+    uv run python -m otomads.loudness --out loudness/otomads.json
 """
 from __future__ import annotations
 
+import argparse
 import concurrent.futures
 import json
 import pathlib
@@ -17,6 +24,7 @@ import statistics
 import subprocess
 from collections.abc import Callable, Iterable, Mapping
 
+from . import packformat
 from . import paths as repo
 
 #: 只衰减不放大 ✓；下限 0.6（约 −4.4 dB）—— 用"最轻的一首"当目标会把绝大多数曲目压到地板 ✗
@@ -170,3 +178,40 @@ def describe_coverage(report: dict) -> list[str]:
         if len(stale) > COVERAGE_SAMPLE:
             lines.append(f"  · …还有 {len(stale) - COVERAGE_SAMPLE} 个")
     return lines
+
+# ------------------------------------------------------------------ 命令行入口（原 measure_loudness）
+
+def coverage_of(pack_id: str, gains: dict) -> dict:
+    """曲包 → 曲目 stem 列表 → 与响度表的对应关系。曲包目录不在（单独跑助手）就返回空。"""
+    if not packformat.available():
+        return {}
+    _packs, _albums, tracks, _cards, _covers = packformat.load_packs()
+    mine = [track for track in tracks if track["pack"] == pack_id]
+    return coverage_report(mine, gains, packformat.audio_stem)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="量曲库响度 → 本源的 loudness 表")
+    parser.add_argument("directory", nargs="?", default=str(repo.ROOT / ".music" / "otomads"),
+                        help="曲库目录（默认 .music/otomads）")
+    parser.add_argument("--pack", default="otomads", help="曲包 id（决定响度表路径）")
+    parser.add_argument("--out", type=pathlib.Path, help="覆盖输出路径（默认读源注册表的 loudness 键）")
+    parser.add_argument("--jobs", type=int, default=8)
+    args = parser.parse_args(argv)
+
+    output = args.out or packformat.loudness_path(args.pack)
+    if output is None:
+        print(f"❌ 源注册表 sources/{args.pack}.toml 没声明 loudness；用 --out 指定输出路径")
+        return 2
+    summary = measure_library(pathlib.Path(args.directory), output=output, jobs=args.jobs)
+    for line in describe(summary):
+        print(line)
+    # 表与曲目的对应关系（只提示）：缺的是"音频还没抓/不在这个曲库"，多的是"改名后的残留"
+    for line in describe_coverage(coverage_of(args.pack, summary["gains"])):
+        print(line)
+    return 0 if summary["measured"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+

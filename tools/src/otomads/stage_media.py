@@ -35,7 +35,7 @@
 * 媒体地址复用 ``local_source.media_path`` 的同一套 ``quote``（去掉前导 ``/`` 即相对地址）；
 * `tracks` 行形状与助手 ``local_source.build_manifest`` 完全一致；
 * 响度表路径写在 manifest 的 ``loudness`` 键里、**相对 manifest 自身**（前端优先按它取表，没声明才
-  回落到应用侧那份 —— 见主仓库 D139）。表由本仓库的 ``measure_loudness`` / ``fetch_audio`` 生成，
+  回落到应用侧那份 —— 见主仓库 D139）。表由本仓库的 ``loudness`` / ``fetch_audio`` 生成，
   路径取源注册表里 ``loudness`` 声明的那个（默认 ``loudness/otomads.json``）。
 * **曲目表也写在 manifest 里**（``albums`` / ``characters``，主仓库 D145）：**曲目**来自曲包 TOML
   （``<仓库根>/packs/``），**地址**来自磁盘文件 —— 应用拿它代替随前端部署的那份自带数据，
@@ -202,7 +202,7 @@ def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
     table = declared_loudness(album)
     if table is not None and not table[1].is_file():
         print(f"⚠️  注册表声明的响度表不存在，归档里不带它：{table[1]}"
-              f"（跑 `uv run --project tools python -m otomads.measure_loudness` 生成；"
+              f"（跑 `uv run --project tools python -m otomads.loudness` 生成；"
               f"前端会回落到应用侧那份）")
         table = None
     with tempfile.TemporaryDirectory() as tmp:
