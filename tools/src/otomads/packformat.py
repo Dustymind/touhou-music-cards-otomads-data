@@ -159,6 +159,30 @@ def source_key(source: str) -> str:
     return hashlib.sha1(source.strip().encode("utf-8")).hexdigest()[:16]
 
 
+def toml_str(value: str) -> str:
+    """TOML 基本字符串（转义反斜杠与引号；标题与直链里这两种字符都出现过）。
+
+    写回用的是**文本级**编辑（`fetch_covers` 往 `[[track]]` 里插一行），所以值的渲染必须在
+    这一层统一 —— 手工拼引号会在标题带 `"` 或 `\\` 时写出坏 TOML。
+    """
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def character_keys() -> set[str]:
+    """本仓库 `characters.toml` 清单里的角色 key（由主仓库 `pnpm data:roster` 生成）。
+
+    用途是"写入侧的守卫"：曲包角色文件名 / 清单里的 key 必须在这个集合里，
+    写错一个 key 会被静默错挂到别的角色上（已删的录入工具当年就靠它把关）。
+    """
+    path = repo.characters_file()
+    if not path.exists():
+        raise SystemExit(f"缺少角色清单：{repo.shown(path)}"
+                         f"（应用侧的 `pnpm data:roster` 会生成它；也可以手工维护）")
+    roster = tomllib.loads(path.read_text(encoding="utf-8"))
+    return {entry["key"] for entry in roster.get("character", [])}
+
+
 def normalize_title(value: str) -> str:
     """曲名归一化：去 `作者 - ` 前缀 → 压空白 → 去首尾 → 小写。
 

@@ -40,7 +40,7 @@ https）：**一个后缀都不加、不拼任何图床参数、也完全不看�
 2. **接口给的 ``data.pic`` 常常是 ``http://``** —— 站点是 https，混内容会被浏览器拦掉，一律换 https。
    **这是唯一允许的改动**：其余一个字符都不动（不追加后缀、不加查询参数、不改路径）。
 
-写回是**文本级**的（与 ``ingest_pack`` 同一路数）：只在**那一条** ``[[track]]`` 块里插一行 / 换一行
+写回是**文本级**的（值的渲染走 ``packformat.toml_str``）：只在**那一条** ``[[track]]`` 块里插一行 / 换一行
 （插在 ``source`` 的**下一行**；没有 ``source`` 就接在块的末尾；缩进跟着块里现有的键走），
 文件里其它**一个字节都不动** —— 人工写的注释、字段顺序、行尾都保住。默认**只补没有的**：
 已经有 ``cover`` 的那一条**连请求都不发**（那是"源内覆写"的人工入口，手工改过的一项原样留着）；
@@ -72,7 +72,6 @@ import tomllib
 import urllib.request
 
 from . import packformat, paths
-from .ingest_pack import toml_str
 
 #: B 站"稿件详情"接口：给 BV 号就能拿到 ``data.pic``（封面原图直链）
 API_URL = "https://api.bilibili.com/x/web-interface/view"
@@ -189,7 +188,7 @@ def insert_track_cover(block: str, cover: str) -> str:
 
     没有 ``source`` 就接在块的**有效内容末尾**（尾部空行留在后面 —— 否则封面会与它那条曲目分家，
     diff 里看着像别人的）。缩进跟着 ``source``（没有就跟 ``[[track]]`` 头）那一行走；
-    值由 `ingest_pack.toml_str` 渲染成**一行**（直链里真出现 ``"`` 或 ``\\`` 也写不坏）。
+    值由 `packformat.toml_str` 渲染成**一行**（直链里真出现 ``"`` 或 ``\\`` 也写不坏）。
 
     纯函数（不读盘、不写盘）：用例直接拿"改前 / 改后"两份文本对比，钉住"其它一个字节都不变"。
     """
@@ -200,7 +199,7 @@ def insert_track_cover(block: str, cover: str) -> str:
     if found is not None:                     # 插在 `source` 的**下一行**
         indent = _indent_at(block, found.start())
         end = block.find("\n", found.start())
-        line = f"{indent}cover = {toml_str(cover)}"
+        line = f"{indent}cover = {packformat.toml_str(cover)}"
         if end < 0:                           # source 是块的最后一行且没有换行（文件结尾）
             return f"{block}\n{line}"
         # `source` 那一行的换行符留在原处、插进去的也自带一个 —— 换行总数不变，
@@ -210,7 +209,7 @@ def insert_track_cover(block: str, cover: str) -> str:
         return f"{block[:end + 1]}{line}\n{block[end + 1:]}"
     body = block.rstrip("\n")                 # 没有 source：接在有效内容末尾，尾部空行留在后面
     indent = re.match(r"[ \t]*", block).group(0)
-    return f"{body}\n{indent}cover = {toml_str(cover)}{block[len(body):]}"
+    return f"{body}\n{indent}cover = {packformat.toml_str(cover)}{block[len(body):]}"
 
 
 def replace_track_cover(block: str, cover: str) -> str:
@@ -224,7 +223,7 @@ def replace_track_cover(block: str, cover: str) -> str:
     if found is None:
         return insert_track_cover(block, cover)
     indent = _indent_at(block, found.start())
-    return (f"{block[:found.start()]}{indent}cover = {toml_str(cover)}"
+    return (f"{block[:found.start()]}{indent}cover = {packformat.toml_str(cover)}"
             f"{block[_value_end(block, found.end()):]}")
 
 

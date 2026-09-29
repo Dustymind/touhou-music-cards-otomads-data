@@ -154,7 +154,7 @@ def covers_of_text(text: str) -> list:
 
 def cover_line(url: str) -> str:
     """工具该写出来的那一行（值 + 渲染交给纯函数，用例只钉位置与周围字节）。"""
-    return f"cover = {fetch_covers.toml_str(url)}"
+    return f"cover = {packs.toml_str(url)}"
 
 
 # ------------------------------------------------------------------ 纯函数：提 BV / 原图直链

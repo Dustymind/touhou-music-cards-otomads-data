@@ -559,7 +559,7 @@ def test_download_asks_yt_dlp_for_a_single_video(tmp_path, monkeypatch):
     少了它，bilibili 多 P 视频（链接没写 `?p=`）会被 extractor 当成**整张选集**返回
     （`_yes_playlist()`），而 `outtmpl` 是固定文件名 ⇒ 各 P 互相覆盖，最后留下**最后一 P**。
     实测本包 4 条多 P source 全部中招（`月时盆` 拿到 p2「原曲只使用」而不是 p1「原曲不使用」）。
-    历史脚本 `ingest_otomads.py` 传的是 `--no-playlist`，是搬到 `fetch_audio` 时丢的。
+    更早那版录入脚本（已删）传的是 `--no-playlist`，是搬到 `fetch_audio` 时丢的。
     """
     made = fake_ytdlp(monkeypatch, {"id": "BVx_p1", "title": "p01"})
     raw = tmp_path / ".raw" / "abcdef.mp3"
@@ -942,6 +942,21 @@ def test_loudness_cli_prints_coverage_warning(tmp_path, monkeypatch, capsys):
     printed = capsys.readouterr().out
     assert "缺 1/2 首" in printed and "乙 - 二" in printed
     assert "对不上任何曲目" not in printed              # 表里那个键正好是曲包里的第一条 ⇒ 没有残留
+
+
+def test_character_keys_reads_the_repo_roster(tmp_path, monkeypatch):
+    """`character_keys()` 是写入侧的守卫：曲包角色文件名必须是这份清单里的 key（主仓库 data:roster 生成）。"""
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    (tmp_path / "characters.toml").write_text(
+        '[[character]]\nkey = "cirno"\nname = "cirno"\norder = 1\n\n'
+        '[[character]]\nkey = "marisa"\nname = "marisa"\norder = 2\n', encoding="utf-8")
+    assert packs.character_keys() == {"cirno", "marisa"}
+
+
+def test_character_keys_reports_a_missing_roster(tmp_path, monkeypatch):
+    monkeypatch.setattr(packs.repo, "DATA", tmp_path)
+    with pytest.raises(SystemExit, match="缺少角色清单"):
+        packs.character_keys()
 
 
 def test_loudness_cli_without_pack_dir_skips_coverage(tmp_path, monkeypatch, capsys):

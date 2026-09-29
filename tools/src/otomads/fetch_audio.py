@@ -66,8 +66,8 @@ TRIM_ENCODER = ["-c:a", "libmp3lame", "-q:a", "0"]
 #: 0.5 秒 ≈ 19–21 个 mp3 帧，远多于 mp3 解码器喂热比特池所需的两三帧 —— 留余量不心疼（多解 0.5 秒音频）。
 TRIM_WARMUP = 0.5
 #: **抓取口径的版本号**，同样是状态签名的一部分：换了"怎么把 source 变成原件"，旧原件就作废、重下。
-#: 2026-09-25：`download()` 补上 `noplaylist`（原来的 `ingest_otomads.py` 有 `--no-playlist`，
-#: 搬到 `fetch_audio` 时丢了 ⇒ 多 P 视频会被当成选集整套抓、各 P 互相覆盖、最后留下**最后一 P**）。
+#: 2026-09-25：`download()` 补上 `noplaylist`（更早那版录入脚本有 `--no-playlist`，搬到
+#: `fetch_audio` 时丢了 ⇒ 多 P 视频会被当成选集整套抓、各 P 互相覆盖、最后留下**最后一 P**）。
 #: 不 +1 的话那 4 条多 P source 的旧原件（p2）会被 `fresh` 判为"还是目标状态"而跳过 ✗。
 FETCH_VERSION = "single-v1"
 #: **渲染口径的版本号**，进状态签名：改了成品是怎么产出的，旧状态就自动作废、重裁一遍。
@@ -225,7 +225,7 @@ def download(source: str, raw: pathlib.Path) -> None:
       链接里写了 `?p=N` 时 `part_id` 已经有值、压根不进那个分支 ⇒ **仍按链接参数解析** ✓。
       两种写法都对，正是要的行为。
 
-    历史脚本 `ingest_otomads.py` 当年传的是 CLI 的 `--no-playlist`（等价于这个键），
+    更早那版录入脚本（已删）当年传的是 CLI 的 `--no-playlist`（等价于这个键），
     是搬到 `fetch_audio` 时丢掉的 —— 这次补回来。
     """
     import yt_dlp
