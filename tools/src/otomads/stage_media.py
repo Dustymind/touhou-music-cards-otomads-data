@@ -188,12 +188,15 @@ def _write_archive(root: pathlib.Path, out: pathlib.Path) -> None:
     `filename=""` 不是多余的：`GzipFile` 默认会把输出文件名写进 gzip 头的 FNAME 字段，
     于是"同一份素材打到不同路径"就会得到不同的字节（踩过）。
     """
-    with open(out, "wb") as raw:
+    # 先写临时文件再改名：打包中途失败不该留下一个"名字像归档、内容半截"的文件
+    tmp = out.with_name(out.name + ".tmp")
+    with open(tmp, "wb") as raw:
         with gzip.GzipFile(filename="", fileobj=raw, mode="wb", mtime=0) as gz:
             with tarfile.open(fileobj=gz, mode="w|") as archive:
                 for path in sorted(root.rglob("*")):
                     if path.is_file():
                         _add_file(archive, path, str(path.relative_to(root)))
+    tmp.replace(out)
 
 
 def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
@@ -261,11 +264,17 @@ def download_archive(url: str, target: pathlib.Path) -> pathlib.Path:
     以前两边各写一遍（差一个 `file://`、差一个 120 秒超时）。
     """
     print(f"[  ..  ] 取归档：{url}")
-    if url.startswith("file://"):
-        shutil.copyfile(url[len("file://"):], target)
-    else:
-        with urllib.request.urlopen(url, timeout=120) as response, open(target, "wb") as handle:
-            shutil.copyfileobj(response, handle)
+    # 同样先落临时文件：下载中断不该留下一个被当成完整归档的半个文件
+    tmp = target.with_name(target.name + ".part")
+    try:
+        if url.startswith("file://"):
+            shutil.copyfile(url[len("file://"):], tmp)
+        else:
+            with urllib.request.urlopen(url, timeout=120) as response, open(tmp, "wb") as handle:
+                shutil.copyfileobj(response, handle)
+        tmp.replace(target)
+    finally:
+        tmp.unlink(missing_ok=True)
     print(f"    落盘 {target}（{target.stat().st_size} B）")
     return target
 

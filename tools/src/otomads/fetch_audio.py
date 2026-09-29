@@ -329,7 +329,9 @@ def render(raw: pathlib.Path, out: pathlib.Path, wanted: tuple[float, float | No
     command += [*encoder, str(tmp)]
     # `stdin=DEVNULL`：ffmpeg 只要看到 stdin 是终端就会接管它（`-nostdin` 只管"要不要读"，
     # 不管"stdin 是不是 tty"），跑完可能让终端不回显 ✗。并发时更危险（多个 ffmpeg 同时抢）。
-    subprocess.run(command, check=True, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    # `timeout`：坏输入能让 ffmpeg 卡死，而它在 worker 线程里 —— 不设上限就永远收不了尾。
+    subprocess.run(command, check=True, capture_output=True, text=True,
+                   stdin=subprocess.DEVNULL, timeout=900)
     os.replace(tmp, out)
 
 
@@ -354,8 +356,12 @@ def save_state(path: pathlib.Path, state: dict) -> None:
     """
     with _STATE_LOCK:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
-                        encoding="utf-8")
+        text = json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
+        # 同目录临时文件 + `os.replace`：进程被 Ctrl-C / 掉电打断时，不会留下半截 JSON
+        # （`load_state` 有容错能忽略坏文件，但那是"丢状态重下"的代价，不该白付）。
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(text, encoding="utf-8")
+        os.replace(tmp, path)
 
 
 def main(argv: list[str] | None = None) -> int:
