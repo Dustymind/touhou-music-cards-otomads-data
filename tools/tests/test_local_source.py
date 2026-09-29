@@ -10,7 +10,7 @@ from http.server import ThreadingHTTPServer
 
 import pytest
 
-from otomads import local_source
+from otomads import local_source, packformat
 
 
 @pytest.fixture()
@@ -103,31 +103,78 @@ def test_config_priority(tmp_path, library):
 import urllib.parse  # noqa: E402  (供上面的 quote 使用)
 
 
-# --------------------------------------------- 媒体版本号（D144）
+# --------------------------------------------- 媒体版本号（D144 / §2.6）
 
-def test_manifest_carries_per_track_media_revisions(library):
-    """清单带**逐曲**版本号（名字+大小+mtime）：音频变了但链接没变时，前端靠换 URL 绕开缓存。
+def test_manifest_carries_per_track_content_revisions(library):
+    """清单带**逐曲**版本号（文件的**内容**哈希，§2.6）：音频变了但链接没变时，前端靠换 URL 绕开缓存。
 
-    整表 ``revision`` 同时给一份（给"只看顶层"的消费者），两者都是同一套算法的输出。
+    整表 ``revision`` 同时给一份（给"只看顶层"的消费者），两者都是同一套算法的输出 ——
+    值就是归档侧的 :func:`packformat.content_revision`（不再有第二套 mtime 口径）。
     """
+    files = local_source.library_files(str(library))
+    entries = [(f"{album}/{title}", path) for album, title, path in files]
+    hashes = {name: packformat.content_revision(path) for name, path in entries}
     first = local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
+
     assert len(first["revision"]) == 16
     assert all(len(row) == 4 and len(row[3]) == 16 for row in first["tracks"])
+    assert {(row[0], row[1]): row[3] for row in first["tracks"]} == {
+        (album, title): hashes[f"{album}/{title}"] for album, title, _path in files}
+    assert first["revision"] == packformat.revisions_of(
+        [(name, hashes[name]) for name, _path in entries])
 
-    # 文件没动 ⇒ 再算一次**一模一样**（可复现；前端因此不会白白换 URL 让所有客户端重下）
-    assert local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads") == first
+    # 文件没动 ⇒ 再算一次**逐字节一样**（可复现；前端因此不会白白换 URL 让所有客户端重下）
+    again = local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
+    assert json.dumps(again, ensure_ascii=False) == json.dumps(first, ensure_ascii=False)
 
     victim = library / "otomads" / "thwy - 岁月.mp3"
     stamp = victim.stat()
     os.utime(victim, ns=(stamp.st_atime_ns, stamp.st_mtime_ns + 1_000_000))
-    second = local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
+    touched = local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
 
-    # **只有动过的那一首换版本**（逐曲的意义：不然整包 321 MB 会全部重下）
-    changed = [index for index, (a, b) in enumerate(zip(first["tracks"], second["tracks"])) if a != b]
-    assert len(changed) == 1, changed
-    assert second["revision"] != first["revision"]
+    # **只动 mtime 不算内容变**：版本号一个字不动（§2.6 —— 文件相同的两台机器因此对得上）
+    assert touched == first
+
+    # 改一个字节（大小不变、mtime 变）⇒ **只有那一首**换版本（逐曲的意义：不然整包 321 MB 全部重下）
+    body = bytearray(victim.read_bytes())
+    body[8] ^= 0xFF
+    victim.write_bytes(bytes(body))
+    stamp = victim.stat()
+    os.utime(victim, ns=(stamp.st_atime_ns, stamp.st_mtime_ns + 5_000_000))   # 与上面那次 mtime 必然不同
+    changed = local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
+
+    moved = [index for index, (a, b) in enumerate(zip(first["tracks"], changed["tracks"])) if a != b]
+    assert moved == [0], moved                      # 只有 `otomads/thwy - 岁月`（排序第一）那一行
+    assert changed["revision"] != first["revision"]
     # 变的只有版本号，地址本身一个字没动 —— 缓存就是靠这一位失效的
-    assert [row[2] for row in first["tracks"]] == [row[2] for row in second["tracks"]]
+    assert [row[2] for row in first["tracks"]] == [row[2] for row in changed["tracks"]]
+
+
+def test_build_manifest_reuses_cached_content_hashes(library, monkeypatch):
+    """助手每次请求都出清单 ⇒ 内容哈希走**进程级缓存**：文件没变就不重读那 ~300 MB（§2.6）。
+
+    缓存键是文件的同一性 ``(绝对路径, st_size, st_mtime_ns)``：只动 mtime ⇒ 那一首重算一次
+    （值仍是内容哈希），其余仍命中。
+    """
+    monkeypatch.setattr(packformat, "_CONTENT_REVISION_CACHE", {})
+    calls: list[str] = []
+    original = packformat.content_revision
+
+    def counting(path):
+        calls.append(str(path))
+        return original(path)
+
+    monkeypatch.setattr(packformat, "content_revision", counting)
+    local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
+    assert len(calls) == 2                      # 冷缓存：两个音频各哈希一次
+    local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
+    assert len(calls) == 2                      # 第二次一次都没重读（键命中）
+
+    victim = library / "otomads" / "thwy - 岁月.mp3"
+    stamp = victim.stat()
+    os.utime(victim, ns=(stamp.st_atime_ns, stamp.st_mtime_ns + 1_000_000))
+    local_source.build_manifest(str(library), "http://127.0.0.1:8011", "otomads")
+    assert len(calls) == 3                      # mtime 变了 ⇒ 只有那一首重算，另一首仍命中
 
 
 def test_served_manifest_is_never_cached_and_carries_revision(server, library):

@@ -104,7 +104,8 @@ def load_config(path, *, host=None, port=None, root=None, pack_id=None,
 def library_files(root: str) -> list[tuple[str, str, str]]:
     """曲库 → `[(专辑, 曲目, 绝对路径), …]`：与 `scan_library` 同一套跳过规则，只是**带路径**。
 
-    `build_manifest` 要拿它算 `revision`（名字 + 大小 + mtime，见 `packformat.media_revision`）；
+    `build_manifest` 要拿它算 `revision`（文件的**内容**哈希，见 `packformat.content_revisions`：
+    进程级缓存按键命中，所以每请求只重算真变过的那几个文件）；
     `scan_library` 的返回形状是给别处（与 `fetch_audio` 的口径一致）用的，不能动。
     """
     found: list[tuple[str, str, str]] = []
@@ -147,9 +148,13 @@ def build_manifest(root: str, base_url: str, pack_id: str,
     （那份表在应用的 ``data/<模式>/loudness/`` 里，助手形态靠回落拿）。声明了却发不出来 = 增益失效，
     所以只有真把表打进同一份归档的 ``stage_media.pack`` 才传这个参数。
 
-    ``revision``（主仓库 D144）：**音频本身**的版本号（名字+大小+mtime）。前端把它拼进媒体地址，
-    于是"曲库变了但链接没变"也能立刻拿到新音频，而不是吃浏览器/CDN 的缓存。manifest 自己走
-    ``Cache-Control: no-store``（见 `_send_manifest`）⇒ 每次都是最新的，前端因此拿得到新版本号。
+    ``revision``（主仓库 D144 / §2.6）：**音频本身**的版本号 —— 文件的**内容哈希**
+    （`packformat.content_revisions`，与归档侧 `packformat.content_revision` 同一算法/格式：
+    sha1 前 16 位）。前端把它拼进媒体地址，于是"曲库变了但链接没变"也能立刻拿到新音频，而不是吃
+    浏览器/CDN 的缓存。manifest 自己走 ``Cache-Control: no-store``（见 `_send_manifest`）⇒
+    每次都是最新的，前端因此拿得到新版本号。哈希走**进程级缓存**（键 = 绝对路径 + 大小 + mtime）
+    ⇒ 每请求只 stat 一遍，不会重读 ~300 MB；而值始终是内容哈希 ⇒ 文件相同的两台机器（mtime 不同）
+    给出**完全相同**的版本号 —— mtime 不再进算法，§2.6 删掉的就是这一点。
 
     版本号写**两处**：行里的第 4 位（**逐曲** —— 只让变过的那几首换 URL，不牵动整包 321 MB），
     外加顶层的 ``revision``（整表兜底，给"只看顶层"的消费者）。两者都是同一套算法的输出。
@@ -160,15 +165,18 @@ def build_manifest(root: str, base_url: str, pack_id: str,
     （老调用方 / 老清单语义不变；前端没看到这两个键就照旧走自带那份兜底）。
     """
     files = library_files(root)
+    # 名字取 `专辑/曲目`（与改前一致）；一次算全：缓存命中时只剩 stat，逐曲与整表共用这一份
+    hashed = packformat.content_revisions([(f"{album}/{title}", path)
+                                           for album, title, path in files])
+    revisions = dict(hashed)
     rows: list[list[str]] = []
-    for album, title, path in files:
+    for album, title, _path in files:
         rows.append([album, title, base_url.rstrip("/") + media_path(album, title),
-                     packformat.media_revision([(f"{album}/{title}", path)])])
+                     revisions[f"{album}/{title}"]])
     manifest = {
         "schema": 1,
         "pack": pack_id,
-        "revision": packformat.media_revision([(f"{album}/{title}", path)
-                                               for album, title, path in files]),
+        "revision": packformat.revisions_of(hashed),
         "tracks": rows,
     }
     if loudness:

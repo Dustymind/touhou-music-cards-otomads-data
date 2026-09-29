@@ -120,9 +120,10 @@ def build_manifest(titles: list[str], album: str = DEFAULT_ALBUM,
 
     ``loudness`` **相对 manifest 自身**（见模块 docstring 与主仓库 D139）；不给就不写这个键。
 
-    ``revisions`` / ``revision``（主仓库 D144）：**音频本身**的版本号，由调用方算好传进来 ——
-    归档侧是内容哈希（`packformat.content_revision`，D149），本机助手侧仍是 mtime
-    （`packformat.media_revision`）。行里的前三项与助手**逐字一致**，第 4 位与顶层键才是新增的
+    ``revisions`` / ``revision``（主仓库 D144 / §2.6）：**音频本身**的版本号，由调用方算好传进来 ——
+    两边是**同一套口径**：文件的**内容**哈希（`packformat.content_revision`，sha1 前 16 位）；
+    本机助手（`local_source.build_manifest`）走带进程级缓存的 `packformat.content_revisions`，
+    同一份文件两边算出的值相同。行里的前三项与助手**逐字一致**，第 4 位与顶层键才是新增的
     —— 它们只进清单，不改地址。前端把版本拼进媒体地址：音频变了但链接没变时 URL 会跟着变
     ⇒ 不吃浏览器/CDN 的缓存；而且**逐曲**的写法只让变过的那几首换 URL，不会让整包 321 MB 全部重下。
 
@@ -297,7 +298,8 @@ def _assemble(root: pathlib.Path, tracks: dict[str, pathlib.Path], table, album:
 
     以前两边各抄一份（11–14 行逐字同形），而这里正是"本机 `pack` == CI `repack` 逐字节相同"那条
     性质的所在地（`tools/tests/test_repack.py` 盯着）：抄两份等于白留一个漂移面。
-    逐曲版本号用**内容**哈希（D149）且**只算一次** —— 整表版本号吃同一批哈希，不再重复读那 330 MB。
+    逐曲版本号用**内容**哈希（D149 / §2.6 —— 本机助手也是同一套口径）且**只算一次** ——
+    整表版本号吃同一批哈希，不再重复读那 330 MB。
     """
     revisions = {title: packformat.content_revision(path) for title, path in tracks.items()}
     manifest = build_manifest(

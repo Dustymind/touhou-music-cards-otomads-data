@@ -618,15 +618,17 @@ def loudness_path(pack_id: str) -> pathlib.Path | None:
 
 
 def content_revision(path) -> str:
-    """文件的**内容**哈希（sha1 前 16 位）—— 归档侧用的版本号口径（D149）。
+    """文件的**内容**哈希（sha1 前 16 位）—— **所有**版本号（``revision``）的唯一口径（D149 / §2.6）。
 
-    为什么归档不再用 mtime（`media_revision` 那套）：**CI 要能重打归档**。媒体来自上一份归档，
-    而 tar 里的 mtime 是归零的（可复现），照 mtime 算出来的版本号既与本机打包的对不上、
+    为什么不用 mtime（已删的 `media_revision` 那套）：**清单必须能跨机器重算**。媒体来自上一份
+    归档，而 tar 里的 mtime 是归零的（可复现），照 mtime 算出来的版本号既与本机打包的对不上、
     也不随"内容变了但大小没变"而动。改成内容哈希之后：同一份音频在**任何机器**上算出来都一样 ⇒
-    本机 `pnpm media:pack` 与 CI 的重打产出**逐字节相同**的清单（有测试钉着）。
+    本机 `pnpm media:pack` 与 CI 的重打产出**逐字节相同**的清单（有测试钉着），本机助手与归档侧
+    也终于用同一个版本号（§2.6 删掉的就是助手那套 mtime 口径）。
 
     代价：要读文件内容。370 MB 的 sha1 大约 1 秒级，而"重新打包"本来就是秒级操作 —— 值当。
-    （**本机助手**仍用 mtime：它每次请求现算，没必要为缓存键去哈希整个曲库。）
+    本机助手每次请求都要出清单，走 :func:`content_revisions` 的**进程级缓存**：一次哈希之后按键
+    命中，不再重复读整个曲库。
     """
     digest = hashlib.sha1()
     with open(path, "rb") as handle:
@@ -635,34 +637,51 @@ def content_revision(path) -> str:
     return digest.hexdigest()[:16]
 
 
+#: `content_revisions()` 的进程级缓存：键 = (绝对路径, st_size, st_mtime_ns)，值 = 内容哈希。
+#: 键是**文件的同一性**（同一路径 + 同大小 + 同 mtime ⇒ 认定内容没变），不是内容本身。
+_CONTENT_REVISION_CACHE: dict[tuple[str, int, int], str] = {}
+
+#: 缓存条数上限：正常曲库 191 条；只防"长时间运行 + 反复改同一批文件"把表堆到无界。
+_CONTENT_REVISION_LIMIT = 4096
+
+
+def content_revisions(entries) -> list[tuple[str, str]]:
+    """`[(清单里的名字, 文件路径), …]` → `[(名字, 内容哈希), …]`（顺序不变），**带进程级缓存**。
+
+    这是给"每次请求都要现出清单"的**本机助手**（`local_source.build_manifest`）用的：191 个文件
+    ≈ 300 MB，一次 sha1 是秒级，每来一个 `/manifest.json` 就整批重算不能接受。缓存键 =
+    ``(绝对路径, st_size, st_mtime_ns)`` —— **文件的同一性**：文件一改（大小或 mtime 变）键就变，
+    下一次自动重算；没变的整批复用，每请求只剩一次 stat。
+
+    **取舍**：命中缓存的判据是"同一性"而不是内容本身，所以"内容变了、大小与 mtime 都原样保留"
+    （只有人为伪造时间戳才做得到）会读到旧值 —— 这换的是"每个请求不重读 ~300 MB"。但**发出去的
+    值始终是内容哈希**：同一份文件在任何机器上算出来都一样 ⇒ 两台各自跑助手、文件相同而 mtime
+    不同的机器会给出**完全相同**的 `revision`（§2.6 要的就是这个；mtime 已不进算法）。
+    归档侧的一次性调用（`stage_media`）继续直接用 :func:`content_revision`，不经过这里。
+    """
+    if len(_CONTENT_REVISION_CACHE) >= _CONTENT_REVISION_LIMIT:
+        _CONTENT_REVISION_CACHE.clear()
+    out: list[tuple[str, str]] = []
+    for name, path in entries:
+        target = pathlib.Path(path)
+        stat = target.stat()                    # 助手给的是 str（os.path.join），两边都收
+        key = (str(target.resolve()), stat.st_size, stat.st_mtime_ns)
+        hit = _CONTENT_REVISION_CACHE.get(key)
+        if hit is None:
+            hit = content_revision(target)
+            _CONTENT_REVISION_CACHE[key] = hit
+        out.append((name, hit))
+    return out
+
+
 def revisions_of(entries) -> str:
     """`[(清单里的名字, 内容哈希), …]` → **整表**版本号（按名字排序后哈希"名字 + 内容版本"，可复现）。
 
     内容哈希由**调用方**给：`stage_media.pack` / `repack` 本来就在算逐曲版本号，这里再读一遍文件
-    等于把同一批 330 MB 音频 sha1 两遍（实测约 0.37 秒/次）。
+    等于把同一批 330 MB 音频 sha1 两遍（实测约 0.37 秒/次）；助手传的是 :func:`content_revisions`
+    已经算好（并缓存）的那一份，同样不重复读。
     """
     digest = hashlib.sha1()
     for name, content in sorted(entries, key=lambda item: item[0]):
         digest.update(f"{name}\t{content}\n".encode())
-    return digest.hexdigest()[:16]
-
-
-def media_revision(entries) -> str:
-    """`[(清单里的名字, 文件路径), …]` → **数据版本号**（16 位十六进制，sha1 截断）。
-
-    ⚠️ **这不是遗留物**（别当成 D149 的旧口径删掉）：归档侧确实换成了 :func:`content_revision`，
-    但**本机曲库助手**（`local_source.build_manifest`，主仓库 `pnpm local` 那条路）仍用它 ——
-    它每次请求现算，没必要为缓存键去哈希整个曲库。
-
-    前端把它拼进媒体地址（`?v=<revision>`，主仓库 D144）：**版本一变 = URL 一变** ⇒ 浏览器与
-    CDN 都不能拿旧的顶。缓存键因此跟"音频本身"走，而不是跟"链接"走。
-
-    输入只取**文件名 + 字节数 + mtime**：改一个字节、重裁一次、加一首、删一首，版本都会变；
-    而"文件没动、只是重新打一次包"版本不变 ✓（同样的输入必然同样的输出，可复现）。
-    **故意不读文件内容** —— 86 首要哈希 370 MB，而"重新打包"是个几秒级操作，不值当。
-    """
-    digest = hashlib.sha1()
-    for name, path in sorted(entries, key=lambda item: item[0]):
-        stat = pathlib.Path(path).stat()        # 助手那边给的是 str（os.path.join），两边都收
-        digest.update(f"{name}\t{stat.st_size}\t{stat.st_mtime_ns}\n".encode())
     return digest.hexdigest()[:16]
