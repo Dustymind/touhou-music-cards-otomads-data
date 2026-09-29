@@ -37,8 +37,8 @@ uv sync --project tools
 UV_INDEX_URL=https://mirrors.cernet.edu.cn/pypi/web/simple uv sync --project tools
 
 # Windows
-$env:UV_INDEX_URL="https://mirrors.cernet.edu.cn/pypi/web/simpl"
-v sync --project tools
+$env:UV_INDEX_URL="https://mirrors.cernet.edu.cn/pypi/web/simple"
+uv sync --project tools
 ```
 
 2. 抓取音 MAD
