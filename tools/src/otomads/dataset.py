@@ -119,7 +119,8 @@ def build_records(snapshot: dict) -> list[dict]:
     曲目 id = ``<角色 key>_otomad_<NNN>``（三位、从 001 起、按曲包文件顺序）—— 与主仓库
     ``tmc.build.build_characters`` 同一条规则（§11.1）。
 
-    ``music`` 条目的形状来自 ``packformat.music_entry``（与 ``tmc.build._pack_music`` 逐字一致）：
+    ``music`` 条目的形状来自 ``packformat.music_entry``（与主仓库 ``tmc.build.merge_characters``
+    合并出来的运行时曲目逐字一致；D175 起由两侧 ``test_vectors.py`` 的共享向量交叉守）：
     第 4 位是作者整串、第 5 位是多作者数组，**写了才有那一位**。
     ``card`` / ``covers`` 是"有才覆盖"（D137 / D153）：没写的角色记录里就没有那个键。
     """
