@@ -188,3 +188,18 @@ def test_local_assistant_manifest_follows_the_shared_vectors(library):
     for album, title, _url, revision in manifest["tracks"]:
         assert revision == revisions[f"{album}/{title}"]
         assert len(revision) == 16
+
+
+# ---------------------------------------------------------------- bitrate 取值范围（数值向量）
+
+#: 与主仓库 `tmc.packs.BITRATE_RANGE` 共享的字面量（Q1 口径：两侧各存一份）。
+BITRATE_RANGE_VECTOR = (32, 320)
+
+
+def test_bitrate_range_matches_the_shared_vector():
+    """`[[track]].bitrate` 的取值范围两边必须一致 —— 主仓库那份此前只靠注释与本仓库对齐。
+
+    本仓库的 `packformat` 校验写入侧、主仓库的 `tmc.packs` 校验读取侧：一边放宽而另一边
+    没跟上，表现是"本地过、对面拒收"（或反过来）。
+    """
+    assert packformat.BITRATE_RANGE == BITRATE_RANGE_VECTOR
