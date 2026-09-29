@@ -159,9 +159,9 @@ def ensure_ytdlp(*, skip_update: bool, reexec: bool) -> str | None:
     print(f"· yt-dlp 有新版本 {latest}（当前 {installed}）→ 升级")
     tools = repo.ROOT / "tools"
     lock = subprocess.run(["uv", "lock", "--upgrade-package", "yt-dlp"], cwd=tools, env=uv_env(),
-                          capture_output=True, text=True, stdin=subprocess.DEVNULL)
+                          capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=300)
     sync = subprocess.run(["uv", "sync"], cwd=tools, env=uv_env(), capture_output=True, text=True,
-                       stdin=subprocess.DEVNULL) \
+                       stdin=subprocess.DEVNULL, timeout=300) \
         if lock.returncode == 0 else None
     if lock.returncode != 0 or sync is None or sync.returncode != 0:
         detail = (lock.stderr or lock.stdout).strip().splitlines()[-1:] or ["?"]
@@ -235,6 +235,8 @@ def download(source: str, raw: pathlib.Path) -> None:
         "format": "bestaudio/best",
         "outtmpl": str(raw.with_suffix("")) + ".%(ext)s",
         "quiet": True, "no_warnings": True, "noprogress": True, "retries": 3,
+        # 没有 socket 超时的话，卡住的连接会把一个 worker 线程永久占住（重试也救不了）
+        "socket_timeout": 30,
         "cachedir": False,
         "noplaylist": True,
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3",

@@ -44,7 +44,7 @@ def mean_volume_db(path: pathlib.Path) -> float | None:
     """
     out = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(path), "-af", "volumedetect",
                           "-f", "null", "-"], capture_output=True, text=True,
-                         stdin=subprocess.DEVNULL).stderr
+                         stdin=subprocess.DEVNULL, timeout=300).stderr
     matched = MEAN_RE.search(out)
     return float(matched.group(1)) if matched else None
 
