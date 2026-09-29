@@ -16,5 +16,5 @@ album = "otomads"
 author = "鞍山侯国玉电乐团"
 title = "【东方电气棍】鞍山的唢呐师"
 extra = "角色曲"
-source = "https://www.bilibili.com/video/BV1Rs4y1779Z/"          # ingest_otomads.py
+source = "https://www.bilibili.com/video/BV1Rs4y1779Z/"
 cover = "https://i0.hdslb.com/bfs/archive/f52ba6fcb9ebc5b692c8a6ab2459c96437f3a1d5.jpg"

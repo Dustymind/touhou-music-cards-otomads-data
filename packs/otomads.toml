@@ -1,14 +1,15 @@
 # 附加曲包：音MAD（otomads）。
 #
-# 这些曲目**只存在于本机**（由 `tools/src/tmc/local_source.py` 起本地曲库助手提供），
+# 这些曲目**只存在于本机**（由 `tools/src/otomads/local_source.py` 起本地曲库助手提供），
 # 因此不进 `data/sources/*.json` 的镜像表；应用侧按 album 的 `pack` 判定模式归属。
 # 角色 → 曲目 的归属沿用改版仓库（v2 工作区）的 `public/character.json`。
 #
 # 这份文件是**清单**（只声明包与专辑）：曲目在 `packs/otomads/<角色 key>.toml`，
-# 一角色一份、顶层 `key` 加若干 `[[track]]`，由 `tmc.packs.load_packs` 一并读入；
-# 清单里写 `[[track]]` 会直接报错。录入走 `python -m tmc.ingest_pack`（见 README.md）。
-# 沿革：D52 的首批 24 条 source 抄自 mp3 标签；2026-09 起由 `tools/ingest_otomads.py` 下载
-# （D96–D100），条目的 source 行尾注释即来源。
+# 一角色一份、顶层 `key` 加若干 `[[track]]`，由 `packformat.load_packs` 一并读入；
+# 清单里写 `[[track]]` 会直接报错。曲目**手工编辑**（`title`/`author`/`source`/
+# `start_time`/`stop_time`），改完 push 即发布（CI 重打归档，见 publish.yml）。
+# 沿革：D52 的首批 24 条 source 抄自 mp3 标签；2026-09 那批由已删的录入脚本下载（D96–D100），
+# 现在 `source` 就是那条曲目的来源，不再有行尾来源注释。
 
 [pack]
 id = "otomads"

@@ -16,5 +16,5 @@ album = "otomads"
 author = "鞍山侯国玉电乐团"
 title = "无何有之棍 ~ Deep Silver"
 extra = "角色曲"
-source = "https://www.bilibili.com/video/BV1kw411q7S8/"          # ingest_otomads.py
+source = "https://www.bilibili.com/video/BV1kw411q7S8/"
 cover = "https://i0.hdslb.com/bfs/archive/f71aba785e28389c5452fff6593f55bfc03e8adf.png"
