@@ -201,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
 
     output = args.out or packformat.loudness_path(args.pack)
     if output is None:
-        print(f"❌ 源注册表 sources/{args.pack}.toml 没声明 loudness；用 --out 指定输出路径")
+        print(f"[FAIL] 源注册表 sources/{args.pack}.toml 没声明 loudness；用 --out 指定输出路径")
         return 2
     summary = measure_library(pathlib.Path(args.directory), output=output, jobs=args.jobs)
     for line in describe(summary):

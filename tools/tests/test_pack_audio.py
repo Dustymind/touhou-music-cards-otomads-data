@@ -969,7 +969,7 @@ def test_loudness_cli_without_pack_dir_skips_coverage(tmp_path, monkeypatch, cap
     monkeypatch.setattr(loudness.packformat, "loudness_path", lambda pack: output)
     monkeypatch.setattr(loudness.packformat, "available", lambda: False)
     assert loudness.main([str(tmp_path), "--pack", "demo"]) == 1   # 一首都没量到 ⇒ 退出码 1（原有口径）
-    assert "⚠️" not in capsys.readouterr().out
+    assert "[!]" not in capsys.readouterr().out
 
 
 # ---------------------- 跨仓库共享向量：时间解析 / 裁剪区间 / 键集合（D150 追加）

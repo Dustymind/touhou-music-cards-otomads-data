@@ -371,7 +371,7 @@ def main(argv: list[str] | None = None) -> int:
     jobs = max(1, args.jobs)
 
     if (problem := ffmpeg_problem()) is not None:
-        print(f"❌ 需要 ffmpeg 才能裁剪：{problem}\n"
+        print(f"[FAIL] 需要 ffmpeg 才能裁剪：{problem}\n"
               f"   Ubuntu/Debian: sudo apt install ffmpeg；macOS: brew install ffmpeg", file=sys.stderr)
         return 3
 
@@ -389,7 +389,7 @@ def main(argv: list[str] | None = None) -> int:
     if not args.dry_run:
         if (problem := ensure_ytdlp(skip_update=args.skip_update,
                                     reexec=os.environ.get(REEXEC_FLAG) == "1")) is not None:
-            print(f"❌ {problem}", file=sys.stderr)
+            print(f"[FAIL] {problem}", file=sys.stderr)
             return 3
     else:
         print("· --dry-run：跳过 yt-dlp 更新检查")
@@ -446,7 +446,7 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             output = packs.loudness_path(pack_id)
             if output is None:
-                print(f"⚠️ 曲包 {pack_id} 的源注册表没声明 loudness，跳过刷新响度表")
+                print(f"[!] 曲包 {pack_id} 的源注册表没声明 loudness，跳过刷新响度表")
                 continue
             directories = sorted({library / track["album"] for track in tracks
                                   if track["pack"] == pack_id})
@@ -466,7 +466,7 @@ def main(argv: list[str] | None = None) -> int:
             detail = f"（{outcome['detail']}）" if outcome["detail"] else ""
             print(f"  · {status}：{outcome['title']}{detail}")
         elif status in {"missing", "failed"}:
-            print(f"  ✗ {outcome['title']}：{outcome['detail']}")
+            print(f"  [FAIL] {outcome['title']}：{outcome['detail']}")
     return 1 if counts["failed"] or counts["missing"] else 0
 
 

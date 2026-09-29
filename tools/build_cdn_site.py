@@ -92,9 +92,9 @@ def main() -> int:
 
     problems, warnings = stage_media.review_archive(archive)
     for warning in warnings:
-        print(f"⚠️  {warning}")
+        print(f"[!] {warning}")
     if problems:
-        print("❌ 归档自检没过，**不铺**（线上保持原样）：")
+        print("[FAIL] 归档自检没过，**不铺**（线上保持原样）：")
         for problem in problems[:10]:
             print(f"  - {problem}")
         if len(problems) > 10:
@@ -123,7 +123,7 @@ def main() -> int:
 
     manifest = stage_media.manifest_of(archive)
     entries = sum(len(character["music"]) for character in manifest["characters"])
-    print(f"✅ 铺好 {out.resolve()}：{len(manifest['tracks'])} 行地址 / "
+    print(f"[OK] 铺好 {out.resolve()}：{len(manifest['tracks'])} 行地址 / "
           f"{len(manifest['characters'])} 个角色 / {entries} 条曲目条目 / "
           f"顶层 revision {manifest.get('revision')}")
     return 0

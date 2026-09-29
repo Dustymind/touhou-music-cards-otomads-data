@@ -356,7 +356,7 @@ def read_cache(path: pathlib.Path) -> dict[tuple[str, str], dict]:
             if not pic:
                 continue
         except (ValueError, KeyError, TypeError):
-            print(f"⚠️  缓存有一行读不动，跳过：{line[:80]}")
+            print(f"[!] 缓存有一行读不动，跳过：{line[:80]}")
             continue
         hits[key] = {"bv": record.get("bv") or "", "pic": pic}
     return hits
@@ -502,7 +502,7 @@ def read_file(path: pathlib.Path) -> str:
     try:
         return path.read_text(encoding="utf-8")
     except FileNotFoundError:
-        raise SystemExit(f"❌ 角色文件不在：{paths.shown(path)}"
+        raise SystemExit(f"[FAIL] 角色文件不在：{paths.shown(path)}"
                          f"（曲目表说这个角色有曲目，但文件没了）") from None
 
 
@@ -522,7 +522,7 @@ def main(argv: list[str] | None = None) -> int:
 
     manifest = paths.find_pack_manifest(args.pack)
     if manifest is None:
-        print(f"❌ 找不到曲包清单：packs/{args.pack}.toml")
+        print(f"[FAIL] 找不到曲包清单：packs/{args.pack}.toml")
         return 2
     pack_dir = manifest.parent / args.pack
     print(f"曲包 {args.pack} → {paths.shown(pack_dir)}/"
@@ -534,8 +534,8 @@ def main(argv: list[str] | None = None) -> int:
     migrated, stuck = migrate_pack(pack_dir, dry_run=args.dry_run)
     if stuck:
         for key in sorted(stuck):
-            print(f"  ⚠️  {key}：{stuck[key]}")
-        print(f"❌ {len(stuck)} 个角色文件的顶层 cover 搬不动（见上）—— 本次**一个字节都没写**，"
+            print(f"  [!] {key}：{stuck[key]}")
+        print(f"[FAIL] {len(stuck)} 个角色文件的顶层 cover 搬不动（见上）—— 本次**一个字节都没写**，"
               f"先按提示修一下再重跑")
         return 1
 
@@ -611,13 +611,13 @@ def main(argv: list[str] | None = None) -> int:
         bits = [f"{name} {counts[name]}" for name in ("新增", "刷新", "跳过") if counts[name]]
         print(f"  · {key}：{' / '.join(bits)}")
     for key, title, reason in failures:
-        print(f"  ⚠️  {key} / {title}：{reason} → 这一条不写（别的照常）")
+        print(f"  [!] {key} / {title}：{reason} → 这一条不写（别的照常）")
 
-    print(f"✅ {'将' if args.dry_run else ''}新增 {added} 条 / 刷新 {refreshed} 条 / "
+    print(f"[OK] {'将' if args.dry_run else ''}新增 {added} 条 / 刷新 {refreshed} 条 / "
           f"迁移 {len(migrated)} 个角色 | 跳过（已有）{sum(skipped.values())} | "
           f"失败 {len(failures)}")
     if failures:
-        print("⚠️  失败的条目下次重跑即可（缓存里成功的那几首不会重复请求）；"
+        print("[!] 失败的条目下次重跑即可（缓存里成功的那几首不会重复请求）；"
               "撞上风控（403/412）就把 --jobs 降到 1 再试")
     return 1 if failures else 0
 

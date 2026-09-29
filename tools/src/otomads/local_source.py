@@ -354,7 +354,7 @@ class ThreadingServer(socketserver.ThreadingTCPServer):
 
 def serve(conf: dict, *, strict_port: bool = False) -> int:
     if not os.path.isdir(conf["root"]):
-        print(f"❌ 曲库目录不存在：{conf['root']}\n"
+        print(f"[FAIL] 曲库目录不存在：{conf['root']}\n"
               f"   用 --root 指定，或在 {DEFAULT_CONFIG} 的 [library].root 里配置。", file=sys.stderr)
         return 2
 
@@ -362,7 +362,7 @@ def serve(conf: dict, *, strict_port: bool = False) -> int:
     if not strict_port:
         found = find_bindable_port(conf["host"], port, conf["port_tries"])
         if found is None:
-            print(f"❌ {conf['host']}:{port} 起连续 {conf['port_tries']} 个端口都不可用", file=sys.stderr)
+            print(f"[FAIL] {conf['host']}:{port} 起连续 {conf['port_tries']} 个端口都不可用", file=sys.stderr)
             return 3
         port = found
 
@@ -370,7 +370,7 @@ def serve(conf: dict, *, strict_port: bool = False) -> int:
     try:
         httpd = ThreadingServer((conf["host"], port), handler)
     except OSError as exc:
-        print(f"❌ 无法监听 {conf['host']}:{port}：{exc}", file=sys.stderr)
+        print(f"[FAIL] 无法监听 {conf['host']}:{port}：{exc}", file=sys.stderr)
         return 3
 
     httpd.music_root = conf["root"]              # type: ignore[attr-defined]
@@ -379,7 +379,7 @@ def serve(conf: dict, *, strict_port: bool = False) -> int:
     tracks = scan_library(conf["root"])
     base_url = f"http://{conf['host']}:{port}/"
     if port != conf["port"]:
-        print(f"⚠️  端口 {conf['port']} 被占用，已改用 {port}；应用侧填 {base_url}")
+        print(f"[!] 端口 {conf['port']} 被占用，已改用 {port}；应用侧填 {base_url}")
     print(f"配置文件  : {conf['config_file'] or '(未使用，取默认值)'}")
     print(f"曲库目录  : {conf['root']}（{len(tracks)} 首）")
     print(f"曲包      : {conf['pack_id']}")
