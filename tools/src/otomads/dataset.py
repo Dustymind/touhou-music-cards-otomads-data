@@ -217,7 +217,7 @@ def git_source(root: pathlib.Path | None = None) -> dict:
             done = subprocess.run(["git", "-C", str(root), *args],
                                   capture_output=True, text=True, check=True)
         except (OSError, subprocess.CalledProcessError) as error:
-            raise SystemExit(f"[FAIL] 取不到本仓库的 git 版本：{error}") from None
+            raise SystemExit(f"[FAILED] 取不到本仓库的 git 版本：{error}") from None
         return done.stdout
 
     return {

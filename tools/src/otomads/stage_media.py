@@ -93,10 +93,10 @@ def audio_files(directory: pathlib.Path) -> dict[str, pathlib.Path]:
 def library_tracks(library: pathlib.Path, album: str) -> dict[str, pathlib.Path]:
     """``<曲库>/<专辑>/`` 下的音频；空或不存在时给出可执行的报错。"""
     if not library.is_dir():
-        raise SystemExit(f"[FAIL] 曲库目录不存在：{library}")
+        raise SystemExit(f"[FAILED] 曲库目录不存在：{library}")
     tracks = audio_files(library / album)
     if not tracks:
-        raise SystemExit(f"[FAIL] 曲库里没有专辑 {album!r} 的音频：{library / album}"
+        raise SystemExit(f"[FAILED] 曲库里没有专辑 {album!r} 的音频：{library / album}"
                          f"（曲库结构是 <root>/<专辑>/<曲目>.mp3）")
     return tracks
 
@@ -202,7 +202,7 @@ def pack(library: pathlib.Path, out: pathlib.Path, album: str = DEFAULT_ALBUM,
     tracks = library_tracks(library, album)
     table = declared_loudness(album)
     if table is not None and not table[1].is_file():
-        print(f"[!] 注册表声明的响度表不存在，归档里不带它：{table[1]}"
+        print(f"[ WARN ] 注册表声明的响度表不存在，归档里不带它：{table[1]}"
               f"（跑 `uv run --project tools python -m otomads.loudness` 生成；"
               f"前端会回落到应用侧那份）")
         table = None
@@ -231,9 +231,9 @@ def _safe_members(archive: tarfile.TarFile) -> list[tarfile.TarInfo]:
     for member in archive.getmembers():
         name = pathlib.PurePosixPath(member.name)
         if name.is_absolute() or ".." in name.parts or member.name.startswith("/"):
-            raise SystemExit(f"[FAIL] 归档里有不安全的路径：{member.name}")
+            raise SystemExit(f"[FAILED] 归档里有不安全的路径：{member.name}")
         if member.issym() or member.islnk() or member.isdev():
-            raise SystemExit(f"[FAIL] 归档里有不支持的成员类型（链接/设备）：{member.name}")
+            raise SystemExit(f"[FAILED] 归档里有不支持的成员类型（链接/设备）：{member.name}")
         if member.isfile() or member.isdir():
             members.append(member)
     return members
@@ -260,7 +260,7 @@ def download_archive(url: str, target: pathlib.Path) -> pathlib.Path:
     `stage --archive` 与 Cloudflare 的构建入口（`tools/build_cdn_site.py`）共用这一份 ——
     以前两边各写一遍（差一个 `file://`、差一个 120 秒超时）。
     """
-    print(f"[+] 取归档：{url}")
+    print(f"[  ..  ] 取归档：{url}")
     if url.startswith("file://"):
         shutil.copyfile(url[len("file://"):], target)
     else:
@@ -323,7 +323,7 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
     """把素材铺进 ``out``（= ``dist/``）：从归档，或直接从本地曲库。"""
     out.mkdir(parents=True, exist_ok=True)
     if (archive is None) == (library is None):
-        raise SystemExit("[FAIL] 二选一：`--archive <URL|路径>` 或 `--from <曲库>`")
+        raise SystemExit("[FAILED] 二选一：`--archive <URL|路径>` 或 `--from <曲库>`")
     if library is not None:                       # 直接从曲库铺（本地全静态构建用）
         tracks = library_tracks(library, album)
         media = out / MEDIA_DIR / album
@@ -349,9 +349,9 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
         else:
             local = pathlib.Path(archive)
             if not local.is_file():
-                raise SystemExit(f"[FAIL] 归档不存在：{local}")
+                raise SystemExit(f"[FAILED] 归档不存在：{local}")
         if not str(local).endswith(ARCHIVE_SUFFIXES):
-            raise SystemExit(f"[FAIL] 只认 tar 归档（{ARCHIVE_SUFFIXES}），收到 {local.name}")
+            raise SystemExit(f"[FAILED] 只认 tar 归档（{ARCHIVE_SUFFIXES}），收到 {local.name}")
         extract(local, out)
 
     manifest_path = out / MANIFEST_NAME
@@ -424,7 +424,7 @@ def repack(previous: pathlib.Path, out: pathlib.Path) -> dict:
     ⇒ CI 重打的清单与本机打的**逐字节相同**（有测试钉着）。
     """
     if not previous.is_file():
-        raise SystemExit(f"[FAIL] 上一份归档不存在：{previous}")
+        raise SystemExit(f"[FAILED] 上一份归档不存在：{previous}")
     with tempfile.TemporaryDirectory() as tmp:
         root = pathlib.Path(tmp)
         extract(previous, root)                     # 归档是**不可信输入**，走同一条安全检查
@@ -433,11 +433,11 @@ def repack(previous: pathlib.Path, out: pathlib.Path) -> dict:
         media = root / MEDIA_DIR / album
         tracks = audio_files(media)
         if not tracks:
-            raise SystemExit(f"[FAIL] 上一份归档里没有 {MEDIA_DIR}/{album}/ 的音频：{previous}")
+            raise SystemExit(f"[FAILED] 上一份归档里没有 {MEDIA_DIR}/{album}/ 的音频：{previous}")
 
         table = declared_loudness(album)
         if table is not None and not table[1].is_file():
-            print(f"[!] 注册表声明的响度表不存在，归档里不带它：{table[1]}")
+            print(f"[ WARN ] 注册表声明的响度表不存在，归档里不带它：{table[1]}")
             table = None
         _copy_loudness(root, table)                 # 表在**仓库**里 ⇒ 重算过的表会跟着重打进来
         manifest = _assemble(root, tracks, table, album, before.get("pack"), out)
@@ -459,7 +459,7 @@ def manifest_of(path: pathlib.Path) -> dict:
         try:
             raw = archive.extractfile(MANIFEST_NAME)
         except KeyError:
-            raise SystemExit(f"[FAIL] 归档里没有 {MANIFEST_NAME}：{path}") from None
+            raise SystemExit(f"[FAILED] 归档里没有 {MANIFEST_NAME}：{path}") from None
         return json.load(raw)          # **在 with 里读**：成员是绑定在归档上的，出了 with 就关了
 
 
@@ -667,7 +667,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "repack":
         summary = repack(args.previous, args.out)
-        print(f"[OK] 重打 {summary['archive']}：{summary['tracks']} 首 / "
+        print(f"[  OK  ] 重打 {summary['archive']}：{summary['tracks']} 首 / "
               f"{summary['bytes'] / 1048576:.1f} MB / 响度表 {'带上' if summary['loudness'] else '没带'}")
         print("   与上一份相比：" + ("**变了** —— 该换资产、该重铺" if summary["changed"]
                                     else "没变 —— 不必换资产（站点侧改动仍可照常重铺）"))
@@ -676,22 +676,22 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "review":
         problems, warnings = review_archive(args.archive, compare_with_repo=not args.no_packs)
         for warning in warnings:
-            print(f"[!] {warning}")
+            print(f"[ WARN ] {warning}")
         for problem in problems[:10]:
             print(f"  - {problem}")
         if problems:
-            print(f"[FAIL] 归档自检没过（{len(problems)} 处）：{args.archive}")
+            print(f"[FAILED] 归档自检没过（{len(problems)} 处）：{args.archive}")
             return 1
         manifest = manifest_of(args.archive)
         entries = sum(len(character["music"]) for character in manifest["characters"])
-        print(f"[OK] 归档自检通过：{args.archive} → {len(manifest['tracks'])} 行地址 / "
+        print(f"[  OK  ] 归档自检通过：{args.archive} → {len(manifest['tracks'])} 行地址 / "
               f"{len(manifest['characters'])} 个角色 / {entries} 条曲目条目 / "
               f"顶层 revision {manifest.get('revision')}")
         return 0
 
     if args.command == "pack":
         summary = pack(args.library, args.out, args.album, args.cards)
-        print(f"[OK] 归档 {summary['archive']}：{summary['tracks']} 首 / "
+        print(f"[  OK  ] 归档 {summary['archive']}：{summary['tracks']} 首 / "
               f"{summary['cards']} 张卡面 / {summary['bytes'] / 1048576:.1f} MB")
         print(f"   响度表：{'已带上（跟着源走，D139）' if summary['loudness'] else '没带（前端会回落应用侧那份）'}")
         print("   发布它（例如 GitHub Release 资产），构建时用："
@@ -699,13 +699,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.cards is not None and args.archive is not None:
-        print("[!] `--cards` 只在 `--from <曲库>` 那条路上有用"
+        print("[ WARN ] `--cards` 只在 `--from <曲库>` 那条路上有用"
               "（从归档铺时卡面本来就在归档里）—— 这次忽略它")
     summary = stage(args.out, args.archive, args.library, args.album, args.base, args.cards)
     problems = verify(args.out, args.album)
     if not (args.out / "index.html").is_file():
-        print(f"[!] {args.out} 里没有 index.html —— 先 `pnpm build`（这一步只铺素材，不构建应用）")
-    print(f"[OK] 铺好 {summary['out']}：{summary['tracks']} 首 / {summary['cards']} 张卡面"
+        print(f"[ WARN ] {args.out} 里没有 index.html —— 先 `pnpm build`（这一步只铺素材，不构建应用）")
+    print(f"[  OK  ] 铺好 {summary['out']}：{summary['tracks']} 首 / {summary['cards']} 张卡面"
           f"（来源：{summary['source']}）")
     print(f"   {MANIFEST_NAME}：{len(summary['manifest']['tracks'])} 行，"
           f"媒体地址{'绝对' if args.base else '相对'}（{'--base ' + args.base if args.base else '与部署基地址无关'}）")
@@ -713,19 +713,19 @@ def main(argv: list[str] | None = None) -> int:
     if coverage.get("declared"):
         print(f"   响度表 {coverage['declared']}：{coverage['keys']} 条（跟着源走，D139）")
         if coverage.get("error"):
-            print(f"   [FAIL] {coverage['error']}")
+            print(f"   [FAILED] {coverage['error']}")
         if coverage["missing"]:
-            print(f"   [!] 表里缺 {len(coverage['missing'])} 首（合法：没量过 ⇒ 增益按 1）")
+            print(f"   [ WARN ] 表里缺 {len(coverage['missing'])} 首（合法：没量过 ⇒ 增益按 1）")
         if coverage["extra"]:
-            print(f"   [!] 表里有 {len(coverage['extra'])} 个键对不上音频（改名残留？）")
+            print(f"   [ WARN ] 表里有 {len(coverage['extra'])} 个键对不上音频（改名残留？）")
     else:
         print("   响度表：源没声明（前端会回落到应用侧那份 `data/<模式>/loudness/`）")
     for problem in problems:
-        print(f"[FAIL] {problem}")
+        print(f"[FAILED] {problem}")
     if problems:
-        print(f"[FAIL] 自检没通过（{len(problems)} 处）")
+        print(f"[FAILED] 自检没通过（{len(problems)} 处）")
         return 1
-    print("[OK] 自检通过：manifest 与磁盘上的音频一一对应")
+    print("[  OK  ] 自检通过：manifest 与磁盘上的音频一一对应")
     return 0
 
 

@@ -702,7 +702,7 @@ def test_dry_run_writes_nothing_not_even_the_cache(repo, tmp_path, monkeypatch, 
     assert repo.read_text(encoding="utf-8") == CHARACTER_FILE
     assert not (tmp_path / "covers.jsonl").exists()
     printed = capsys.readouterr().out
-    assert "新增 2 条" in printed and "[OK] 将新增 2 条" in printed
+    assert "新增 2 条" in printed and "[  OK  ] 将新增 2 条" in printed
 
 
 def test_dry_run_migrates_nothing_on_disk(repo, tmp_path, monkeypatch, capsys):
