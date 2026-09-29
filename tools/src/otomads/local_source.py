@@ -17,7 +17,10 @@ manifest 里的音频地址按**请求**现拼（所以换域名/端口不用重
 为什么不能直接用 ``python3 -m http.server``：
 
 * 应用用 ``fetch()`` 拉 manifest，会被 CORS 挡住（http.server 不发 ``Access-Control-Allow-Origin``）；
-* ``http.server`` 不支持 Range，拖进度条会失效。
+* ``http.server`` 不支持 Range，拖进度条会失效；
+* 它会照单全发 —— **列目录**，并把曲库根下的 `.state/`（抓取状态）与配置文件一起端出去。
+  本助手只发 ``manifest.json`` 与 ``/media/**``，而且**只解码一次**：父类的 ``translate_path``
+  会再解一次，`/media/%252e%252e/…` 实测能绕过白名单（见 :func:`safe_relative`）。
 
 配置（默认读仓库根的 ``local-source.toml``，已被 .gitignore）：
 
@@ -49,6 +52,7 @@ import argparse
 import http.server
 import json
 import os
+import pathlib
 import re
 import socket
 import socketserver
@@ -67,6 +71,32 @@ DEFAULT_ROOT = repo.ROOT / ".music"
 MANIFEST_PATH = "manifest.json"
 AUDIO_EXTENSIONS = repo.AUDIO_EXTENSIONS      # 真源在 `paths`（`stage_media` 也从此处取）
 RANGE_RE = re.compile(r"bytes=(\d*)-(\d*)")
+#: 允许发出去的路径前缀（相对曲库根）。**白名单而不是黑名单**：新加的点目录默认就是 404。
+SERVED_PREFIX = "media/"
+
+
+def is_served(relative: str) -> bool:
+    """这个相对路径发不发？只有 ``manifest.json``（单独处理）与 ``media/**`` 发。
+
+    **白名单是这里唯一的安全边界**：助手对着浏览器与（反代后的）局域网开放，把 `.state/`
+    （抓取状态里写着用户的 source 链接）与配置文件端出去没有任何好处。
+    """
+    return relative == MANIFEST_PATH or relative.startswith(SERVED_PREFIX)
+
+
+def safe_relative(relative: str) -> str | None:
+    """相对路径 → 规范化结果；**不安全就返回 ``None``**（调用方回 404）。
+
+    挡住五种东西：空段（``media//x``、尾随 ``/`` ⇒ 目录列表）、``.`` / ``..``（爬出曲库根）、
+    **点开头的段**（``media/.state/demo.json`` 是抓取状态）、反斜杠（URL 里是普通字符、磁盘上是
+    分隔符）、NUL（会让某些系统上的 ``open()`` 截断）。
+    """
+    if "\\" in relative or "\x00" in relative:
+        return None
+    parts = relative.split("/")
+    if any(part == "" or part.startswith(".") for part in parts):
+        return None
+    return "/".join(parts)
 
 
 def load_config(path, *, host=None, port=None, root=None, pack_id=None,
@@ -266,13 +296,6 @@ class LocalMusicHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Content-Length", "0")
         self.end_headers()
 
-    def translate_path(self, path: str) -> str:
-        """URL 去掉 ``/media/`` 前缀并把百分号解码，中文/空格文件名照常命中。"""
-        path = unquote(path.split("?", 1)[0].split("#", 1)[0], errors="surrogatepass")
-        if path.startswith("/media/"):
-            path = path[len("/media"):]
-        return super().translate_path(path)
-
     def log_message(self, fmt: str, *args) -> None:  # noqa: A003
         sys.stderr.write("  %s\n" % (fmt % args))
 
@@ -290,37 +313,86 @@ class LocalMusicHandler(http.server.SimpleHTTPRequestHandler):
         if body:
             self.wfile.write(payload)
 
+    def resolve(self) -> pathlib.Path | None:
+        """请求 → 磁盘路径；不在白名单里 / 路径不安全 ⇒ ``None``（调用方回 404）。
+
+        **只解码一次，然后自己拼** —— 不能用父类的 ``translate_path``：它会**再解一次**。实测
+        ``/media/%252e%252e/local-source.toml`` 到父类手里就成了 `../local-source.toml` ——
+        曲库根下任何文件都能读走（`.state/` 抓取状态、配置文件），``/media/%252e%252e/`` 还能列目录。
+        白名单与"真实路径必须仍在曲库根下"两道一起才有意义（符号链接也挡得住）。
+        """
+        relative = unquote(self.path.split("?", 1)[0].split("#", 1)[0]).lstrip("/")
+        if not is_served(relative) or not relative.startswith(SERVED_PREFIX):
+            return None
+        safe = safe_relative(relative)
+        if safe is None:
+            return None
+        root = pathlib.Path(self.server.music_root)          # type: ignore[attr-defined]
+        path = root / safe[len(SERVED_PREFIX):]
+        try:
+            path.resolve().relative_to(root.resolve())
+        except (OSError, ValueError):
+            return None
+        return path
+
     def send_head(self):  # noqa: ANN201
         if unquote(self.path.split("?", 1)[0].lstrip("/")) == MANIFEST_PATH:
             self._send_manifest(body=self.command != "HEAD")
             return None
 
+        if self.command not in ("GET", "HEAD"):
+            self.send_error(405, "Method Not Allowed")
+            return None
+
+        path = self.resolve()
+        if path is None or not path.is_file():       # 目录也走这条 ⇒ **不列目录**
+            self.send_error(404, "Not served",
+                            f"本助手只发 {MANIFEST_PATH} 与 /{SERVED_PREFIX}** 下的音频")
+            return None
+
         raw_range = self.headers.get("Range")
-        if not raw_range or self.command not in ("GET", "HEAD"):
-            return super().send_head()
+        matched = RANGE_RE.fullmatch(raw_range.strip()) if raw_range else None
+        return self._send_range(path, matched) if matched else self._send_file(path)
 
-        matched = RANGE_RE.fullmatch(raw_range.strip())
-        if not matched:
-            return super().send_head()
-
-        path = self.translate_path(self.path)
-        if os.path.isdir(path):
-            return super().send_head()
+    def _send_file(self, path: pathlib.Path):  # noqa: ANN202
+        """整份发（200）；`HEAD` 只发头。"""
         try:
             handle = open(path, "rb")  # noqa: SIM115
         except OSError:
             self.send_error(404, "File not found")
             return None
-
         try:
             size = os.fstat(handle.fileno()).st_size
         except OSError:
             handle.close()
-            return super().send_head()
+            self.send_error(404, "File not found")
+            return None
+        self.send_response(200)
+        self.send_header("Content-Type", self.guess_type(str(path)))
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", str(size))
+        self.end_headers()
+        if self.command == "HEAD":
+            handle.close()
+            return None
+        return handle
 
+    def _send_range(self, path: pathlib.Path, matched: re.Match):  # noqa: ANN202
+        """按 `Range` 发 206（`bytes=a-b` / `a-` / `-n`）；越界 416（播放器拖进度条靠这个）。"""
+        try:
+            handle = open(path, "rb")  # noqa: SIM115
+        except OSError:
+            self.send_error(404, "File not found")
+            return None
+        try:
+            size = os.fstat(handle.fileno()).st_size
+        except OSError:
+            handle.close()
+            self.send_error(404, "File not found")
+            return None
         start_s, end_s = matched.group(1), matched.group(2)
         if start_s == "":
-            start = max(0, size - int(end_s or 0))
+            start = max(0, size - int(end_s or 0))         # `bytes=-N`：最后 N 字节
             end = size - 1
         else:
             start = int(start_s)
@@ -335,7 +407,7 @@ class LocalMusicHandler(http.server.SimpleHTTPRequestHandler):
             return None
 
         self.send_response(206)
-        self.send_header("Content-Type", self.guess_type(path))
+        self.send_header("Content-Type", self.guess_type(str(path)))
         self.send_header("Accept-Ranges", "bytes")
         self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
         self.send_header("Content-Length", str(end - start + 1))

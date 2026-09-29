@@ -78,6 +78,35 @@ def test_suffix_range_and_bad_range(server):
     assert excinfo.value.code == 416
 
 
+def test_only_the_whitelist_is_served(server, library):
+    """白名单 + **只解码一次**：`/media/%252e%252e/…` 不许爬出 `/media/`（回归用例）。
+
+    父类 `translate_path` 会**再解一次** ⇒ 从前 `/media/%252e%252e/local-source.toml` 能读走曲库根下
+    任何文件、`/media/%252e%252e/` 还能列目录（2026-09-29 健壮性自查里实测复现）。现在：白名单 +
+    空段 / `.` / `..` / 点开头段 / 反斜杠 / NUL 一律 404，目录（含 `/media/`）也 404、不列。
+    """
+    (library / "local-source.toml").write_text('[library]\nroot = "."\n', encoding="utf-8")
+    (library / ".state").mkdir()
+    (library / ".state" / "demo.json").write_text("{}", encoding="utf-8")
+
+    for path in ("/media/%252e%252e/local-source.toml",
+                 "/media/%252e%252e/.state/demo.json",
+                 "/media/%252e%252e/",
+                 "/media/%2e%2e/readme.txt",
+                 "/media/../readme.txt",
+                 "/readme.txt",
+                 "/media/",
+                 "/media/otomads/"):
+        with pytest.raises(urllib.error.HTTPError) as excinfo:
+            urllib.request.urlopen(server + path)
+        assert excinfo.value.code == 404, path
+
+    # 白名单里的那份照常 200 —— 回归不能把正常路径一起挡了
+    url = f"{server}/media/otomads/{urllib.parse.quote('thwy - 岁月')}.mp3"
+    with urllib.request.urlopen(url) as resp:
+        assert resp.status == 200 and resp.read(3) == b"ID3"
+
+
 def test_port_fallback_picks_free_port():
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
