@@ -15,6 +15,9 @@ __pycache__/
 .pytest_cache/
 .uv/
 
+# `otomads.dataset` 的产物（生成物不进仓库；主仓库按 env / Release 快照取用）
+dataset/
+
 # 编辑器 / 系统
 .DS_Store
 
