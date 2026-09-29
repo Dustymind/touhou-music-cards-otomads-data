@@ -57,20 +57,20 @@ gh workflow run publish.yml -R Dustymind/touhou-music-cards-otomads-data
 ```
 
 抓取是并发的（`--jobs`，默认 4）：瓶颈全在网络，`--jobs` 给太大容易撞 bilibili 的 **412 风控**。
-**GitHub 托管 runner 抓不了**（实测三条真 source 全是 `HTTP Error 412`；86 条 source 全是 bilibili）
+**GitHub 托管 runner 抓不了**（实测三条真 source 全是 `HTTP Error 412`；191 条 source 全是 bilibili）
 ⇒ 只能在能上 bilibili 的机器上抓。
 
 ## 加一首曲目
 
+**手改**：在 `packs/otomads/<角色 key>.toml` 里加一个 `[[track]]`（一个块 = 一首）。原来的
+`parse_ingest_rows` / `ingest_pack` 录入脚本已随工具合并删除（§13.2），没有导入工具了；
+角色还没有文件就先建一份（主仓库的 `pnpm data:scaffold` 按真源里的角色生成骨架）。
+
 ```bash
-uv run --project tools python -m otomads.parse_ingest_rows rows.txt     # ① 文本行 → JSON
-uv run --project tools python -m otomads.ingest_pack \
-    --pack otomads --rows tools/ingest_rows_<日期>.json                 # ② 按角色追加（幂等）
-uv run --project tools python -m otomads.fetch_audio                    # ③ 抓取 + 刷新响度表
+uv run --project tools python -m otomads.fetch_audio --track <子串>   # 抓取 + 按 start/stop 裁剪 + 刷新响度表
+uv run --project tools python -m otomads.dataset                      # 生成 dataset/（CI 与主仓库都读它）
 ```
 
-② 只追加、不改已有内容，同 `(专辑, 曲名)` 跳过；角色还没有文件就新建一份。
-**手写也完全可以**：在 `packs/otomads/<角色 key>.toml` 里加 `[[track]]`。
 加完跑一次 `uv run --project tools python -m otomads.fetch_covers` 补封面（**逐条补缺**：
 已有 `cover` 的一条都不动，新加的那条自动补上；旧形状的顶层数组也会在这一步自动迁移。
 要让每条都换成"接口给的裸原图"，跑一次 `--force`），
@@ -184,11 +184,11 @@ gh secret set CLOUDFLARE_API_TOKEN -R Dustymind/touhou-music-cards-otomads-data
 ```
 characters.toml                 # 允许的角色清单（key / name / order）
 packs/otomads.toml              # 曲包清单：[pack] + [[album]]
-packs/otomads/<角色 key>.toml   # 一角色一份（35 份有曲目 + 86 份空骨架）
+packs/otomads/<角色 key>.toml   # 一角色一份（80 份有曲目 + 41 份空骨架）
 sources/otomads.toml            # 音源注册表：默认源（CDN）+ 响度表路径
 loudness/otomads.json           # 本源的响度均衡表（键 = 文件名 stem）
 local-source.toml.example       # 本地曲库配置模板（复制成 local-source.toml）
-tools/                          # uv 工程：助手 / 格式层 / 抓取 / 响度 / 打包 / 录入（见 tools/README.md）
+tools/                          # uv 工程：助手 / 格式层 / 抓取 / 封面 / 响度 / 打包 / 数据集（见 tools/README.md）
 tools/build_cdn_site.py         # Cloudflare 构建入口（下归档 → 自检 → 铺 dist/）
 wrangler.jsonc                  # Worker + 静态资源 + 自定义域名的部署配置（`wrangler deploy` 读它）
 media-worker.mjs                # 接管 /media/*：Range + CORS
@@ -197,11 +197,12 @@ media-worker.mjs                # 接管 /media/*：Range + CORS
 
 ## 现状与沿革
 
-- 规模：**106 首 / 43 个角色**（106 首全带 `source`，23 首带裁剪区间）；角色文件共 **121 份** = 43 份有曲目 + 78 份骨架。
-- 裁剪是"**解码后精确切 + 重编码**"：按采样点对齐（不是 mp3 帧边界），代价是二次有损 + 约 0.5 秒/首，只对有区间的 23 首付。
-- 消费方（应用侧）把本仓库当 submodule **pin 到 commit**（不跟分支）：本仓库改完数据推上来，消费方
-  `git -C data/otomads fetch && git -C data/otomads checkout <commit>` → `pnpm data:build` 即可。
-  **不必等打 tag** —— tag（`th09.5-*`）只是给人看的里程碑标记，不再是消费方的依赖点。
+- 规模：**191 首 / 80 个角色**（191 首全带 `source`，36 首带裁剪区间）；角色文件共 **121 份** = 80 份有曲目 + 41 份骨架。
+- 裁剪是"**解码后精确切 + 重编码**"：按采样点对齐（不是 mp3 帧边界），代价是二次有损 + 约 0.5 秒/首，只对有区间的 36 首付。
+- 消费方（应用侧）**不再把本仓库当 submodule、也没有 commit pin**（D174）：主仓库按 env
+  `OTOMADS_DATA_DIR` 指向的克隆取用，或从本仓库的 **Release 数据集快照**（tag `dataset`，逐文件）下载；
+  这份数据集由本仓库自己的 `dataset.py` 生成（`dataset/`，gitignored）。**不必等打 tag** ——
+  `th09.5-*` 只是给人看的里程碑标记；`dataset` 快照由 CI 在 push 后自动更新。
   本仓库也可以完全独立使用（不起应用，纯当数据与工具）。
 - 提交历史是从别处按路径重写搬来的（2026-09-17 → 09-23），之后在这里独立提交；
   `tools/`、`characters.toml`、`loudness/` 于 2026-09-24 迁入（tag `th09.5-260924`）。
