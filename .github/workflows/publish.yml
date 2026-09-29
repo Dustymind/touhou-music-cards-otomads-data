@@ -1,4 +1,5 @@
-# 一条链：push 到 `main`（或手动）→ ① 测试 → ② 重打归档（变了才换 `media` 资产）→ ③ 构建站点并部署。
+# 一条链：push 到 `main`（或手动）→ ① 测试 → ② 数据集快照（主仓库构建期取用，§7.2）
+# → ③ 重打归档（变了才换 `media` 资产）→ ④ 构建站点并部署。
 #
 # **为什么不用 Cloudflare 的 Workers Builds / Deploy Hook**（D150，2026-09-25 真踩到）：
 # 那条路依赖 CF 那边的 Git 集成，连接一失效就**零构建**；而 Deploy Hook 照样回 2xx ⇒ 静默失败，
@@ -59,8 +60,47 @@ jobs:
         # `-rs`：把跳过原因也打出来（悄悄 skip 掉几条等于没有覆盖）
         run: python -m pytest -rs
 
+  dataset:
+    name: ② 数据集快照（主仓库构建期取用）
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: dataset
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: 生成数据集（本仓库自己那半，REFACTOR-PLAN v2 §7.2/§13.4）
+        # 纯标准库；不带身份字段（音MAD 的身份继承原曲，主仓库合并时接上）
+        run: PYTHONPATH=tools/src python3 -m otomads.dataset --out dataset
+      - name: 变了才换资产（index.json 每次都更新：它带本次 commit）
+        run: |
+          set -euo pipefail
+          cd dataset
+          # 内容文件（**不含** index.json：它每次带新 commit）的指纹
+          sha256sum characters.json albums.json tracks.json pack-audio.json sources.json \
+            loudness/otomads.json > ../dataset-digest.txt
+          cd ..
+          cp dataset/loudness/otomads.json loudness-otomads.json
+          mkdir -p previous
+          if gh release download "$TAG" --pattern dataset-digest.txt --dir previous --clobber 2>/dev/null \
+             && cmp -s previous/dataset-digest.txt dataset-digest.txt; then
+            echo "数据集内容没变 ⇒ 只更新 index.json（带本次 commit）"
+          fi
+          gh release view "$TAG" >/dev/null 2>&1 \
+            || gh release create "$TAG" --title "dataset snapshot" \
+                 --notes "主仓库构建期取用的数据集快照（REFACTOR-PLAN v2 §7.2）"
+          gh release upload "$TAG" \
+            dataset/index.json dataset/characters.json dataset/albums.json dataset/tracks.json \
+            dataset/pack-audio.json dataset/sources.json loudness-otomads.json dataset-digest.txt \
+            --clobber
+          echo "已更新 dataset 快照（$(git rev-parse --short HEAD)）"
+
   repack:
-    name: ② 重打归档
+    name: ③ 重打归档
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -109,7 +149,7 @@ jobs:
           echo "✅ 已换掉 $TAG 的 $ASSET"
 
   deploy:
-    name: ③ 构建并部署
+    name: ④ 构建并部署
     needs: repack
     runs-on: ubuntu-latest
     timeout-minutes: 30
