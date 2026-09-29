@@ -20,7 +20,6 @@ import pytest
 
 from otomads import fetch_audio, local_source, loudness, packformat as packs
 
-PACKS = [{"id": "demo", "label": {"en": "Demo", "zh": "演示"}, "kind": "local", "order": 100}]
 ALBUMS = [{"key": "demo", "name": "demo", "kind": "other", "pack": "demo", "order": 100}]
 CHARS = [{"key": "cirno", "music": []}]
 
