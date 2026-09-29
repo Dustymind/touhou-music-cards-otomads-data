@@ -4,7 +4,7 @@
 
 | 模块 | 作用 |
 |---|---|
-| `otomads.local_source` | 本地曲库助手：`/manifest.json` + `/media/...`（Range/CORS、端口回退、按请求头现拼地址；清单里还带**本包自己的曲目表** `albums`/`characters`，主仓库 D145） |
+| `otomads.local_source` | 本地曲库助手：`/manifest.json` + `/media/...`（Range/CORS、端口回退、按请求头现拼地址；**只发 `manifest.json` 与 `media/**`，其余路径一律 404** —— 单次百分号解码、路径必须留在曲库根内、不列目录；清单里还带**本包自己的曲目表** `albums`/`characters`，主仓库 D145） |
 | `otomads.packformat` | 曲包格式层：读 `packs/`、严格校验键名、音频路径/时间工具、`pack_snapshot()`（曲目表快照）、`loudness_path()`、写入侧的 `toml_str()` 与 `character_keys()` |
 | `otomads.fetch_covers` | 抓**每条曲目**的 B 站封面 → 写进**那一条 `[[track]]` 里的 `cover`**（**只写一条裸原图直链**：接口给的 `data.pic`，只把 `http://` 换成 https，不加任何后缀 / 尺寸参数 —— 裁切与缩放是前端按卡面形状做的事；只问接口、**不下载任何图片**；`--dry-run` / `--force` / `--jobs` / JSONL 缓存；文本级写回、默认**只补没有的**、旧形状的顶层 `cover` 数组自动迁移） |
 | `otomads.fetch_audio` | yt-dlp 抓取 + ffmpeg 裁剪；**并发**（`--jobs`，默认 4）；按源刷新 `loudness/<包>.json` |
@@ -50,8 +50,9 @@ uv run python -m otomads.fetch_covers --dry-run  # ③ （可选）补这条曲�
 写入侧的口径（键集合、时间语义、`[[track]]` 里不许写 `character`）由 `otomads.packformat`
 在读入时**严格校验** —— 写错键名会当场报错，不会静默进数据集。角色 key 必须是
 `characters.toml` 清单里已有的（那份清单由主仓库的 `pnpm data:roster` 生成）。
-写完在本仓库提交推送；主仓库切到那个 **commit**（`git -C data/otomads checkout <commit>`）后跑
-`pnpm data:build`（S3 起生成物不进仓库，构建期现生成）。tag 可选，只是里程碑标记。
+写完在本仓库提交推送；主仓库按 `OTOMADS_DATA_DIR`（默认 `data/otomads`）**就地**用这份工作树
+（不是 submodule、也不 pin commit，见主仓库 D174），跑 `pnpm data:build` 生成 `data/public`
+（生成物不进仓库，构建期现生成）。tag 可选，只是里程碑标记。
 封面（**每条 `[[track]]` 里自己的 `cover`**，一条曲目一份）由 `otomads.fetch_covers` 生成/补缺：
 它**逐条**来 —— 已经有 `cover` 的一条都不动（手工覆写与工具补缺共存），旧形状的顶层
 `cover = [...]` 数组会先被**自动迁移**进各条曲目（不联网、幂等）；要按当前 `source` 整包重抓用
@@ -71,10 +72,10 @@ https 直链**，就是接口给的**未加工原图**（裸 `data.pic`，只把
 1. **并发只在应用层**：yt-dlp 的 `--concurrent-fragments` 只并行 HLS/DASH 的**分片**，而 bilibili 的音频
    是单个文件直链 —— 对抓取没有帮助。`fetch_audio` 因此自己开线程池（`--jobs`），瓶颈全在网络：
    本地开销实测只有约 0.25 秒/首（`YoutubeDL()`；**裁剪**另算 —— D142 之后是"解码后精确切 + V0 重编码"，
-   ≈ 0.4–0.6 秒/首，但只有带区间的 16 首付这笔），86 首合计约 30 秒。
+   ≈ 0.4–0.6 秒/首，但只有带区间的 36 首付这笔），191 首合计约 65 秒（同口径外推）。
    并发下的三处不变量：状态**进线程池前读全**（运行期只有写）、状态落盘加锁、
    "同源同区间"的认领与产出在**同一把锁**里（否则两条同源曲目会白裁两遍）。
 2. **每个 `ffmpeg` / `yt-dlp` 子进程都要显式重定向 stdin**（`stdin=subprocess.DEVNULL`，ffmpeg 另加
    `-nostdin`）：子进程继承终端的 stdin 时，ffmpeg 会去接管它，异常路径退出后终端可能**不再回显**。
-   量响度一轮就 86 次机会。这条由 `tests/test_pack_audio.py::test_every_ffmpeg_and_ytdlp_call_gets_its_own_stdin`
+   量响度一轮就 191 次机会。这条由 `tests/test_pack_audio.py::test_every_ffmpeg_and_ytdlp_call_gets_its_own_stdin`
    静态守着（读源码 AST，不跑子进程）。

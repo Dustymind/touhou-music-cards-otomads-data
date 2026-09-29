@@ -32,7 +32,7 @@ uv run --project tools python -m otomads.fetch_audio --dry-run
 uv run --project tools python -m otomads.fetch_audio --jobs 4
 
 # ② 量响度 → 写 loudness/otomads.json
-uv run --project tools python -m otomads.measure_loudness
+uv run --project tools python -m otomads.loudness
 
 # ③ 打包（归档布局 = 部署根；没有卡图就不给 --cards）
 uv run --project tools python -m otomads.stage_media pack \
@@ -171,7 +171,7 @@ gh secret set CLOUDFLARE_API_TOKEN -R Dustymind/touhou-music-cards-otomads-data
 
 ## 响度表自查（踩过的坑）
 
-`fetch_audio` / `measure_loudness` 写完表后会自查一次并打印提示（只提示、不报错）：
+`fetch_audio` / `loudness` 写完表后会自查一次并打印提示（只提示、不报错）：
 
 - `⚠️ 响度表缺 N/M 首`：那首还没抓，或不在这个曲库（**合法**，增益按 1）；
 - `⚠️ 响度表里有 N 个键对不上任何曲目`：改了作者/曲名后没重跑，或**拿别的曲库量过**（表被覆盖）。
