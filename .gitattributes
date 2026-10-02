@@ -1,0 +1,36 @@
+# 行尾属性。
+#
+# 为什么这个文件是**必需**的：本仓库的产物是**按字节**被下游消费的。
+#   * `tools/src/otomads/dataset.py` 产出的六个 JSON + 响度表 ⇒ 主仓库拿它当 contentHash 的输入；
+#   * `packs/**/*.toml`、`loudness/*`、`characters.toml` ⇒ **提交进仓库**的真源。
+# 同一份真源在 Windows 与 Linux 上必须产出同一批字节，否则两端的 contentHash 对不上、联机握手会拒。
+#
+# 代码侧已经把"写"这一半钉死了（`write_text(..., newline="")`，grep 一下就能看到注释）；
+# 这里钉的是"检出/读"那一半：Windows 上 `core.autocrlf` 的默认值在安装时可能被选成 true
+# （= 检出转 CRLF），那样工作树里全是 CRLF，任何逐字节比对或哈希都会对不上，diff 也全是行尾噪声。
+# 光靠 `.editorconfig` 拦不住它（那只管编辑器）。
+#
+# 口径：`text=auto eol=lf` —— 提交时归一化成 LF，**检出时也写 LF**（不跟随平台）。
+# 与主仓库 `touhou-music-cards-reconstructed` 的 `.gitattributes` 同一口径。
+
+* text=auto eol=lf
+
+# 二进制：显式声明，别让 git 去猜（也不做行尾转换）。
+# 本仓库当前**不跟踪**任何二进制（`media/`、`.music/`、封面缓存都 gitignored），
+# 这几行是防御性的：哪天真要提交，不会被当成文本处理。
+*.png   -text
+*.jpg   -text
+*.jpeg  -text
+*.gif   -text
+*.mp3   -text
+*.wav   -text
+*.flac  -text
+*.ogg   -text
+*.ttf   -text
+*.otf   -text
+*.woff  -text
+*.woff2 -text
+*.gz    -text
+*.zip   -text
+*.tar   -text
+*.7z    -text
