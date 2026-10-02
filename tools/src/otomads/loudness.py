@@ -106,7 +106,10 @@ def measure_library(
     payload = {"schema": 1, "targetDb": round(target, 2), "measuredDb": dict(sorted(cache.items())),
                "gains": dict(sorted(gains.items()))}
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    # `newline=""`：这张表是**提交进仓库**的，行尾必须是 `\n`
+    # （不然 Windows 上跑一次会把整个文件重写成 CRLF，diff 全是行尾噪声）
+    output.write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n",
+                      encoding="utf-8", newline="")
     return {"measured": len(measured), "target": target, "gains": gains, "dropped": dropped,
             "output": output}
 

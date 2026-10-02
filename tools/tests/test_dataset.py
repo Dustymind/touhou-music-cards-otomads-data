@@ -49,10 +49,13 @@ LOUDNESS = '{\n "schema": 1,\n "gains": {}\n}\n'
 
 
 def write_tree(root: pathlib.Path, files: dict[str, str]) -> None:
+    """把字面量写成文件。`newline="\\n"` **必须显式写**：下面 `test_loudness_is_copied_byte_for_byte`
+    比的是字节，而 Windows 上 `write_text` 默认会把 `\\n` 翻成 `\\r\\n` —— 那样"真源是 LF"
+    这个前提就不成立了，测试会因为**替身自己**写错而红（与被测代码无关）。"""
     for rel, text in files.items():
         path = root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
+        path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def track(title: str, **fields) -> str:
@@ -113,6 +116,24 @@ def test_build_writes_the_six_json_files_in_the_shared_byte_format(data_root, tm
     assert list(payloads["pack-audio.json"]) == ["schema", "entries"]
     assert list(payloads["sources.json"]) == ["schema", "sources"]
     assert all(payload["schema"] == 2 for payload in payloads.values())
+
+
+def test_built_files_use_lf_line_endings(data_root, tmp_path):
+    """六个 JSON + 响度表一律 `\\n` 行尾。
+
+    这些**字节**就是主仓库 contentHash 的输入（`tmc.build.content_hash` 读的是解析后的
+    载荷，但"两次运行逐字节相同"与快照对账都是按字节比的），必须与 Linux 侧完全相同。
+    Windows 上 `Path.write_text` 默认把 `\\n` 翻成 `\\r\\n` ⇒ 同一份真源在两边产出两套字节，
+    而且**一声不响**（只表现为内容指纹对不上）。
+
+    在 Linux 上这条恒真 —— 所以它其实是给 Windows 跑的回归测试（实测：没加
+    `newline=""` 时 `pack-audio.json` 多出 1342 个 `\\r`）。
+    """
+    scaffold(data_root, pack_files={"cirno": character("cirno", tracks=track("一"))})
+    out, _payloads = build(tmp_path, data_root)
+    offenders = sorted(path.relative_to(out).as_posix()
+                       for path in out.rglob("*") if path.is_file() and b"\r" in path.read_bytes())
+    assert offenders == []
 
 
 # ------------------------------------------------------------------ 角色顺序 / 曲目 id

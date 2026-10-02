@@ -750,7 +750,9 @@ def test_parallel_fetch_keeps_every_track_in_state(tmp_path, monkeypatch):
     library = tmp_path / "library"
     library.mkdir()
     config = tmp_path / "local-source.toml"
-    config.write_text(f'[library]\nroot = "{library}"\n', encoding="utf-8")
+    # `json.dumps` 渲染路径：TOML 基本字符串认 `\U` 为 Unicode 转义，
+    # 直接插 Windows 的 `C:\Users\…` 会让 tomllib 报"Invalid hex value"
+    config.write_text(f'[library]\nroot = {json.dumps(str(library))}\n', encoding="utf-8")
 
     code = fetch_audio.main(["--config", str(config), "--jobs", "4"])
 
@@ -786,7 +788,9 @@ def test_parallel_fetch_downloads_a_shared_source_once(tmp_path, monkeypatch):
     library = tmp_path / "library"
     library.mkdir()
     config = tmp_path / "local-source.toml"
-    config.write_text(f'[library]\nroot = "{library}"\n', encoding="utf-8")
+    # `json.dumps` 渲染路径：TOML 基本字符串认 `\U` 为 Unicode 转义，
+    # 直接插 Windows 的 `C:\Users\…` 会让 tomllib 报"Invalid hex value"
+    config.write_text(f'[library]\nroot = {json.dumps(str(library))}\n', encoding="utf-8")
 
     code = fetch_audio.main(["--config", str(config), "--jobs", "6"])
 

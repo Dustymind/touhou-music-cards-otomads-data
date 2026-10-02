@@ -273,7 +273,11 @@ def build_dataset(out_dir: pathlib.Path) -> dict[str, dict]:
     out_dir = pathlib.Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     for name, payload in payloads.items():
-        (out_dir / name).write_text(_dumps(payload), encoding="utf-8")
+        # `newline=""` **不能省**：这几个文件的**字节**就是主仓库 contentHash 的输入，
+        # 必须与 Linux 侧逐字节相同。不写它，Windows 上 `write_text` 会把 `\n` 翻成 `\r\n`，
+        # 于是同一份真源在两边算出两个哈希 —— 而且不报错，只是内容指纹对不上 ✗
+        # POSIX 上这是零行为变化（`newline=""` 只在 Windows 上关掉转换）。
+        (out_dir / name).write_text(_dumps(payload), encoding="utf-8", newline="")
     _copy_loudness(out_dir, registry)
     return payloads
 

@@ -195,7 +195,11 @@ def _write_archive(root: pathlib.Path, out: pathlib.Path) -> None:
             with tarfile.open(fileobj=gz, mode="w|") as archive:
                 for path in sorted(root.rglob("*")):
                     if path.is_file():
-                        _add_file(archive, path, str(path.relative_to(root)))
+                        # `as_posix()`：归档成员名一律正斜杠。Windows 上 `str(PurePath)` 是
+                        # `media\otomads\x.mp3` ⇒ 会打进反斜杠、部署出来的路径全错，
+                        # 且归档字节与 Linux 侧不一致（这条正是"可复现"的前提）。
+                        # POSIX 上 `as_posix()` == `str()`，所以这是零行为变化。
+                        _add_file(archive, path, path.relative_to(root).as_posix())
     tmp.replace(out)
 
 
@@ -320,7 +324,7 @@ def _assemble(root: pathlib.Path, tracks: dict[str, pathlib.Path], table, album:
         # 曲目表跟着源走（D145）：清单里的**曲目**按曲包 TOML，**地址**按磁盘文件
         snapshot=packformat.repo_snapshot(),
     )
-    (root / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
+    (root / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8", newline="")
     out.parent.mkdir(parents=True, exist_ok=True)
     _write_archive(root, out)
     return manifest
@@ -346,7 +350,7 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
         manifest = build_manifest(sorted(tracks), album, base=base,
                                   loudness=table[0] if table else None,
                                   snapshot=packformat.repo_snapshot())
-        (out / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8")
+        (out / MANIFEST_NAME).write_text(render(manifest), encoding="utf-8", newline="")
         copied_cards = _copy_cards(cards, out / CARDS_DIR)
         return {"tracks": len(tracks), "cards": copied_cards, "source": "library", "out": out,
                 "manifest": manifest, "loudness": 1 if table else 0}
@@ -377,10 +381,10 @@ def stage(out: pathlib.Path, archive: str | None = None, library: pathlib.Path |
                                       revisions=revisions or None,
                                       revision=manifest.get("revision"),
                                       snapshot=packformat.pack_snapshot_of(manifest))
-            manifest_path.write_text(render(manifest), encoding="utf-8")
+            manifest_path.write_text(render(manifest), encoding="utf-8", newline="")
     else:                                         # 归档里没有 manifest（手工做的）→ 按铺好的文件生成
         manifest = build_manifest(sorted(tracks), album, base=base)
-        manifest_path.write_text(render(manifest), encoding="utf-8")
+        manifest_path.write_text(render(manifest), encoding="utf-8", newline="")
     cards_dir = out / CARDS_DIR
     cards_copied = sum(1 for p in cards_dir.iterdir() if p.is_file()) if cards_dir.is_dir() else 0
     return {"tracks": len(tracks), "cards": cards_copied, "source": archive, "out": out,

@@ -493,7 +493,7 @@ def migrate_pack(pack_dir: pathlib.Path, *, dry_run: bool) -> tuple[list[str], d
         migrated.append(path.stem)
         print(f"  · {path.stem}：{'将迁移' if dry_run else '迁移'}顶层 `cover` 数组 → 各条 `[[track]]`")
         if not dry_run:
-            path.write_text(moved, encoding="utf-8")
+            path.write_text(moved, encoding="utf-8", newline="")   # 这几个 TOML 是提交进仓库的：行尾钉死 `\n`
     return migrated, failed
 
 
@@ -602,7 +602,7 @@ def main(argv: list[str] | None = None) -> int:
             added += 1
     if not args.dry_run:
         for key, text in changed.items():
-            (pack_dir / f"{key}.toml").write_text(text, encoding="utf-8")
+            (pack_dir / f"{key}.toml").write_text(text, encoding="utf-8", newline="")
 
     for key in grouped:
         counts = per_char[key]

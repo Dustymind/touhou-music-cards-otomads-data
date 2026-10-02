@@ -104,7 +104,7 @@ def main() -> int:
     if out.exists():
         shutil.rmtree(out)                      # 构建目录要干净：上一次的残留不能混进来
     stage_media.extract(archive, out)
-    (out / HEADERS_NAME).write_text(HEADERS_FILE, encoding="utf-8")
+    (out / HEADERS_NAME).write_text(HEADERS_FILE, encoding="utf-8", newline="")   # 行尾 `\n`：别让 Windows 翻成 CRLF
     print(f"    写 {out}/{HEADERS_NAME}：CORS `*` + 清单/响度表每次校验 + 媒体 4 小时")
     # `file_digest` 流式读（≥3.11）；以前是 `hashlib.sha256(archive.read_bytes())` ——
     # 会把整份 ~322 MB 归档读进内存，峰值白涨 300 MB，而 sha 结果完全一样。
@@ -118,7 +118,7 @@ def main() -> int:
         "branch": os.environ.get("WORKERS_CI_BRANCH", os.environ.get("GITHUB_REF_NAME", "")),
     }
     (out / BUILD_INFO_NAME).write_text(json.dumps(info, ensure_ascii=False, indent=1) + "\n",
-                                      encoding="utf-8")
+                                      encoding="utf-8", newline="")
     print(f"    写 {out}/{BUILD_INFO_NAME}：{info['commit'][:12] or '(无 commit 信息)'} @ {info['builtAt']}")
 
     manifest = stage_media.manifest_of(archive)

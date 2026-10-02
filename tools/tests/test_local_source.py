@@ -120,9 +120,12 @@ def test_port_fallback_picks_free_port():
 
 def test_config_priority(tmp_path, library):
     cfg = tmp_path / "local-source.toml"
+    # 路径用 `json.dumps` 渲染：JSON 的字符串转义口径与 TOML 基本字符串一致。
+    # 直接 f-string 插进去的话，Windows 的 `C:\Users\…` 里 `\U` 会被 tomllib 当成
+    # Unicode 转义（`TOMLDecodeError: Invalid hex value`）—— 纯粹是**替身**写法的问题。
     cfg.write_text(
-        f'[server]\nhost = "127.0.0.1"\nport = 8123\n[library]\nroot = "{library}"\n'
-        '[pack]\nid = "my-pack"\n', encoding="utf-8")
+        f'[server]\nhost = "127.0.0.1"\nport = 8123\n[library]\n'
+        f'root = {json.dumps(str(library))}\n[pack]\nid = "my-pack"\n', encoding="utf-8")
     conf = local_source.load_config(str(cfg))
     assert conf["port"] == 8123 and conf["root"] == str(library) and conf["pack_id"] == "my-pack"
     overridden = local_source.load_config(str(cfg), port=9000, pack_id="other")

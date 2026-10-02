@@ -360,7 +360,7 @@ def save_state(path: pathlib.Path, state: dict) -> None:
         # 同目录临时文件 + `os.replace`：进程被 Ctrl-C / 掉电打断时，不会留下半截 JSON
         # （`load_state` 有容错能忽略坏文件，但那是"丢状态重下"的代价，不该白付）。
         tmp = path.with_name(path.name + ".tmp")
-        tmp.write_text(text, encoding="utf-8")
+        tmp.write_text(text, encoding="utf-8", newline="")   # 行尾 `\n`：状态文件不该随平台变字节
         os.replace(tmp, path)
 
 
@@ -584,8 +584,10 @@ def process_track(track: dict, *, library: pathlib.Path, state: dict,
         return {"status": "failed", "title": title,
                 "detail": f"{type(error).__name__}: {error}"}, claimed
 
-    state["tracks"][key] = {**signature, "raw": str(pathlib.Path(RAW_DIR) / raw_path.name),
-                            "out": str(out_rel), "outHash": hash_file(out_path),
+    state["tracks"][key] = {**signature, "raw": (pathlib.Path(RAW_DIR) / raw_path.name).as_posix(),
+                            # `as_posix()`：状态里的路径是**契约**（正斜杠），不是给人看的
+                            # —— Windows 上 `str(Path)` 会给 `demo\B - 二.mp3`，反斜杠进了 JSON 就错了 ✗
+                            "out": out_rel.as_posix(), "outHash": hash_file(out_path),
                             "ytdlp": installed_ytdlp(), "updatedAt": time.strftime("%Y-%m-%dT%H:%M:%S")}
     changed.add(out_path.stem)
     return {"status": action, "title": title,
