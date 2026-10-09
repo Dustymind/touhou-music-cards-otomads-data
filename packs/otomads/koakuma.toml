@@ -5,8 +5,8 @@ key = "koakuma"
 
 [[track]]
 album = "otomads"
-authors = ["地下部", "Rinsaku", "逢封fn_eg", "Moonview210", "chleain"]
-title = "Masuo魔法図書館"
+author = "逢封fn_eg"
+title = "Masuo魔法末地图书馆【东方魔酢污】"
 extra = "角色曲"
-source = "https://www.bilibili.com/video/BV1kU7a6rEf4/"          # mp3 标签
-cover = "https://i2.hdslb.com/bfs/archive/8d3dc6c7bf2830d24f036aaeb7ea7fd05b8f5c47.jpg"
+source = "https://www.bilibili.com/video/BV1T6ZWB4Em9/"
+cover = "https://i2.hdslb.com/bfs/archive/0bd93df34e23d153ef80004f44ff1ac657170121.jpg"
