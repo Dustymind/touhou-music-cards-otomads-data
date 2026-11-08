@@ -18,3 +18,11 @@ source = "https://www.bilibili.com/video/BV1J4x4ehELr/"     # 可选：抓取/�
 cover = "https://i2.hdslb.com/bfs/archive/974f7ebe98c30480e420cfa135994eaee9f23ee4.jpg"
 start_time = "00:00:11.790"                        # 可选：裁剪区间（只给一侧也合法）
 # stop_time = "00:00:30.000"
+
+[[track]]
+album = "otomads"
+author = "楓下稲穂子"
+title = "【合作单品】会受向日葵的斥责啦"
+extra = "角色曲"
+source = "https://www.bilibili.com/video/BV1Qenn6AEFk/"
+cover = "https://i1.hdslb.com/bfs/archive/7c529ebf93059dc6ad72370146fb8eb20a92754d.jpg"

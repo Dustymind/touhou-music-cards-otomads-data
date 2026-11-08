@@ -36,3 +36,11 @@ title = "[原图不使用]纯粹的孤儿～妈之所在"
 extra = "角色曲"
 source = "https://www.bilibili.com/video/BV1nEaKz7E7K/"     # 可选：抓取/裁剪用
 cover = "https://i1.hdslb.com/bfs/archive/9b7a5838e8959cce3f6eb74245a9bf41e9447682.jpg"
+
+[[track]]
+album = "otomads"
+author = "驹草JX"
+title = "塘埔之英豪 倒映之榕江"
+extra = "道中曲"
+source = "https://www.bilibili.com/video/BV11nteevE4F/"
+cover = "https://i0.hdslb.com/bfs/archive/fcb8c69d9750b6958bde84901125bd3be7409e47.jpg"
